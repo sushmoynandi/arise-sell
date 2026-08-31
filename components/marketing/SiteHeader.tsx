@@ -32,7 +32,9 @@ export default function SiteHeader() {
   const [lifted, setLifted] = useState(false);
   const pathname = usePathname();
   const { t } = useLang();
-  const [activeHref, setActiveHref] = useState<string>("/");
+  const [activeHref, setActiveHref] = useState<string>(() =>
+    pathname === "/contact" ? "/contact" : "/",
+  );
   const isManualScrollRef = useRef(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -76,7 +78,6 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (pathname === "/contact") {
-      setActiveHref("/contact");
       const onScroll = () => setLifted(window.scrollY > 10);
       onScroll();
       window.addEventListener("scroll", onScroll, { passive: true });

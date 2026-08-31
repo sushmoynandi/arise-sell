@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Eyebrow, Panel } from "@/components/ui/primitives";
+import { Eyebrow, Panel } from "@/components/ui/primitives";
 import { Counter, Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { useLang } from "@/lib/i18n";
 
@@ -42,38 +42,71 @@ const BELIEFS = [
 const TIMELINE = [
   {
     when: "2024",
-    whatEn: "Ran a small handloom page on Facebook. Lost more orders to a slow inbox than to price.",
-    whatBn: "ফেসবুকে নিজেদের একটি পেজ চালাতে গিয়ে দেখলাম, দামের কারণে নয়—দেরিতে রিপ্লাই দেওয়ার কারণে সবচেয়ে বেশি অর্ডার হারাতাম।",
+    whatEn:
+      "Ran a small handloom page on Facebook. Lost more orders to a slow inbox than to price.",
+    whatBn:
+      "ফেসবুকে নিজেদের একটি পেজ চালাতে গিয়ে দেখলাম, দামের কারণে নয়—দেরিতে রিপ্লাই দেওয়ার কারণে সবচেয়ে বেশি অর্ডার হারাতাম।",
   },
   {
     when: "Early 2025",
-    whatEn: "Built a crude auto-reply. It answered fast and confidently invented stock. Three returns in a week.",
-    whatBn: "প্রথমে একটি সাধারণ অটো-রিপ্লাই বানালাম। দ্রুত উত্তর দিত কিন্তু ভুলভাল স্টক বলে ফেলত। এক সপ্তাহে ৩টি রিটার্ন হলো।",
+    whatEn:
+      "Built a crude auto-reply. It answered fast and confidently invented stock. Three returns in a week.",
+    whatBn:
+      "প্রথমে একটি সাধারণ অটো-রিপ্লাই বানালাম। দ্রুত উত্তর দিত কিন্তু ভুলভাল স্টক বলে ফেলত। এক সপ্তাহে ৩টি রিটার্ন হলো।",
   },
   {
     when: "Mid 2025",
-    whatEn: "Rebuilt around guardrails and a recorded test suite. Order completion went up when the bot said “I don't know” more often.",
-    whatBn: "পুরো সিস্টেম কঠোর গার্ডরেইল এবং ২৪০টি টেস্ট কেস দিয়ে নতুন করে সাজানো হলো। অর্ডার কমপ্লিশন একলাফে বেড়ে গেল।",
+    whatEn:
+      "Rebuilt around guardrails and a recorded test suite. Order completion went up when the bot said “I don't know” more often.",
+    whatBn:
+      "পুরো সিস্টেম কঠোর গার্ডরেইল এবং ২৪০টি টেস্ট কেস দিয়ে নতুন করে সাজানো হলো। অর্ডার কমপ্লিশন একলাফে বেড়ে গেল।",
   },
   {
     when: "2026",
-    whatEn: "Opened it up to Bangladeshi merchants, and moved billing strictly to closed orders.",
-    whatBn: "বাংলাদেশের সকল ব্যবসায়ীদের জন্য উন্মুক্ত করা হলো এবং বিলিং সম্পূর্ণ 'ক্লোজড অর্ডার' ভিত্তিক করা হলো।",
+    whatEn:
+      "Opened it up to Bangladeshi merchants, and moved billing strictly to closed orders.",
+    whatBn:
+      "বাংলাদেশের সকল ব্যবসায়ীদের জন্য উন্মুক্ত করা হলো এবং বিলিং সম্পূর্ণ 'ক্লোজড অর্ডার' ভিত্তিক করা হলো।",
   },
 ];
 
 const NUMBERS = [
-  { n: 41208, labelEn: "threads handled", labelBn: "কথোপকথন সম্পন্ন", suffix: "" },
-  { n: 240, labelEn: "recorded eval cases", labelBn: "টেস্ট কেস ভেরিফাইড", suffix: "" },
-  { n: 93.6, labelEn: "closed without a human", labelBn: "মানুষের সাহায্য ছাড়া ক্লোজড", suffix: "%", d: 1 },
-  { n: 3.8, labelEn: "second median first reply", labelBn: "গড় প্রথম উত্তরের সময়", suffix: "s", d: 1 },
+  {
+    n: 41208,
+    labelEn: "threads handled",
+    labelBn: "কথোপকথন সম্পন্ন",
+    suffix: "",
+  },
+  {
+    n: 240,
+    labelEn: "recorded eval cases",
+    labelBn: "টেস্ট কেস ভেরিফাইড",
+    suffix: "",
+  },
+  {
+    n: 93.6,
+    labelEn: "closed without a human",
+    labelBn: "মানুষের সাহায্য ছাড়া ক্লোজড",
+    suffix: "%",
+    d: 1,
+  },
+  {
+    n: 3.8,
+    labelEn: "second median first reply",
+    labelBn: "গড় প্রথম উত্তরের সময়",
+    suffix: "s",
+    d: 1,
+  },
 ];
 
 export default function StorySection() {
   const { t } = useLang();
 
   return (
-    <section id="story" className="relative border-t border-line py-20 lg:py-28 bg-white">
+    <section
+      id="story"
+      className="relative border-t border-line py-20 lg:py-28 bg-white"
+    >
       <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-3xl text-center">
@@ -81,13 +114,13 @@ export default function StorySection() {
             <h2 className="mt-4 text-balance font-display text-[clamp(1.9rem,3.6vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
               {t(
                 "We built this because slow inboxes kill real sales.",
-                "দেরিতে রিপ্লাই দেওয়ার কারণে যেন কোনো ব্যবসা কাস্টমার না হারায়।"
+                "দেরিতে রিপ্লাই দেওয়ার কারণে যেন কোনো ব্যবসা কাস্টমার না হারায়।",
               )}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-text-2">
               {t(
                 "Not competitor pricing or ad budget — an answer delivered hours late is why buyers leave. NextProduct was created in Dhaka to solve this for good.",
-                "কম্পিটিটরের দামের জন্য নয়, ঘণ্টার পর ঘণ্টা মেসেজ ফেলে রাখার কারণেই কাস্টমার অন্য দোকান থেকে কিনে ফেলে। এই সমস্যা দূর করতেই NextProduct তৈরি।"
+                "কম্পিটিটরের দামের জন্য নয়, ঘণ্টার পর ঘণ্টা মেসেজ ফেলে রাখার কারণেই কাস্টমার অন্য দোকান থেকে কিনে ফেলে। এই সমস্যা দূর করতেই NextProduct তৈরি।",
               )}
             </p>
           </div>

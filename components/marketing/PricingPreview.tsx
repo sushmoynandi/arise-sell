@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { PLANS, OVERAGE, OVERAGE_BN } from "@/data/plans";
 import { Button, Panel } from "@/components/ui/primitives";
-import { IconArrow, IconCheck } from "@/components/ui/icons";
+import { IconCheck } from "@/components/ui/icons";
 import { Reveal, Stagger, StaggerItem, SPRING } from "@/components/motion";
 import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
