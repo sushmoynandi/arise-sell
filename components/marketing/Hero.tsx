@@ -19,17 +19,17 @@ const REASSURE = [
 export default function Hero() {
   const { t } = useLang();
   return (
-    <section className="relative overflow-hidden pb-16 pt-28 lg:pb-20 lg:pt-36">
+    <section className="relative overflow-hidden pb-12 pt-20 lg:pb-16 lg:pt-24">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full opacity-70 blur-[130px]"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(10,110,80,0.13), rgba(74,59,196,0.06) 55%, transparent)",
+            "radial-gradient(closest-side, rgba(10,110,80,0.14), rgba(5,98,68,0.06) 55%, transparent)",
         }}
       />
 
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-14 px-5 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-14 lg:px-8">
+      <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-10 px-4 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-12 lg:px-6">
         <div>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -43,15 +43,20 @@ export default function Hero() {
             <span className="text-[13px] text-text-2">
               {t(
                 "You only pay for orders it actually closes",
-                "যত অর্ডার ক্লোজ হবে, শুধু ততটুকুরই খরচ"
+                "যত অর্ডার ক্লোজ হবে, শুধু ততটুকুরই খরচ",
               )}
             </span>
           </motion.div>
 
           <h1 className="font-display text-[clamp(2.3rem,5vw,3.6rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-text">
-            <SplitWords text={t("Your shop keeps selling", "দোকান বন্ধ থাকলেও")} />
+            <SplitWords
+              text={t("Your shop keeps selling", "দোকান বন্ধ থাকলেও")}
+            />
             <br />
-            <SplitWords text={t("after you close it.", "বিক্রি চলতে থাকে।")} delay={0.16} />
+            <SplitWords
+              text={t("after you close it.", "বিক্রি চলতে থাকে।")}
+              delay={0.16}
+            />
           </h1>
 
           <motion.p
@@ -61,8 +66,8 @@ export default function Hero() {
             className="mt-4 font-[family-name:var(--font-hind)] text-[19px] leading-relaxed text-signal"
           >
             {t(
+              "Instant replies, complete order taking, and courier booking — 100% on autopilot.",
               "কাস্টমার মেসেজ করলেই উত্তর, অর্ডার, আর কুরিয়ার বুকিং — সব নিজে থেকেই।",
-              "উত্তর, অর্ডার আর কুরিয়ার বুকিং — সব নিজে থেকেই।"
             )}
           </motion.p>
 
@@ -74,7 +79,7 @@ export default function Hero() {
           >
             {t(
               "NextProduct answers your customers on WhatsApp, Messenger and Instagram in their own language, takes the complete order, books Steadfast or Pathao, and sends the invoice — while you sleep, eat, or serve someone standing in front of you.",
-              "NextProduct আপনার কাস্টমারকে হোয়াটসঅ্যাপ, মেসেঞ্জার আর ইনস্টাগ্রামে তাদের নিজের ভাষায় উত্তর দেয়, পুরো অর্ডার নেয়, স্টেডফাস্ট বা পাঠাও বুক করে, আর চালান পাঠিয়ে দেয় — আপনি যখন ঘুমাচ্ছেন, খাচ্ছেন, বা সামনের কাস্টমারকে দেখছেন।"
+              "NextProduct আপনার কাস্টমারকে হোয়াটসঅ্যাপ, মেসেঞ্জার আর ইনস্টাগ্রামে তাদের নিজের ভাষায় উত্তর দেয়, পুরো অর্ডার নেয়, স্টেডফাস্ট বা পাঠাও বুক করে, আর চালান পাঠিয়ে দেয় — আপনি যখন ঘুমাচ্ছেন, খাচ্ছেন, বা সামনের কাস্টমারকে দেখছেন।",
             )}
           </motion.p>
 
@@ -108,7 +113,10 @@ export default function Hero() {
             className="mt-6 flex flex-wrap gap-x-5 gap-y-2"
           >
             {REASSURE.map((r) => (
-              <li key={r.en} className="flex items-center gap-1.5 text-[13px] text-text-3">
+              <li
+                key={r.en}
+                className="flex items-center gap-1.5 text-[13px] text-text-3"
+              >
                 <IconCheck width={13} height={13} className="text-signal" />
                 {t(r.en, r.bn)}
               </li>
@@ -120,7 +128,7 @@ export default function Hero() {
       </div>
 
       {/* stats + merchants */}
-      <div className="relative mx-auto mt-20 max-w-[1180px] px-5 lg:px-8">
+      <div className="relative mx-auto mt-20 max-w-[1280px] px-5 lg:px-8">
         <motion.dl
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -145,7 +153,7 @@ export default function Hero() {
         <p className="mb-4 text-center text-[13px] text-text-3">
           {t(
             "Trusted by growing shops across Bangladesh",
-            "সারা বাংলাদেশের বাড়ন্ত দোকানগুলোর ভরসা"
+            "সারা বাংলাদেশের বাড়ন্ত দোকানগুলোর ভরসা",
           )}
         </p>
         <Marquee>

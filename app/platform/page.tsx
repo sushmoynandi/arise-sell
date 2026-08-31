@@ -19,7 +19,7 @@ import {
   IconInstagram,
   IconWidget,
 } from "@/components/ui/icons";
-import { Reveal, ScrollProgress, Stagger, StaggerItem } from "@/components/motion";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "Platform",
@@ -59,26 +59,57 @@ const CHANNELS = [
 ];
 
 const SURFACES = [
-  { icon: IconPulse, name: "Pulse", body: "Revenue closed today, the live event stream, and the three things waiting on a human." },
-  { icon: IconThreads, name: "Threads", body: "Every channel in one queue, with the guardrails that fired shown beside each reply." },
-  { icon: IconPipeline, name: "Pipeline", body: "Intent moving left to right. The agent proposes each stage change; you confirm the ones worth confirming." },
-  { icon: IconTruck, name: "Fulfilment", body: "Order, courier booking and the Bangla invoice on one screen — because they were never three jobs." },
-  { icon: IconBox, name: "Catalog", body: "What the agent may sell, the photo index behind screenshot matching, and every feed sync with what changed." },
-  { icon: IconMegaphone, name: "Reach", body: "Broadcasts, comment rules and follow-up playbooks — the three ways you start the conversation." },
-  { icon: IconBrain, name: "Brain", body: "Persona, guardrails, knowledge, and the eval suite that has to pass before a change ships." },
-  { icon: IconChart, name: "Signals", body: "Server-side conversion events, real return on ad spend, and an AI budget ceiling that actually stops." },
+  {
+    icon: IconPulse,
+    name: "Pulse",
+    body: "Revenue closed today, the live event stream, and the three things waiting on a human.",
+  },
+  {
+    icon: IconThreads,
+    name: "Threads",
+    body: "Every channel in one queue, with the guardrails that fired shown beside each reply.",
+  },
+  {
+    icon: IconPipeline,
+    name: "Pipeline",
+    body: "Intent moving left to right. The agent proposes each stage change; you confirm the ones worth confirming.",
+  },
+  {
+    icon: IconTruck,
+    name: "Fulfilment",
+    body: "Order, courier booking and the Bangla invoice on one screen — because they were never three jobs.",
+  },
+  {
+    icon: IconBox,
+    name: "Catalog",
+    body: "What the agent may sell, the photo index behind screenshot matching, and every feed sync with what changed.",
+  },
+  {
+    icon: IconMegaphone,
+    name: "Reach",
+    body: "Broadcasts, comment rules and follow-up playbooks — the three ways you start the conversation.",
+  },
+  {
+    icon: IconBrain,
+    name: "Brain",
+    body: "Persona, guardrails, knowledge, and the eval suite that has to pass before a change ships.",
+  },
+  {
+    icon: IconChart,
+    name: "Signals",
+    body: "Server-side conversion events, real return on ad spend, and an AI budget ceiling that actually stops.",
+  },
 ];
 
 export default function PlatformPage() {
   return (
     <>
-      <ScrollProgress />
       <SiteHeader />
       <main>
         {/* hero */}
         <section className="relative overflow-hidden pb-16 pt-32 lg:pt-40">
           <div className="bg-grid pointer-events-none absolute inset-0 mask-fade-b opacity-60" />
-          <div className="relative mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="relative mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
                 ফিচার
@@ -88,9 +119,10 @@ export default function PlatformPage() {
                 <span className="text-text-3"> In one place.</span>
               </h1>
               <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-text-2">
-                Your customers message you on four different apps. Your orders live in a notebook,
-                your courier in a browser tab, and your stock in your head. This puts all of it in
-                one screen — and does most of the work for you.
+                Your customers message you on four different apps. Your orders
+                live in a notebook, your courier in a browser tab, and your
+                stock in your head. This puts all of it in one screen — and does
+                most of the work for you.
               </p>
             </Reveal>
           </div>
@@ -98,7 +130,7 @@ export default function PlatformPage() {
 
         {/* channels */}
         <section id="channels" className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
                 সব চ্যানেলে
@@ -118,7 +150,9 @@ export default function PlatformPage() {
                     <h3 className="mt-4 font-display text-[19px] font-semibold tracking-tight">
                       {c.name}
                     </h3>
-                    <p className="mt-2.5 text-[14px] leading-relaxed text-text-2">{c.body}</p>
+                    <p className="mt-2.5 text-[14px] leading-relaxed text-text-2">
+                      {c.body}
+                    </p>
                     <ul className="mt-5 flex flex-wrap gap-1.5">
                       {c.facts.map((f) => (
                         <li key={f}>
@@ -136,8 +170,11 @@ export default function PlatformPage() {
         <Lifecycle />
 
         {/* console surfaces */}
-        <section id="fulfilment" className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+        <section
+          id="fulfilment"
+          className="border-t border-line py-20 lg:py-24"
+        >
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
                 আপনার ড্যাশবোর্ড
@@ -155,7 +192,9 @@ export default function PlatformPage() {
                     <h3 className="mt-3.5 font-display text-[15px] font-semibold tracking-tight">
                       {s.name}
                     </h3>
-                    <p className="mt-2 text-[12.5px] leading-relaxed text-text-3">{s.body}</p>
+                    <p className="mt-2 text-[12.5px] leading-relaxed text-text-3">
+                      {s.body}
+                    </p>
                   </div>
                 </StaggerItem>
               ))}

@@ -1,7 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Badge, Eyebrow, LiveDot, Meter, Sparkline } from "@/components/ui/primitives";
+import {
+  Badge,
+  Eyebrow,
+  LiveDot,
+  Meter,
+  Sparkline,
+} from "@/components/ui/primitives";
 import {
   IconBolt,
   IconEye,
@@ -13,9 +19,17 @@ import {
   IconWhatsApp,
   IconWidget,
 } from "@/components/ui/icons";
-import { Reveal, Stagger, StaggerItem, Tilt, SPRING } from "@/components/motion";
+import {
+  Reveal,
+  Stagger,
+  StaggerItem,
+  Tilt,
+  SPRING,
+} from "@/components/motion";
 import { CHANNELS } from "@/data/tenant";
 import { SERIES } from "@/data/operations";
+
+import { useLang } from "@/lib/i18n";
 
 const CHANNEL_ICONS = {
   whatsapp: IconWhatsApp,
@@ -26,14 +40,28 @@ const CHANNEL_ICONS = {
 } as const;
 
 export default function Capabilities() {
+  const { t } = useLang();
+
   return (
-    <section id="channels" className="relative border-t border-line py-24 lg:py-32">
-      <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+    <section
+      id="capabilities"
+      className="relative border-t border-line py-20 lg:py-28 bg-white"
+    >
+      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
-          <Eyebrow>What it actually does</Eyebrow>
-          <h2 className="mt-5 max-w-2xl text-balance font-display text-[clamp(1.9rem,3.6vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
-            Six things a good shop assistant does.
-            <span className="text-text-3"> All six, at 3am, in Bangla.</span>
+          <Eyebrow>{t("What it actually does", "কী কী কাজ করে")}</Eyebrow>
+          <h2 className="mt-4 max-w-2xl text-balance font-display text-[clamp(1.9rem,3.6vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
+            {t(
+              "Six things a good shop assistant does.",
+              "একজন ভালো বিক্রয়কর্মীর ৬টি কাজ।",
+            )}
+            <span className="text-text-3">
+              {" "}
+              {t(
+                "All six, at 3am, in Bangla.",
+                "সবগুলোই করবে রাত ৩টায়, বাংলায়।",
+              )}
+            </span>
           </h2>
         </Reveal>
 
@@ -45,11 +73,16 @@ export default function Capabilities() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-display text-[19px] font-semibold tracking-tight">
-                      Every channel, one thread
+                      {t(
+                        "Every channel, one thread",
+                        "সব চ্যানেলের কাস্টমার এক জায়গায়",
+                      )}
                     </h3>
                     <p className="mt-2 max-w-md text-[14px] leading-relaxed text-text-2">
-                      The same customer on Messenger this morning and WhatsApp tonight is one person
-                      with one cart — not two strangers starting over.
+                      {t(
+                        "The same customer on Messenger this morning and WhatsApp tonight is one person with one cart — not two strangers starting over.",
+                        "সকালে মেসেঞ্জারে আর রাতে হোয়াটসঅ্যাপে নক করা একই কাস্টমারকে এক ব্যক্তি হিসেবেই চেনে — তথ্য পুনরায় দিতে হয় না।",
+                      )}
                     </p>
                   </div>
                   <LiveDot />
@@ -57,7 +90,8 @@ export default function Capabilities() {
 
                 <div className="mt-7 space-y-2.5">
                   {CHANNELS.filter((c) => c.live).map((c, i) => {
-                    const Icon = CHANNEL_ICONS[c.id as keyof typeof CHANNEL_ICONS];
+                    const Icon =
+                      CHANNEL_ICONS[c.id as keyof typeof CHANNEL_ICONS];
                     return (
                       <motion.div
                         key={c.id}
@@ -72,8 +106,12 @@ export default function Capabilities() {
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline justify-between gap-3">
-                            <span className="text-[13.5px] font-medium text-text">{c.label}</span>
-                            <span className="font-mono text-[11px] text-text-3">{c.share}%</span>
+                            <span className="text-[13.5px] font-medium text-text">
+                              {c.label}
+                            </span>
+                            <span className="font-mono text-[11px] text-text-3">
+                              {c.share}%
+                            </span>
                           </div>
                           <div className="mt-1.5">
                             <Meter value={c.share} max={50} />
@@ -95,17 +133,19 @@ export default function Capabilities() {
                   <IconEye width={17} height={17} />
                 </span>
                 <h3 className="mt-4 font-display text-[19px] font-semibold tracking-tight">
-                  Screenshot → SKU
+                  {t("Screenshot → SKU", "স্ক্রিনশট থেকে সঠিক পণ্য")}
                 </h3>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-text-2">
-                  Customers send a cropped photo of your own post. It comes back as a variant, in
-                  stock, with a price.
+                  {t(
+                    "Customers send a cropped photo of your own post. It comes back as a variant, in stock, with a price.",
+                    "কাস্টমার পোস্টের ছবি ক্রপ করে পাঠালেও রঙ, সাইজ ও স্টক মিলিয়ে সঠিক দাম জানিয়ে দেয়।",
+                  )}
                 </p>
               </div>
               <div className="mt-6 rounded-xl border border-line bg-surface-2/60 p-3">
                 <div className="flex items-center justify-between font-mono text-[10.5px] text-text-3">
-                  <span>MATCH</span>
-                  <span className="text-iris">0.94</span>
+                  <span>{t("MATCH ACCURACY", "ম্যাচ সঠিকতা")}</span>
+                  <span className="text-iris font-semibold">94%</span>
                 </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <motion.div
@@ -116,7 +156,12 @@ export default function Capabilities() {
                     transition={{ ...SPRING, delay: 0.3 }}
                   />
                 </div>
-                <p className="mt-2.5 font-mono text-[11px] text-text-2">JD-IND · Indigo · 12 left</p>
+                <p className="mt-2.5 font-mono text-[11px] text-text-2">
+                  {t(
+                    "Jamdani Indigo · 12 in stock",
+                    "জামদানি ইন্ডিগো · ১২ পিস স্টকে",
+                  )}
+                </p>
               </div>
             </div>
           </StaggerItem>
@@ -128,10 +173,13 @@ export default function Capabilities() {
                 <IconTruck width={17} height={17} />
               </span>
               <h3 className="mt-4 font-display text-[19px] font-semibold tracking-tight">
-                Courier, not clipboard
+                {t("Auto Courier Booking", "স্বয়ংক্রিয় কুরিয়ার বুকিং")}
               </h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-text-2">
-                Steadfast and Pathao booked on your own merchant account. COD lands in your wallet.
+                {t(
+                  "Steadfast and Pathao booked directly on your merchant account. COD money goes directly to your wallet.",
+                  "স্টেডফাস্ট ও পাঠাও-এ সরাসরি আপনার মার্চেন্ট অ্যাকাউন্টে পার্সেল বুক হয় এবং সিওডির টাকা আপনার একাউন্টে আসে।",
+                )}
               </p>
               <div className="mt-5 flex flex-wrap gap-1.5">
                 <Badge tone="mint" dot>
@@ -140,7 +188,9 @@ export default function Capabilities() {
                 <Badge tone="azure" dot>
                   Pathao
                 </Badge>
-                <Badge tone="neutral">1-click bulk</Badge>
+                <Badge tone="neutral">
+                  {t("1-click bulk", "১-ক্লিক বাল্ক")}
+                </Badge>
               </div>
             </div>
           </StaggerItem>
@@ -152,14 +202,17 @@ export default function Capabilities() {
                 <IconShield width={17} height={17} />
               </span>
               <h3 className="mt-4 font-display text-[19px] font-semibold tracking-tight">
-                It knows when to stop
+                {t("Smart Safety Guardrails", "মিথ্যা তথ্য রোধে গার্ডরেইল")}
               </h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-text-2">
-                Never claims stock it can&apos;t see. Never invents a delivery date. Hands bulk and
-                discounts to a human.
+                {t(
+                  "Never claims stock it can't see. Never invents a fake delivery date. Hands discounts and bulk requests to a human.",
+                  "স্টকে না থাকলে কখনোই ভুল তথ্য দেয় না। ভুয়া ডেলিভারির তারিখ বানায় না এবং জটিল ডিসকাউন্ট মানুষের হাতে দেয়।",
+                )}
               </p>
               <p className="mt-5 font-mono text-[11px] text-text-3">
-                <span className="text-amber">6.4%</span> of threads escalated last week
+                <span className="text-amber font-semibold">93.6%</span>{" "}
+                {t("closed fully automated", "সম্পূর্ণ অটোমেটেড ক্লোজড")}
               </p>
             </div>
           </StaggerItem>
@@ -171,11 +224,13 @@ export default function Capabilities() {
                 <IconBolt width={17} height={17} />
               </span>
               <h3 className="mt-4 font-display text-[19px] font-semibold tracking-tight">
-                Ads that learn
+                {t("Ads That Learn", "অ্যাড ট্র্যাকিং ও আরও বিক্রি")}
               </h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-text-2">
-                Purchases go server-side to Meta, so the campaign that started the chat finds more
-                people like that buyer.
+                {t(
+                  "Purchases report server-side to Meta, training your ads to automatically target real buyers.",
+                  "প্রতিটি নিশ্চিত বিক্রি ফেসবুকে রিপোর্ট হয়, ফলে আপনার অ্যাড আসল ক্রেতাদের খুঁজে বের করতে পারে।",
+                )}
               </p>
               <div className="mt-auto pt-5">
                 <Sparkline data={SERIES.revenue} height={40} />

@@ -3,7 +3,7 @@ import SiteHeader from "@/components/marketing/SiteHeader";
 import SiteFooter from "@/components/marketing/SiteFooter";
 import CtaBand from "@/components/marketing/CtaBand";
 import { Badge, Eyebrow, Panel } from "@/components/ui/primitives";
-import { Counter, Reveal, ScrollProgress, Stagger, StaggerItem } from "@/components/motion";
+import { Counter, Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
@@ -32,10 +32,22 @@ const BELIEFS = [
 ];
 
 const TIMELINE = [
-  { when: "2024", what: "Ran a small handloom page on Facebook. Lost more orders to a slow inbox than to price." },
-  { when: "Early 2025", what: "Built a crude auto-reply. It answered fast and confidently invented stock. Three returns in a week." },
-  { when: "Mid 2025", what: "Rebuilt around guardrails and a recorded test suite. Order completion went up when the bot said “I don't know” more often." },
-  { when: "2026", what: "Opened it up to other merchants, and moved billing from conversations to closed orders." },
+  {
+    when: "2024",
+    what: "Ran a small handloom page on Facebook. Lost more orders to a slow inbox than to price.",
+  },
+  {
+    when: "Early 2025",
+    what: "Built a crude auto-reply. It answered fast and confidently invented stock. Three returns in a week.",
+  },
+  {
+    when: "Mid 2025",
+    what: "Rebuilt around guardrails and a recorded test suite. Order completion went up when the bot said “I don't know” more often.",
+  },
+  {
+    when: "2026",
+    what: "Opened it up to other merchants, and moved billing from conversations to closed orders.",
+  },
 ];
 
 const NUMBERS = [
@@ -48,12 +60,11 @@ const NUMBERS = [
 export default function StoryPage() {
   return (
     <>
-      <ScrollProgress />
       <SiteHeader />
       <main>
         <section className="relative overflow-hidden pb-16 pt-32 lg:pt-40">
           <div className="bg-grid pointer-events-none absolute inset-0 mask-fade-b opacity-60" />
-          <div className="relative mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="relative mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Eyebrow>Story</Eyebrow>
               <h1 className="mt-5 max-w-3xl text-balance font-display text-[clamp(2.2rem,4.6vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
@@ -61,8 +72,9 @@ export default function StoryPage() {
                 <span className="text-text-3"> to a slow inbox.</span>
               </h1>
               <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-text-2">
-                Not to a competitor&apos;s price, or a better photo, or a bigger ad budget. To a message
-                answered nine hours later, when the customer had already bought from someone else.
+                Not to a competitor&apos;s price, or a better photo, or a bigger
+                ad budget. To a message answered nine hours later, when the
+                customer had already bought from someone else.
               </p>
             </Reveal>
 
@@ -73,7 +85,9 @@ export default function StoryPage() {
                     <dt className="font-display text-[30px] font-semibold leading-none tracking-tight text-signal">
                       <Counter to={s.n} decimals={s.d ?? 0} suffix={s.suffix} />
                     </dt>
-                    <dd className="mt-2.5 text-[12.5px] leading-snug text-text-3">{s.label}</dd>
+                    <dd className="mt-2.5 text-[12.5px] leading-snug text-text-3">
+                      {s.label}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -83,7 +97,7 @@ export default function StoryPage() {
 
         {/* beliefs */}
         <section className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Eyebrow>What we believe</Eyebrow>
               <h2 className="mt-5 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -101,7 +115,9 @@ export default function StoryPage() {
                     <h3 className="mt-3 font-display text-[19px] font-semibold tracking-tight">
                       {b.title}
                     </h3>
-                    <p className="mt-3 text-[14px] leading-relaxed text-text-2">{b.body}</p>
+                    <p className="mt-3 text-[14px] leading-relaxed text-text-2">
+                      {b.body}
+                    </p>
                   </Panel>
                 </StaggerItem>
               ))}
@@ -111,7 +127,7 @@ export default function StoryPage() {
 
         {/* timeline */}
         <section className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Eyebrow>How it got here</Eyebrow>
               <h2 className="mt-5 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -131,7 +147,9 @@ export default function StoryPage() {
                       <p className="font-mono text-[11px] uppercase tracking-wider text-signal">
                         {t.when}
                       </p>
-                      <p className="mt-2 text-[14.5px] leading-relaxed text-text-2">{t.what}</p>
+                      <p className="mt-2 text-[14.5px] leading-relaxed text-text-2">
+                        {t.what}
+                      </p>
                     </div>
                   </div>
                 </Reveal>
@@ -141,8 +159,8 @@ export default function StoryPage() {
         </section>
 
         {/* contact */}
-        <section className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+        <section id="contact" className="border-t border-line py-20 lg:py-24">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Panel className="flex flex-wrap items-center justify-between gap-6 p-8">
                 <div>
@@ -150,9 +168,9 @@ export default function StoryPage() {
                     Talk to a person
                   </h2>
                   <p className="mt-2 max-w-md text-[14px] leading-relaxed text-text-2">
-                    No qualification form and no discovery call. Send us your catalog URL and a
-                    screenshot of your busiest thread, and we&apos;ll tell you honestly whether this
-                    helps.
+                    No qualification form and no discovery call. Send us your
+                    catalog URL and a screenshot of your busiest thread, and
+                    we&apos;ll tell you honestly whether this helps.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Badge tone="neutral">Dhaka, Bangladesh</Badge>

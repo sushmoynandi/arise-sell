@@ -7,7 +7,13 @@ import { SPRING, SPRING_POP, SPRING_SOFT } from "@/components/motion";
 import { IconCheck, IconTruck, IconWhatsApp } from "@/components/ui/icons";
 import { cx } from "@/lib/format";
 
-const RAIL = ["Listening", "Matched", "Details", "Confirmed", "Shipped"] as const;
+const RAIL = [
+  "Listening",
+  "Matched",
+  "Details",
+  "Confirmed",
+  "Shipped",
+] as const;
 
 /** Which rail step each script line completes. */
 const STEP_AT = [0, 1, 2, 3, 4];
@@ -45,10 +51,14 @@ export default function LiveClose() {
   }, [shown]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [shown, typing]);
 
-  const step = shown === 0 ? 0 : STEP_AT[Math.min(shown - 1, STEP_AT.length - 1)];
+  const step =
+    shown === 0 ? 0 : STEP_AT[Math.min(shown - 1, STEP_AT.length - 1)];
   const done = shown >= HERO_SCRIPT.length;
 
   return (
@@ -59,7 +69,7 @@ export default function LiveClose() {
         className="anim-aurora pointer-events-none absolute -inset-16 -z-10 opacity-70 blur-3xl"
         style={{
           background:
-            "radial-gradient(38% 44% at 62% 28%, rgba(10,110,80,0.12), transparent 70%), radial-gradient(40% 40% at 28% 72%, rgba(86,70,214,0.09), transparent 70%)",
+            "radial-gradient(38% 44% at 62% 28%, rgba(10,110,80,0.16), transparent 70%), radial-gradient(40% 40% at 28% 72%, rgba(5,98,68,0.12), transparent 70%)",
         }}
       />
 
@@ -77,8 +87,12 @@ export default function LiveClose() {
               <IconWhatsApp width={14} height={14} />
             </span>
             <div className="leading-tight">
-              <p className="text-[13px] font-medium text-text">Nokshi &amp; Co.</p>
-              <p className="font-mono text-[10.5px] text-text-3">WhatsApp · +880 1710</p>
+              <p className="text-[13px] font-medium text-text">
+                Nokshi &amp; Co.
+              </p>
+              <p className="font-mono text-[10.5px] text-text-3">
+                WhatsApp · +880 1710
+              </p>
             </div>
           </div>
           <span className="flex items-center gap-1.5 rounded-full border border-[color:var(--signal-line)] bg-signal-wash px-2 py-[3px] font-mono text-[10px] text-signal">
@@ -100,23 +114,39 @@ export default function LiveClose() {
                 initial={{ opacity: 0, y: 14, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={SPRING}
-                className={cx("flex", m.from === "agent" ? "justify-end" : "justify-start")}
+                className={cx(
+                  "flex",
+                  m.from === "agent" ? "justify-end" : "justify-start",
+                )}
               >
-                <div className={cx("max-w-[85%]", m.from === "agent" && "text-right")}>
+                <div
+                  className={cx(
+                    "max-w-[85%]",
+                    m.from === "agent" && "text-right",
+                  )}
+                >
                   <div
                     className={cx(
                       "rounded-2xl px-3.5 py-2.5 text-left text-[13px] leading-relaxed",
                       m.from === "agent"
                         ? "rounded-tr-sm bg-signal text-signal-ink"
-                        : "rounded-tl-sm border border-line bg-surface text-text"
+                        : "rounded-tl-sm border border-line bg-surface text-text",
                     )}
                   >
-                    <span className={m.from === "agent" ? "font-[family-name:var(--font-hind)]" : ""}>
+                    <span
+                      className={
+                        m.from === "agent"
+                          ? "font-[family-name:var(--font-hind)]"
+                          : ""
+                      }
+                    >
                       {m.body}
                     </span>
                   </div>
                   {m.gloss && (
-                    <p className="mt-1 pr-1 text-[11px] italic text-text-3">“{m.gloss}”</p>
+                    <p className="mt-1 pr-1 text-[11px] italic text-text-3">
+                      “{m.gloss}”
+                    </p>
                   )}
                   {m.chip && (
                     <motion.p
@@ -167,12 +197,18 @@ export default function LiveClose() {
                       transition={SPRING_POP}
                       className="grid size-4 place-items-center rounded-full"
                     >
-                      {active && <IconCheck width={9} height={9} className="text-signal-ink" />}
+                      {active && (
+                        <IconCheck
+                          width={9}
+                          height={9}
+                          className="text-signal-ink"
+                        />
+                      )}
                     </motion.span>
                     <span
                       className={cx(
                         "text-[9.5px] font-medium transition-colors duration-300",
-                        active ? "text-text" : "text-text-3"
+                        active ? "text-text" : "text-text-3",
                       )}
                     >
                       {label}
@@ -212,7 +248,9 @@ export default function LiveClose() {
               </span>
               <div className="leading-tight">
                 <p className="font-mono text-[10px] text-text-3">STEADFAST</p>
-                <p className="text-[12.5px] font-medium text-text">SF-7719042</p>
+                <p className="text-[12.5px] font-medium text-text">
+                  SF-7719042
+                </p>
               </div>
             </div>
             <div className="mt-3 space-y-1 border-t border-line pt-2.5 font-mono text-[10.5px]">

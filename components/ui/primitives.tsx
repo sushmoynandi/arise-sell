@@ -4,27 +4,37 @@ import { cx } from "@/lib/format";
 import { CHANNEL_ICON } from "./icons";
 import type { Channel } from "@/data/types";
 
+import Image from "next/image";
+
 /* --------------------------------------------------------------- Wordmark */
 
-export function Wordmark({ compact = false }: { compact?: boolean }) {
+export function Wordmark({
+  compact = false,
+  className,
+}: {
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <span className="flex items-center gap-2.5">
-      <span className="relative grid size-8 shrink-0 place-items-center rounded-[10px] bg-signal text-signal-ink">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M5 19V5l14 14V5"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-      {!compact && (
-        <span className="font-display text-[17px] font-semibold tracking-tight text-text">
-          NextProduct
-        </span>
+    <span
+      className={cx(
+        "inline-flex items-center p-0 m-0 leading-none select-none",
+        className,
       )}
+    >
+      <Image
+        src="/logo.png"
+        alt="NextProduct"
+        width={204}
+        height={60}
+        className={cx(
+          "block p-0 m-0 object-contain transition-transform duration-200 hover:scale-[1.02]",
+          compact
+            ? "h-7 w-auto"
+            : "h-[36px] sm:h-[38px] lg:h-[40px] w-auto max-w-[165px]",
+        )}
+        priority
+      />
     </span>
   );
 }
@@ -34,6 +44,8 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
 type BtnProps = {
   children: ReactNode;
   href?: string;
+  target?: string;
+  rel?: string;
   onClick?: () => void;
   variant?: "signal" | "ghost" | "outline" | "quiet";
   size?: "sm" | "md" | "lg";
@@ -62,6 +74,8 @@ const BTN_SIZE = {
 export function Button({
   children,
   href,
+  target,
+  rel,
   onClick,
   variant = "signal",
   size = "md",
@@ -71,7 +85,7 @@ export function Button({
   const cls = cx(BTN_BASE, BTN_VARIANT[variant], BTN_SIZE[size], className);
   if (href)
     return (
-      <Link href={href} className={cls}>
+      <Link href={href} target={target} rel={rel} className={cls}>
         {children}
       </Link>
     );
@@ -112,7 +126,7 @@ export function Badge({
       className={cx(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] text-[11px] font-medium leading-none",
         TONE[tone],
-        className
+        className,
       )}
     >
       {dot && <span className="size-1.5 rounded-full bg-current" />}
@@ -123,12 +137,18 @@ export function Badge({
 
 /* ------------------------------------------------------------- Eyebrow/Kbd */
 
-export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
+export function Eyebrow({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <span
       className={cx(
         "inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-text-3",
-        className
+        className,
       )}
     >
       <span className="h-px w-6 bg-line" />
@@ -137,8 +157,14 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
   );
 }
 
-export function LiveDot({ tone = "mint" }: { tone?: "mint" | "signal" | "amber" }) {
-  const c = { mint: "text-mint", signal: "text-signal", amber: "text-amber" }[tone];
+export function LiveDot({
+  tone = "mint",
+}: {
+  tone?: "mint" | "signal" | "amber";
+}) {
+  const c = { mint: "text-mint", signal: "text-signal", amber: "text-amber" }[
+    tone
+  ];
   return (
     <span className={cx("relative grid size-2 place-items-center", c)}>
       <span className="anim-ring absolute inset-0 rounded-full opacity-40" />
@@ -159,7 +185,9 @@ export function Panel({
   interactive?: boolean;
 }) {
   return (
-    <div className={cx("panel", interactive && "edge-lift", className)}>{children}</div>
+    <div className={cx("panel", interactive && "edge-lift", className)}>
+      {children}
+    </div>
   );
 }
 
@@ -175,10 +203,19 @@ export function PanelHead({
   className?: string;
 }) {
   return (
-    <div className={cx("flex items-start justify-between gap-4 border-b border-line px-5 py-4", className)}>
+    <div
+      className={cx(
+        "flex items-start justify-between gap-4 border-b border-line px-5 py-4",
+        className,
+      )}
+    >
       <div className="min-w-0">
-        <h3 className="font-display text-[15px] font-semibold tracking-tight text-text">{title}</h3>
-        {sub && <p className="mt-0.5 text-[12.5px] leading-snug text-text-3">{sub}</p>}
+        <h3 className="font-display text-[15px] font-semibold tracking-tight text-text">
+          {title}
+        </h3>
+        {sub && (
+          <p className="mt-0.5 text-[12.5px] leading-snug text-text-3">{sub}</p>
+        )}
       </div>
       {right && <div className="shrink-0">{right}</div>}
     </div>
@@ -187,7 +224,13 @@ export function PanelHead({
 
 /* ---------------------------------------------------------------- Channel */
 
-export function ChannelChip({ channel, label }: { channel: Channel; label?: string }) {
+export function ChannelChip({
+  channel,
+  label,
+}: {
+  channel: Channel;
+  label?: string;
+}) {
   const Icon = CHANNEL_ICON[channel];
   const tint: Record<Channel, string> = {
     whatsapp: "text-mint",
@@ -228,7 +271,9 @@ export function Sparkline({
     const y = height - ((v - min) / span) * (height - 4) - 2;
     return [x, y] as const;
   });
-  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+  const d = pts
+    .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`)
+    .join(" ");
   const id = `sg-${stroke.replace(/[^a-z]/gi, "")}-${data.length}-${Math.round(max)}`;
 
   return (
@@ -247,10 +292,19 @@ export function Sparkline({
               <stop offset="100%" stopColor={stroke} stopOpacity="0" />
             </linearGradient>
           </defs>
-          <path d={`${d} L${w},${height} L0,${height} Z`} fill={`url(#${id})`} />
+          <path
+            d={`${d} L${w},${height} L0,${height} Z`}
+            fill={`url(#${id})`}
+          />
         </>
       )}
-      <path d={d} fill="none" stroke={stroke} strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+      <path
+        d={d}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="1.6"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }
@@ -269,11 +323,24 @@ export function Meter({
   className?: string;
 }) {
   const pctVal = Math.min(100, (value / max) * 100);
-  const bg = { signal: "bg-signal", mint: "bg-mint", amber: "bg-amber", coral: "bg-coral" }[tone];
+  const bg = {
+    signal: "bg-signal",
+    mint: "bg-mint",
+    amber: "bg-amber",
+    coral: "bg-coral",
+  }[tone];
   return (
-    <div className={cx("h-1.5 w-full overflow-hidden rounded-full bg-surface-3", className)}>
+    <div
+      className={cx(
+        "h-1.5 w-full overflow-hidden rounded-full bg-surface-3",
+        className,
+      )}
+    >
       <div
-        className={cx("h-full rounded-full transition-[width] duration-700", bg)}
+        className={cx(
+          "h-full rounded-full transition-[width] duration-700",
+          bg,
+        )}
         style={{ width: `${pctVal}%` }}
       />
     </div>
@@ -316,10 +383,21 @@ export function Avatar({
 
 /* ------------------------------------------------------------------ Delta */
 
-export function Delta({ value, suffix = "%" }: { value: number; suffix?: string }) {
+export function Delta({
+  value,
+  suffix = "%",
+}: {
+  value: number;
+  suffix?: string;
+}) {
   const up = value >= 0;
   return (
-    <span className={cx("inline-flex items-center gap-1 text-[12px] font-medium", up ? "text-mint" : "text-coral")}>
+    <span
+      className={cx(
+        "inline-flex items-center gap-1 text-[12px] font-medium",
+        up ? "text-mint" : "text-coral",
+      )}
+    >
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
         <path
           d={up ? "M5 2.2 8.4 7.4H1.6Z" : "M5 7.8 1.6 2.6h6.8Z"}

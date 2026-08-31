@@ -16,10 +16,11 @@ export const BRAND = {
 } as const;
 
 export const SITE_NAV = [
-  { label: "Platform", href: "/platform" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Developers", href: "/docs" },
-  { label: "Story", href: "/story" },
+  { label: "Features", href: "/#features" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Story", href: "/#story" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Contact", href: "/contact" },
 ] as const;
 
 /**
@@ -30,19 +31,60 @@ export const CONSOLE_NAV = [
   {
     group: "Run",
     items: [
-      { label: "Pulse", href: "/console", icon: "pulse", hint: "Live revenue stream" },
-      { label: "Threads", href: "/console/threads", icon: "threads", hint: "Every conversation", badge: "4" },
-      { label: "Pipeline", href: "/console/pipeline", icon: "pipeline", hint: "Intent → order" },
-      { label: "Fulfilment", href: "/console/fulfilment", icon: "truck", hint: "Order, courier, invoice" },
+      {
+        label: "Pulse",
+        href: "/console",
+        icon: "pulse",
+        hint: "Live revenue stream",
+      },
+      {
+        label: "Threads",
+        href: "/console/threads",
+        icon: "threads",
+        hint: "Every conversation",
+        badge: "4",
+      },
+      {
+        label: "Pipeline",
+        href: "/console/pipeline",
+        icon: "pipeline",
+        hint: "Intent → order",
+      },
+      {
+        label: "Fulfilment",
+        href: "/console/fulfilment",
+        icon: "truck",
+        hint: "Order, courier, invoice",
+      },
     ],
   },
   {
     group: "Build",
     items: [
-      { label: "Catalog", href: "/console/catalog", icon: "box", hint: "Products & vision index" },
-      { label: "Reach", href: "/console/reach", icon: "megaphone", hint: "Campaigns & comments" },
-      { label: "Brain", href: "/console/brain", icon: "brain", hint: "Persona, rules, evals" },
-      { label: "Signals", href: "/console/signals", icon: "chart", hint: "Attribution & spend" },
+      {
+        label: "Catalog",
+        href: "/console/catalog",
+        icon: "box",
+        hint: "Products & vision index",
+      },
+      {
+        label: "Reach",
+        href: "/console/reach",
+        icon: "megaphone",
+        hint: "Campaigns & comments",
+      },
+      {
+        label: "Brain",
+        href: "/console/brain",
+        icon: "brain",
+        hint: "Persona, rules, evals",
+      },
+      {
+        label: "Signals",
+        href: "/console/signals",
+        icon: "chart",
+        hint: "Attribution & spend",
+      },
     ],
   },
 ] as const;

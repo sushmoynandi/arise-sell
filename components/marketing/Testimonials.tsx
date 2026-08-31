@@ -10,7 +10,14 @@ function Stars() {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} width="14" height="14" viewBox="0 0 24 24" className="text-[#e0a92a]" aria-hidden>
+        <svg
+          key={i}
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          className="text-[#e0a92a]"
+          aria-hidden
+        >
           <path
             fill="currentColor"
             d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.4l6.5-.9z"
@@ -25,16 +32,16 @@ export default function Testimonials() {
   const { t: t2 } = useLang();
   return (
     <section className="relative border-t border-line bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
-              বিক্রেতারা কী বলছেন
+              {t2("What shop owners say", "বিক্রেতারা কী বলছেন")}
             </p>
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
               {t2(
                 "Shop owners who stopped answering messages at 2am.",
-                "যাঁরা রাত ২টায় মেসেজের উত্তর দেওয়া বন্ধ করেছেন।"
+                "যাঁরা রাত ২টায় মেসেজের উত্তর দেওয়া বন্ধ করেছেন।",
               )}
             </h2>
           </div>
@@ -57,14 +64,20 @@ export default function Testimonials() {
                   <p className="font-display text-[22px] font-semibold leading-none tracking-tight text-signal">
                     {t2(x.result, x.resultBn)}
                   </p>
-                  <p className="mt-1 text-[12px] text-text-3">{t2(x.detail, x.detailBn)}</p>
+                  <p className="mt-1 text-[12px] text-text-3">
+                    {t2(x.detail, x.detailBn)}
+                  </p>
                 </div>
 
                 <figcaption className="mt-5 flex items-center gap-3 border-t border-line pt-5">
                   <Avatar name={x.name} hue={x.hue} size={38} />
                   <div className="min-w-0">
-                    <p className="truncate text-[13.5px] font-medium text-text">{t2(x.name, x.nameBn)}</p>
-                    <p className="truncate text-[12px] text-text-3">{t2(x.shop, x.shopBn)}</p>
+                    <p className="truncate text-[13.5px] font-medium text-text">
+                      {t2(x.name, x.nameBn)}
+                    </p>
+                    <p className="truncate text-[12px] text-text-3">
+                      {t2(x.shop, x.shopBn)}
+                    </p>
                   </div>
                 </figcaption>
               </motion.figure>

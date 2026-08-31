@@ -9,8 +9,11 @@ import { useLang } from "@/lib/i18n";
 export default function Features() {
   const { t } = useLang();
   return (
-    <section id="features" className="relative border-t border-line py-20 lg:py-28">
-      <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+    <section
+      id="features"
+      className="relative border-t border-line py-20 lg:py-28"
+    >
+      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
@@ -19,13 +22,13 @@ export default function Features() {
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
               {t(
                 "Everything a good salesperson does — without the salary.",
-                "একজন ভালো বিক্রয়কর্মী যা করে, সবই — বেতন ছাড়া।"
+                "একজন ভালো বিক্রয়কর্মী যা করে, সবই — বেতন ছাড়া।",
               )}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-text-2">
               {t(
                 "Not a chatbot that answers FAQs. A full-time seller that takes the order, ships the parcel and keeps your customers coming back.",
-                "শুধু প্রশ্নের উত্তর দেওয়ার বট নয়। একজন পুরো সময়ের বিক্রয়কর্মী — যে অর্ডার নেয়, পার্সেল পাঠায়, আর কাস্টমারকে ফিরিয়ে আনে।"
+                "শুধু প্রশ্নের উত্তর দেওয়ার বট নয়। একজন পুরো সময়ের বিক্রয়কর্মী — যে অর্ডার নেয়, পার্সেল পাঠায়, আর কাস্টমারকে ফিরিয়ে আনে।",
               )}
             </p>
           </div>
@@ -54,7 +57,7 @@ export default function Features() {
                     <p className="mt-1 font-[family-name:var(--font-hind)] text-[14px] text-text-3">
                       {f.titleBn}
                     </p>,
-                    null
+                    null,
                   )}
                   <p className="mt-3 text-[14px] leading-relaxed text-text-2">
                     {t(f.body, f.bodyBn)}

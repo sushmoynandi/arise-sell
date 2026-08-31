@@ -5,7 +5,7 @@ import CtaBand from "@/components/marketing/CtaBand";
 import CodeBlock from "@/components/marketing/CodeBlock";
 import { Badge, Eyebrow, Panel } from "@/components/ui/primitives";
 import { IconCheck, IconShield, IconWarn } from "@/components/ui/icons";
-import { Reveal, ScrollProgress } from "@/components/motion";
+import { Reveal } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "Developers",
@@ -132,21 +132,24 @@ const LIMITS = [
 export default function DocsPage() {
   return (
     <>
-      <ScrollProgress />
       <SiteHeader />
       <main>
         <section className="relative overflow-hidden pb-16 pt-32 lg:pt-40">
           <div className="bg-grid pointer-events-none absolute inset-0 mask-fade-b opacity-60" />
-          <div className="relative mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="relative mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Eyebrow>Developers</Eyebrow>
               <h1 className="mt-5 max-w-3xl text-balance font-display text-[clamp(2.2rem,4.6vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
                 Two endpoints.
-                <span className="text-text-3"> That&apos;s the whole integration.</span>
+                <span className="text-text-3">
+                  {" "}
+                  That&apos;s the whole integration.
+                </span>
               </h1>
               <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-text-2">
-                One feed we pull from you, one webhook we push to you. Keep your Laravel, your
-                WooCommerce, your own database — we don&apos;t need to own your catalog to sell from it.
+                One feed we pull from you, one webhook we push to you. Keep your
+                Laravel, your WooCommerce, your own database — we don&apos;t
+                need to own your catalog to sell from it.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 <Badge tone="signal">Contract v2</Badge>
@@ -159,7 +162,7 @@ export default function DocsPage() {
 
         {/* feed */}
         <section id="feed" className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-14">
               <Reveal>
                 <span className="font-mono text-[11px] text-signal">01</span>
@@ -167,14 +170,17 @@ export default function DocsPage() {
                   The catalog feed
                 </h2>
                 <p className="mt-4 text-[14.5px] leading-relaxed text-text-2">
-                  You expose one authenticated JSON endpoint. We pull it every six hours, download
-                  and re-host your images, and rebuild the photo-match index so a customer&apos;s
-                  screenshot resolves to a real variation.
+                  You expose one authenticated JSON endpoint. We pull it every
+                  six hours, download and re-host your images, and rebuild the
+                  photo-match index so a customer&apos;s screenshot resolves to
+                  a real variation.
                 </p>
                 <p className="mt-3 text-[13.5px] leading-relaxed text-text-3">
-                  <code className="font-mono text-text-2">external_id</code> is the dedup key — keep
-                  it stable and never reuse it. <code className="font-mono text-text-2">variation_id</code>{" "}
-                  must match the id your own checkout uses, or orders we push back won&apos;t resolve.
+                  <code className="font-mono text-text-2">external_id</code> is
+                  the dedup key — keep it stable and never reuse it.{" "}
+                  <code className="font-mono text-text-2">variation_id</code>{" "}
+                  must match the id your own checkout uses, or orders we push
+                  back won&apos;t resolve.
                 </p>
               </Reveal>
               <Reveal delay={0.08}>
@@ -186,7 +192,7 @@ export default function DocsPage() {
 
         {/* orders */}
         <section id="orders" className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-14">
               <Reveal>
                 <span className="font-mono text-[11px] text-signal">02</span>
@@ -195,13 +201,14 @@ export default function DocsPage() {
                 </h2>
                 <p className="mt-4 text-[14.5px] leading-relaxed text-text-2">
                   When the agent closes an order, we POST it to you. Return a{" "}
-                  <code className="font-mono text-text-2">payment_url</code> and the agent sends a
-                  bKash or Nagad link straight into the chat; return nothing and it stays cash on
-                  delivery.
+                  <code className="font-mono text-text-2">payment_url</code> and
+                  the agent sends a bKash or Nagad link straight into the chat;
+                  return nothing and it stays cash on delivery.
                 </p>
                 <p className="mt-3 text-[13.5px] leading-relaxed text-text-3">
-                  Orders are always itemised. There is no single-product shortcut shape to branch on
-                  — one line item or nine, the payload is identical.
+                  Orders are always itemised. There is no single-product
+                  shortcut shape to branch on — one line item or nine, the
+                  payload is identical.
                 </p>
               </Reveal>
               <Reveal delay={0.08}>
@@ -212,8 +219,11 @@ export default function DocsPage() {
         </section>
 
         {/* idempotency + signing */}
-        <section id="idempotency" className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+        <section
+          id="idempotency"
+          className="border-t border-line py-20 lg:py-24"
+        >
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Eyebrow>Safety</Eyebrow>
               <h2 className="mt-5 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -243,7 +253,9 @@ export default function DocsPage() {
                     <h3 className="mt-3.5 font-display text-[15px] font-semibold tracking-tight">
                       {r.title}
                     </h3>
-                    <p className="mt-2 text-[13px] leading-relaxed text-text-2">{r.body}</p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-text-2">
+                      {r.body}
+                    </p>
                   </Panel>
                 ))}
               </Reveal>
@@ -253,7 +265,7 @@ export default function DocsPage() {
 
         {/* limits */}
         <section className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
+          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
             <Reveal>
               <Eyebrow>Fetcher limits</Eyebrow>
               <h2 className="mt-5 font-display text-[clamp(1.7rem,3.2vw,2.4rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -264,7 +276,9 @@ export default function DocsPage() {
               <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
                 {LIMITS.map(([k, v]) => (
                   <div key={k} className="bg-surface px-5 py-4">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-text-3">{k}</p>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-text-3">
+                      {k}
+                    </p>
                     <p className="mt-1.5 text-[13.5px] text-text-2">{v}</p>
                   </div>
                 ))}

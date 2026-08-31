@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Inter_Tight, Hind_Siliguri, JetBrains_Mono } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Inter_Tight,
+  Hind_Siliguri,
+  JetBrains_Mono,
+} from "next/font/google";
 import "./globals.css";
 import { AgentationProvider } from "@/components/AgentationProvider";
 import { LanguageProvider } from "@/lib/i18n";
@@ -60,13 +65,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
       className={`${bricolage.variable} ${interTight.variable} ${hind.variable} ${jetbrains.variable}`}
     >
-      <body className="bg-canvas text-text antialiased" suppressHydrationWarning>
+      <body
+        className="bg-canvas text-text antialiased"
+        suppressHydrationWarning
+      >
         <LanguageProvider>{children}</LanguageProvider>
         <AgentationProvider />
       </body>

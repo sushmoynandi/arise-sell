@@ -28,7 +28,7 @@ That framing drives three decisions you'll see everywhere in the code:
 
 | Route | Purpose |
 |---|---|
-| `/` | Landing (business marketing). Hero → 8 feature cards → 3 spotlight blocks with live demos → 3-step setup → testimonials → pricing preview → FAQ → closing CTA. |
+| `/` | Landing (business marketing). Hero → 8 feature cards → reply-time decay curve → 3 spotlight blocks with live demos → 3-step setup → testimonials → pricing preview → FAQ accordion → closing CTA. |
 | `/platform` | Channels in depth, the five-stage lifecycle, the eight console surfaces, trust section. |
 | `/pricing` | Three plans + enterprise, a billing-model comparison table, FAQ accordion. |
 | `/docs` | Developer contract v2 — catalog feed, order webhook, HMAC signature verification, fetcher limits. |

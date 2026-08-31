@@ -1,60 +1,68 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useLang, type Lang } from "@/lib/i18n";
-import { SPRING } from "@/components/motion";
+import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
 
-const OPTIONS: Array<{ id: Lang; label: string; full: string }> = [
-  { id: "en", label: "EN", full: "English" },
-  { id: "bn", label: "বাংলা", full: "Bangla" },
-];
-
 export default function LanguageToggle({
-  size = "md",
+  size = "sm",
   className,
 }: {
   size?: "sm" | "md";
   className?: string;
 }) {
   const { lang, setLang } = useLang();
+  const isBn = lang === "bn";
 
   return (
     <div
       role="group"
-      aria-label="Language"
+      aria-label="Language selector"
       className={cx(
-        "relative inline-flex items-center rounded-full border border-line bg-surface-2 p-0.5",
-        className
+        "relative inline-flex items-center rounded-full border border-signal/[0.14] bg-signal/[0.035] p-[2px] select-none shadow-[inset_0_1px_2px_rgba(10,110,80,0.04),0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md",
+        size === "sm" ? "h-[30px]" : "h-[36px]",
+        className,
       )}
     >
-      {OPTIONS.map((o) => {
-        const on = lang === o.id;
-        return (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => setLang(o.id)}
-            aria-pressed={on}
-            aria-label={`Switch to ${o.full}`}
-            className={cx(
-              "relative rounded-full transition-colors duration-200",
-              size === "sm" ? "px-2.5 py-1 text-[11.5px]" : "px-3 py-1.5 text-[12.5px]",
-              o.id === "bn" && "font-[family-name:var(--font-hind)]",
-              on ? "text-white" : "text-text-2 hover:text-text"
-            )}
-          >
-            {on && (
-              <motion.span
-                layoutId="lang-pill"
-                transition={SPRING}
-                className="absolute inset-0 -z-10 rounded-full bg-signal"
-              />
-            )}
-            {o.label}
-          </button>
-        );
-      })}
+      {/* Smooth sliding pill indicator */}
+      <span
+        aria-hidden="true"
+        className={cx(
+          "absolute top-[2px] bottom-[2px] w-[calc(50%-2px)] rounded-full bg-gradient-to-b from-[#0c7855] to-[#07593f] shadow-[0_1px_4px_rgba(10,110,80,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform duration-200 ease-out pointer-events-none",
+          isBn ? "translate-x-[calc(100%+2px)]" : "translate-x-0",
+        )}
+      />
+
+      <button
+        type="button"
+        onClick={() => setLang("en")}
+        aria-pressed={!isBn}
+        aria-label="Switch to English"
+        className={cx(
+          "relative z-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-150 cursor-pointer",
+          size === "sm"
+            ? "px-2.5 py-0.5 text-[11.5px] min-w-[34px]"
+            : "px-3.5 py-1 text-[12.5px] min-w-[44px]",
+          !isBn ? "text-white" : "text-text-3 hover:text-text",
+        )}
+      >
+        EN
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setLang("bn")}
+        aria-pressed={isBn}
+        aria-label="Switch to Bangla"
+        className={cx(
+          "relative z-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-150 cursor-pointer font-[family-name:var(--font-hind)]",
+          size === "sm"
+            ? "px-2.5 py-0.5 text-[11.5px] min-w-[34px]"
+            : "px-3.5 py-1 text-[12.5px] min-w-[44px]",
+          isBn ? "text-white" : "text-text-3 hover:text-text",
+        )}
+      >
+        বাংলা
+      </button>
     </div>
   );
 }

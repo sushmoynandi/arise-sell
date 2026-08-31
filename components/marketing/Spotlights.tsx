@@ -6,14 +6,23 @@ import { SPOTLIGHTS } from "@/data/marketing";
 import { Reveal, SPRING } from "@/components/motion";
 import { IconCheck, IconTruck, IconWhatsApp } from "@/components/ui/icons";
 import { cx } from "@/lib/format";
+import { useLang } from "@/lib/i18n";
 
 /* ---------------------------------------------------------------- visuals */
 
 function ChatDemo() {
   const lines = [
-    { me: false, text: "vaiya eita koto? amar 42 lagbe", gloss: "How much is this? I need size 42." },
+    {
+      me: false,
+      text: "vaiya eita koto? amar 42 lagbe",
+      gloss: "How much is this? I need size 42.",
+    },
     { me: true, text: "খাদি কুর্তা ৳২,২৯০ 🌿 XL (৪২) আছে ৯ পিস।" },
-    { me: false, text: "ঢাকার ভিতরে ডেলিভারি কত দিন?", gloss: "How many days for delivery in Dhaka?" },
+    {
+      me: false,
+      text: "ঢাকার ভিতরে ডেলিভারি কত দিন?",
+      gloss: "How many days for delivery in Dhaka?",
+    },
     { me: true, text: "২৪ ঘণ্টার মধ্যে, চার্জ ৳৮০। নিবেন?" },
   ];
   return (
@@ -33,12 +42,14 @@ function ChatDemo() {
                 "rounded-2xl px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed",
                 l.me
                   ? "rounded-tr-sm bg-signal font-[family-name:var(--font-hind)] text-white"
-                  : "rounded-tl-sm border border-line bg-white text-text"
+                  : "rounded-tl-sm border border-line bg-white text-text",
               )}
             >
               {l.text}
             </div>
-            {l.gloss && <p className="mt-1 text-[11px] italic text-text-3">“{l.gloss}”</p>}
+            {l.gloss && (
+              <p className="mt-1 text-[11px] italic text-text-3">“{l.gloss}”</p>
+            )}
           </div>
         </motion.div>
       ))}
@@ -81,7 +92,9 @@ function MatchDemo() {
         className="rounded-2xl border border-[color:var(--signal-line)] bg-[#f2faf6] p-4"
       >
         <div className="flex items-center justify-between">
-          <p className="text-[12px] font-medium text-signal">Matched in your catalog</p>
+          <p className="text-[12px] font-medium text-signal">
+            Matched in your catalog
+          </p>
           <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-signal">
             96%
           </span>
@@ -124,7 +137,9 @@ function CourierDemo() {
           <IconTruck width={17} height={17} />
         </span>
         <div>
-          <p className="text-[13.5px] font-semibold text-text">Steadfast · booked</p>
+          <p className="text-[13.5px] font-semibold text-text">
+            Steadfast · booked
+          </p>
           <p className="text-[11.5px] text-text-3">Tracking SF-7719042</p>
         </div>
         <span className="ml-auto flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-signal">
@@ -149,7 +164,9 @@ function CourierDemo() {
       </dl>
       <div className="flex items-center gap-2 border-t border-line bg-surface-2 px-4 py-2.5">
         <IconWhatsApp width={13} height={13} className="text-signal" />
-        <p className="text-[11.5px] text-text-2">Tracking code sent to the customer in chat</p>
+        <p className="text-[11.5px] text-text-2">
+          Tracking code sent to the customer in chat
+        </p>
       </div>
     </motion.div>
   );
@@ -160,12 +177,16 @@ const DEMOS = { chat: ChatDemo, match: MatchDemo, courier: CourierDemo };
 /* ---------------------------------------------------------------- section */
 
 export default function Spotlights() {
+  const { t } = useLang();
+
   return (
     <section className="relative border-t border-line bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-[1180px] space-y-20 px-5 lg:space-y-28 lg:px-8">
+      <div className="mx-auto max-w-[1280px] space-y-20 px-5 lg:space-y-28 lg:px-8">
         {SPOTLIGHTS.map((s, i) => {
           const Demo = DEMOS[s.demo];
           const flip = i % 2 === 1;
+          const points = t(s.points, s.pointsBn ?? s.points);
+
           return (
             <div
               key={s.title}
@@ -176,16 +197,20 @@ export default function Spotlights() {
                   {s.kicker}
                 </p>
                 <h3 className="mt-3 text-balance font-display text-[clamp(1.6rem,3vw,2.3rem)] font-semibold leading-[1.12] tracking-[-0.025em]">
-                  {s.title}
+                  {t(s.title, s.titleBn)}
                 </h3>
-                <p className="mt-4 max-w-lg text-[15.5px] leading-relaxed text-text-2">{s.body}</p>
+                <p className="mt-4 max-w-lg text-[15.5px] leading-relaxed text-text-2">
+                  {t(s.body, s.bodyBn)}
+                </p>
                 <ul className="mt-6 space-y-3">
-                  {s.points.map((p) => (
+                  {points.map((p: string) => (
                     <li key={p} className="flex items-start gap-3">
                       <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-[#e6f4ee] text-signal">
                         <IconCheck width={11} height={11} />
                       </span>
-                      <span className="text-[14.5px] leading-snug text-text-2">{p}</span>
+                      <span className="text-[14.5px] leading-snug text-text-2">
+                        {p}
+                      </span>
                     </li>
                   ))}
                 </ul>

@@ -19,9 +19,24 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cx } from "@/lib/format";
 
 /* --- the house springs --------------------------------------------------- */
-export const SPRING = { type: "spring", stiffness: 260, damping: 26, mass: 0.9 } as const;
-export const SPRING_SOFT = { type: "spring", stiffness: 140, damping: 22, mass: 1 } as const;
-export const SPRING_POP = { type: "spring", stiffness: 420, damping: 18, mass: 0.6 } as const;
+export const SPRING = {
+  type: "spring",
+  stiffness: 260,
+  damping: 26,
+  mass: 0.9,
+} as const;
+export const SPRING_SOFT = {
+  type: "spring",
+  stiffness: 140,
+  damping: 22,
+  mass: 1,
+} as const;
+export const SPRING_POP = {
+  type: "spring",
+  stiffness: 420,
+  damping: 18,
+  mass: 0.6,
+} as const;
 export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
 /* --- Reveal: scroll-triggered entrance ----------------------------------- */
@@ -34,7 +49,13 @@ type RevealProps = {
   as?: "div" | "section" | "li" | "span";
 };
 
-export function Reveal({ children, className, delay = 0, y = 22, once = true }: RevealProps) {
+export function Reveal({
+  children,
+  className,
+  delay = 0,
+  y = 22,
+  once = true,
+}: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once, margin: "-12% 0px -8% 0px" });
 
@@ -84,7 +105,13 @@ export function Stagger({
   );
 }
 
-export function StaggerItem({ children, className }: { children: ReactNode; className?: string }) {
+export function StaggerItem({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <motion.div variants={staggerChild} className={className}>
       {children}
@@ -234,7 +261,7 @@ export function SplitWords({
           key={`${w}-${i}`}
           className={cx(
             "inline-block whitespace-pre",
-            highlight.includes(w.replace(/[.,]/g, "")) && "text-signal"
+            highlight.includes(w.replace(/[.,]/g, "")) && "text-signal",
           )}
           initial={{ opacity: 0, y: "0.5em", filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -260,7 +287,12 @@ export function Marquee({
 }) {
   return (
     <div className={cx("mask-fade-x overflow-hidden", className)}>
-      <div className={cx("flex w-max gap-3", reverse ? "anim-marquee-rev" : "anim-marquee")}>
+      <div
+        className={cx(
+          "flex w-max gap-3",
+          reverse ? "anim-marquee-rev" : "anim-marquee",
+        )}
+      >
         {children}
         {children}
       </div>
@@ -268,15 +300,35 @@ export function Marquee({
   );
 }
 
-/* --- ScrollProgress: thin signal bar -------------------------------------- */
 export function ScrollProgress() {
   const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 180, damping: 30, restDelta: 0.001 });
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 220,
+    damping: 32,
+    restDelta: 0.001,
+  });
   return (
     <motion.div
-      style={{ scaleX }}
-      className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-signal"
+      style={{ scaleX, transformOrigin: "0%" }}
+      className="fixed inset-x-0 top-0 z-[100] h-[4px] bg-signal shadow-[0_1px_8px_rgba(10,110,80,0.5)] pointer-events-none"
     />
+  );
+}
+
+export function RightScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleY = useSpring(scrollYProgress, {
+    stiffness: 260,
+    damping: 30,
+    restDelta: 0.001,
+  });
+  return (
+    <div className="fixed right-0 top-0 bottom-0 z-50 w-[3px] bg-black/[0.03] pointer-events-none">
+      <motion.div
+        style={{ scaleY, transformOrigin: "0% 0%" }}
+        className="w-full h-full bg-signal shadow-[0_0_8px_rgba(10,110,80,0.6)]"
+      />
+    </div>
   );
 }
 

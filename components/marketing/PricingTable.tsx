@@ -112,7 +112,7 @@ export default function PricingTable() {
               ))}
             </ul>
           </div>
-          <Button href="/story" variant="outline" size="lg">
+          <Button href="https://wa.me/8801710000000" target="_blank" variant="outline" size="lg">
             Talk to us
           </Button>
         </Panel>
