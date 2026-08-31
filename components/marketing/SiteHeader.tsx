@@ -231,7 +231,7 @@ export default function SiteHeader() {
             <div className="flex items-center gap-2.5">
               <LanguageToggle size="sm" />
               <Button
-                href="/console"
+                href="/login"
                 size="sm"
                 className="relative overflow-hidden rounded-full border border-signal/20 bg-gradient-to-b from-[#0c7855] to-[#07593f] px-4 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_12px_rgba(10,110,80,0.4)] active:scale-[0.98]"
               >
@@ -362,11 +362,12 @@ export default function SiteHeader() {
 
             <div className="border-t border-black/[0.06] p-5">
               <Button
-                href="/console"
+                href="/login"
                 size="lg"
+                onClick={() => setOpen(false)}
                 className="w-full justify-center rounded-2xl bg-gradient-to-b from-[#0c7855] to-[#07593f] py-4 text-[16px] text-white shadow-[0_2px_8px_rgba(10,110,80,0.35)]"
               >
-                {t("Open merchant console", "মার্চেন্ট কনসোল খুলুন")}
+                {t("Sign in to console", "কনসোলে লগইন করুন")}
                 <IconArrow width={16} height={16} />
               </Button>
             </div>

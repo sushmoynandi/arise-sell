@@ -3,118 +3,189 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { Wordmark } from "@/components/ui/primitives";
-import { IconCheck, IconWhatsApp } from "@/components/ui/icons";
+import {
+  IconCheck,
+  IconShield,
+  IconWhatsApp,
+  IconFacebook,
+  IconInstagram,
+  IconLinkedIn,
+  IconYouTube,
+  IconGlobe,
+} from "@/components/ui/icons";
 import { useLang } from "@/lib/i18n";
 
-const COLUMNS = [
+const SOCIAL_LINKS = [
   {
-    titleEn: "Product",
-    titleBn: "প্রোডাক্ট",
-    links: [
-      { labelEn: "Features", labelBn: "ফিচারসমূহ", href: "/#features" },
-      { labelEn: "How it works", labelBn: "কীভাবে কাজ করে", href: "/#how-it-works" },
-      { labelEn: "Pricing", labelBn: "মূল্য ও প্ল্যান", href: "/#pricing" },
-      { labelEn: "Live Console", labelBn: "লাইভ ড্যাশবোর্ড", href: "/console" },
-    ],
+    name: "WhatsApp",
+    href: "https://wa.me/8801710000000",
+    icon: IconWhatsApp,
+    hoverClass:
+      "hover:text-[#25D366] hover:border-[#25D366]/40 hover:bg-[#25D366]/[0.06]",
   },
   {
-    titleEn: "Channels",
-    titleBn: "চ্যানেল",
-    links: [
-      { labelEn: "WhatsApp Business", labelBn: "হোয়াটসঅ্যাপ বিজনেস", href: "/#channels" },
-      { labelEn: "Facebook Messenger", labelBn: "ফেসবুক মেসেঞ্জার", href: "/#channels" },
-      { labelEn: "Instagram Direct", labelBn: "ইনস্টাগ্রাম ডিরেক্ট", href: "/#channels" },
-      { labelEn: "Website Live Chat", labelBn: "ওয়েবসাইট চ্যাট উইজেট", href: "/#channels" },
-    ],
+    name: "Facebook",
+    href: "https://facebook.com",
+    icon: IconFacebook,
+    hoverClass:
+      "hover:text-[#1877F2] hover:border-[#1877F2]/40 hover:bg-[#1877F2]/[0.08]",
   },
   {
-    titleEn: "Company",
-    titleBn: "কোম্পানি",
-    links: [
-      { labelEn: "Our Story", labelBn: "আমাদের গল্প", href: "/#story" },
-      { labelEn: "Common FAQs", labelBn: "সাধারণ প্রশ্নোত্তর", href: "/#faq" },
-      { labelEn: "Contact Us", labelBn: "যোগাযোগ", href: "/contact" },
-    ],
+    name: "Instagram",
+    href: "https://instagram.com",
+    icon: IconInstagram,
+    hoverClass:
+      "hover:text-[#E4405F] hover:border-[#E4405F]/40 hover:bg-[#E4405F]/[0.08]",
   },
+  {
+    name: "LinkedIn",
+    href: "https://linkedin.com",
+    icon: IconLinkedIn,
+    hoverClass:
+      "hover:text-[#0A66C2] hover:border-[#0A66C2]/40 hover:bg-[#0A66C2]/[0.08]",
+  },
+  {
+    name: "YouTube",
+    href: "https://youtube.com",
+    icon: IconYouTube,
+    hoverClass:
+      "hover:text-[#FF0000] hover:border-[#FF0000]/40 hover:bg-[#FF0000]/[0.08]",
+  },
+];
+
+const RESOURCE_LINKS = [
+  {
+    labelEn: "Documentation & API",
+    labelBn: "ডকুমেন্টেশন ও এপিআই",
+    href: "/docs",
+  },
+  { labelEn: "Privacy Policy", labelBn: "প্রাইভেসি পলিসি", href: "/docs" },
+  { labelEn: "Terms of Service", labelBn: "শর্তাবলী", href: "/docs" },
+  { labelEn: "Contact Us", labelBn: "যোগাযোগ", href: "/contact" },
 ];
 
 export default function SiteFooter() {
   const { t } = useLang();
 
   return (
-    <footer className="border-t border-line bg-white">
-      <div className="mx-auto max-w-[1280px] px-5 pb-10 pt-14 lg:px-8">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))] lg:gap-12">
-          {/* brand + contact */}
-          <div>
-            <Wordmark />
-            <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-text-2">
+    <footer className="relative overflow-hidden border-t border-black/[0.07] bg-gradient-to-b from-white via-[#f6faf8] to-[#edf5f1]">
+      {/* Soft Ambient Theme Lighting Orbs */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-64 w-[750px] rounded-full opacity-60 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(10,110,80,0.12), rgba(10,110,80,0.02) 60%, transparent)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-20 right-1/4 h-48 w-80 rounded-full opacity-40 blur-2xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(10,110,80,0.10), transparent)",
+        }}
+      />
+
+      <div className="relative mx-auto max-w-[1280px] px-5 pt-12 pb-8 lg:px-8">
+        {/* 3-Column Balanced Grid */}
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.5fr_1fr_1.3fr] lg:gap-14 items-start">
+          {/* Column 1: Brand & Status */}
+          <div className="space-y-3.5">
+            <Link
+              href="/"
+              className="inline-block transition-transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Wordmark />
+            </Link>
+
+            <p className="max-w-sm text-[13.5px] leading-relaxed text-text-2">
               {t(
-                "The 24-hour salesperson for Bangladeshi shops selling on WhatsApp, Messenger and Instagram.",
-                "হোয়াটসঅ্যাপ, মেসেঞ্জার ও ইনস্টাগ্রামে বিক্রয়কারী বাংলাদেশি শপগুলোর সার্বক্ষণিক এআই বিক্রয়কর্মী।"
+                "Autonomous 24/7 AI Sales Assistant for Bangladeshi eCommerce on WhatsApp, Messenger & Instagram.",
+                "হোয়াটসঅ্যাপ, মেসেঞ্জার ও ইনস্টাগ্রামের শপগুলোর জন্য সার্বক্ষণিক নির্ভরযোগ্য এআই বিক্রয়কর্মী।",
               )}
             </p>
 
-            <div className="mt-6 space-y-2.5">
-              <a
-                href="tel:+8801710000000"
-                className="flex items-center gap-2.5 text-[14px] text-text-2 transition-colors hover:text-signal"
-              >
-                <span className="grid size-8 place-items-center rounded-xl bg-[#e6f4ee] text-signal">
-                  <IconWhatsApp width={15} height={15} />
-                </span>
-                017 1000 0000
-              </a>
-              <a
-                href={`mailto:${BRAND.supportEmail}`}
-                className="block text-[14px] text-text-2 transition-colors hover:text-signal"
-              >
-                {BRAND.supportEmail}
-              </a>
-              <p className="text-[13.5px] text-text-3">
-                {t("Banani, Dhaka 1213, Bangladesh", "বনানী, ঢাকা ১২১৩, বাংলাদেশ")}
-              </p>
+            <div className="pt-0.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/80 px-3.5 py-1 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] backdrop-blur-sm">
+                <IconGlobe width={13} height={13} className="text-signal" />
+                {t(
+                  "Banani, Dhaka 1213, Bangladesh",
+                  "বনানী, ঢাকা ১২১৩, বাংলাদেশ",
+                )}
+              </span>
             </div>
-
-            <p className="mt-6 flex items-center gap-2 text-[12.5px] text-text-3">
-              <IconCheck width={13} height={13} className="text-signal" />
-              {t("Verified Meta Tech Provider", "ভেরিফাইড মেটা টেক পার্টনার")}
-            </p>
           </div>
 
-          {COLUMNS.map((col) => (
-            <div key={col.titleEn}>
-              <h4 className="text-[14px] font-semibold text-text">
-                {t(col.titleEn, col.titleBn)}
-              </h4>
-              <ul className="mt-4 space-y-2.5">
-                {col.links.map((l) => (
-                  <li key={l.labelEn}>
-                    <Link
-                      href={l.href}
-                      className="text-[13.5px] text-text-2 transition-colors hover:text-signal"
-                    >
-                      {t(l.labelEn, l.labelBn)}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+          {/* Column 2: Resources & Legal */}
+          <div className="space-y-3 pt-0.5 md:pl-8 lg:pl-11">
+            <h4 className="text-[12.5px] font-bold uppercase tracking-wider text-text">
+              {t("Resources & Legal", "রিসোর্স ও পলিসি")}
+            </h4>
+            <ul className="space-y-2.5">
+              {RESOURCE_LINKS.map((link) => (
+                <li key={link.labelEn}>
+                  <Link
+                    href={link.href}
+                    className="text-[13.5px] text-text-2 transition-colors hover:text-signal hover:underline"
+                  >
+                    {t(link.labelEn, link.labelBn)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Connect With Us */}
+          <div className="space-y-3.5 pt-0.5">
+            <h4 className="text-[12.5px] font-bold uppercase tracking-wider text-text">
+              {t("Connect With Us", "আমাদের সাথে যুক্ত থাকুন")}
+            </h4>
+
+            {/* Social Circle Icons */}
+            <div className="flex items-center gap-2.5">
+              {SOCIAL_LINKS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <a
+                    key={s.name}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.name}
+                    className={`grid size-9 place-items-center rounded-full border border-black/[0.08] bg-white/90 text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-sm transition-all duration-150 hover:border-signal/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer ${s.hoverClass}`}
+                  >
+                    <Icon width={16} height={16} />
+                  </a>
+                );
+              })}
             </div>
-          ))}
+
+            {/* Compact Verified Meta Partner Pill */}
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-signal/20 bg-white/95 px-4 py-2 shadow-[0_1px_3px_rgba(0,0,0,0.03)] backdrop-blur-md">
+              <span className="grid size-4.5 place-items-center rounded-full bg-signal text-white shadow-sm">
+                <IconCheck width={10} height={10} />
+              </span>
+              <span className="text-[12px] font-semibold text-text">
+                {t("Verified Meta Tech Partner", "ভেরিফাইড মেটা টেক পার্টনার")}
+              </span>
+              <span className="text-black/15">·</span>
+              <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-text-3">
+                <IconShield width={11} height={11} className="text-signal" />
+                256-bit SSL
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-line pt-6 text-[13px] text-text-3 sm:flex-row sm:items-center">
+        {/* Fine Clean Divider */}
+        <div className="my-8 border-t border-black/[0.06]" />
+
+        {/* Bottom Centered Copyright */}
+        <div className="text-center text-[12.5px] text-text-3">
           <p>
-            © {new Date().getFullYear()} {BRAND.nameFull} — {t("All rights reserved.", "সর্বস্বত্ব সংরক্ষিত।")}
-          </p>
-          <p className="flex flex-wrap gap-x-5 gap-y-1">
-            <Link href="/docs" className="transition-colors hover:text-signal">
-              {t("Privacy", "প্রাইভেসি")}
-            </Link>
-            <Link href="/docs" className="transition-colors hover:text-signal">
-              {t("Terms", "শর্তাবলী")}
-            </Link>
-            <span>{t("Prices in BDT, VAT included", "সকল মূল্য বাংলাদেশি টাকায় (ভ্যাট অন্তর্ভুক্ত)")}</span>
+            © {new Date().getFullYear()} {BRAND.nameFull}.{" "}
+            {t("All rights reserved.", "সর্বস্বত্ব সংরক্ষিত।")}
           </p>
         </div>
       </div>
