@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/marketing/SiteHeader";
 import SiteFooter from "@/components/marketing/SiteFooter";
+import CtaBand from "@/components/marketing/CtaBand";
 import PricingTable from "@/components/marketing/PricingTable";
 import Faq from "@/components/marketing/Faq";
-import CtaBand from "@/components/marketing/CtaBand";
 import { Eyebrow, Panel } from "@/components/ui/primitives";
 import { Reveal, ScrollProgress } from "@/components/motion";
 import { FAQS } from "@/data/plans";
@@ -114,7 +114,6 @@ export default function PricingPage() {
             </div>
           </div>
         </section>
-
         <CtaBand />
       </main>
       <SiteFooter />

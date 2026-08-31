@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SPRING, SPRING_SOFT } from "@/components/motion";
+import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
 
-export default function Faq({ items }: { items: Array<{ q: string; a: string }> }) {
+type Item = { q: string; a: string; qBn?: string; aBn?: string };
+
+export default function Faq({ items }: { items: readonly Item[] }) {
   const [open, setOpen] = useState<number | null>(0);
+  const { t } = useLang();
 
   return (
     <div className="divide-y divide-[color:var(--line)] border-y border-line">
@@ -25,7 +29,7 @@ export default function Faq({ items }: { items: Array<{ q: string; a: string }> 
                   on ? "text-signal" : "text-text"
                 )}
               >
-                {f.q}
+                {t(f.q, f.qBn ?? f.q)}
               </span>
               <motion.span
                 animate={{ rotate: on ? 45 : 0 }}
@@ -33,7 +37,12 @@ export default function Faq({ items }: { items: Array<{ q: string; a: string }> 
                 className="grid size-6 shrink-0 place-items-center rounded-full border border-line text-text-3"
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M12 5v14M5 12h14"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </motion.span>
             </button>
@@ -47,7 +56,7 @@ export default function Faq({ items }: { items: Array<{ q: string; a: string }> 
                   className="overflow-hidden"
                 >
                   <p className="max-w-2xl pb-6 pr-10 text-[14.5px] leading-relaxed text-text-2">
-                    {f.a}
+                    {t(f.a, f.aBn ?? f.a)}
                   </p>
                 </motion.div>
               )}

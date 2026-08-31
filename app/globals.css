@@ -10,12 +10,12 @@
   color-scheme: light;
 
   /* --- Surfaces --- */
-  --canvas: #f7f8f9; /* app + page field */
+  --canvas: #faf9f7; /* warm paper — a shop's site, not a terminal */
   --surface: #ffffff; /* cards, panels, sidebar */
-  --surface-2: #f1f3f5; /* subtle fill, hover, chat bubbles */
-  --surface-3: #e4e7eb; /* inputs, meter tracks, inactive bars */
-  --line: #e2e5e9;
-  --line-soft: #edeff2;
+  --surface-2: #f4f3f0; /* subtle fill, hover, chat bubbles */
+  --surface-3: #e8e6e1; /* inputs, meter tracks, inactive bars */
+  --line: #e7e4de;
+  --line-soft: #f1efeb;
 
   /* Deep surface, used sparingly (mobile scrim, photo overlays) */
   --ink: #0f1419;
@@ -47,7 +47,7 @@
   --shadow-lg: 0 2px 6px rgba(15, 20, 25, 0.04), 0 14px 34px -12px rgba(15, 20, 25, 0.16);
   --glow: 0 0 0 1px var(--signal-line), 0 8px 24px -12px rgba(10, 110, 80, 0.35);
 
-  --radius: 12px;
+  --radius: 16px;
 }
 
 @theme inline {
@@ -79,7 +79,7 @@
   --font-bangla: var(--font-hind), var(--font-inter-tight), sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
-  --radius-card: 12px;
+  --radius-card: 16px;
 }
 
 * {
@@ -100,6 +100,19 @@ body {
   /* `clip` (not `hidden`) contains decorative bleed without creating a scroll
      container — so `position: sticky` headers keep working. */
   overflow-x: clip;
+}
+
+/* Bangla mode: Bricolage has no Bengali glyphs, so swap the display face too. */
+html.lang-bn body,
+html.lang-bn .font-display,
+html.lang-bn [class*="font-display"] {
+  font-family: var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+}
+html.lang-bn h1,
+html.lang-bn h2,
+html.lang-bn h3 {
+  letter-spacing: -0.01em;
+  line-height: 1.28;
 }
 
 ::selection {
@@ -139,13 +152,13 @@ body {
 
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(15, 20, 25, 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 20, 25, 0.045) 1px, transparent 1px);
+    linear-gradient(to right, rgba(15, 20, 25, 0.038) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 20, 25, 0.038) 1px, transparent 1px);
   background-size: 56px 56px;
 }
 
 .bg-dots {
-  background-image: radial-gradient(rgba(15, 20, 25, 0.075) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(15, 20, 25, 0.06) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 

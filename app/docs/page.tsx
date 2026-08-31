@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/marketing/SiteHeader";
 import SiteFooter from "@/components/marketing/SiteFooter";
-import CodeBlock from "@/components/marketing/CodeBlock";
 import CtaBand from "@/components/marketing/CtaBand";
+import CodeBlock from "@/components/marketing/CodeBlock";
 import { Badge, Eyebrow, Panel } from "@/components/ui/primitives";
 import { IconCheck, IconShield, IconWarn } from "@/components/ui/icons";
 import { Reveal, ScrollProgress } from "@/components/motion";
@@ -272,7 +272,6 @@ export default function DocsPage() {
             </Reveal>
           </div>
         </section>
-
         <CtaBand />
       </main>
       <SiteFooter />

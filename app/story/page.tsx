@@ -171,7 +171,6 @@ export default function StoryPage() {
             </Reveal>
           </div>
         </section>
-
         <CtaBand />
       </main>
       <SiteFooter />

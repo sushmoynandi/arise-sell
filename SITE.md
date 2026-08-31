@@ -28,7 +28,7 @@ That framing drives three decisions you'll see everywhere in the code:
 
 | Route | Purpose |
 |---|---|
-| `/` | Landing. Hero with a self-running order simulation, lifecycle stepper, capability bento, reply-time decay chart, eval/trust section, CTA. |
+| `/` | Landing (business marketing). Hero → 8 feature cards → 3 spotlight blocks with live demos → 3-step setup → testimonials → pricing preview → FAQ → closing CTA. |
 | `/platform` | Channels in depth, the five-stage lifecycle, the eight console surfaces, trust section. |
 | `/pricing` | Three plans + enterprise, a billing-model comparison table, FAQ accordion. |
 | `/docs` | Developer contract v2 — catalog feed, order webhook, HMAC signature verification, fetcher limits. |
@@ -116,13 +116,17 @@ components/
                           Sparkline, Avatar, Delta, ChannelChip, Eyebrow, LiveDot
   ui/icons.tsx            line icon set + channel glyphs (no emoji anywhere)
   marketing/
-    SiteHeader / SiteFooter
-    Hero                  headline + proof numbers + merchant marquee
+    SiteHeader            business nav: bilingual links, phone number, Bangla CTA
+    SiteFooter            product/channel/company columns + contact details
+    Hero                  bilingual headline, reassurance ticks, stats band, merchant rail
     LiveClose             the self-running order simulation
-    Lifecycle             interactive five-stage explainer
-    Capabilities          bento grid
-    ReplyDecay            conversion-vs-latency chart
-    Trust                 guardrails + eval report card
+    Features              8 colour-coded benefit cards (data/marketing.ts)
+    Spotlights            3 alternating feature blocks, each with a working mini-demo
+    HowItWorks            3-step setup, Bangla numerals
+    Testimonials          merchant quotes with result figures
+    PricingPreview        3 plans, compact
+    featureVisuals.tsx    feature icon set + soft tint system
+    Lifecycle / Capabilities / ReplyDecay / Trust   deeper pages (/platform)
     PricingTable / Faq / CodeBlock / CtaBand
   console/
     ConsoleShell          sidebar + topbar + mobile drawer
@@ -184,6 +188,35 @@ npm run build      # production build
 - Product photos are hosted on Unsplash; `next.config.ts` allowlists that host.
 
 ## 10. Recent changes
+
+- **Rebuilt the marketing site as a business site, not a developer site.** The previous version
+  read as a tool for engineers: mono type throughout, HMAC/eval/spec language on the landing
+  page, austere hairline layouts, and no feature showcase to speak of. The buyer here is a shop
+  owner. What changed:
+  - Landing page restructured to the shape a business site needs — **features, spotlights with
+    live demos, 3-step setup, testimonials, pricing, FAQ, CTA**.
+  - **Bilingual throughout.** Bangla kickers on every section, Bangla CTA in the nav, Bangla
+    numerals in the setup steps.
+  - **Colour returned to the UI.** Eight feature cards each carry their own soft tint
+    (`featureVisuals.tsx`); the palette warmed from cool grey to warm paper (`#faf9f7`).
+  - **Zero mono type** on any landing-page component — it now lives only in `/docs` and the
+    console, where it belongs.
+  - Copy rewritten from specifications to benefits ("Books Steadfast & Pathao itself", not
+    "courier API integration"). Technical proof stays on `/platform` and `/docs`.
+  - Header gained a phone number and a Bangla primary CTA; footer gained real contact details.
+
+- **Two targeted changes to avoid resembling the reference site.** A side-by-side check of
+  the live competitor found two real collisions, both now fixed:
+  1. Their header class string is `fixed inset-x-0 top-0 z-50 … backdrop-blur-md`; ours was
+     nearly identical. The header is still fixed, but is now a **solid surface** that gains a
+     hairline and a 1px shadow on scroll — no backdrop blur — with a sliding underline on nav
+     hover.
+  2. Their Bangla hero reads "সবসময় অনলাইন … আপনি ঘুমালেও" ("always online … even while you
+     sleep"). Our third headline line said "It just never sleeps now." Rewritten to
+     **"Let it finish the sale."**, which points at closing rather than uptime.
+
+  A larger structural redesign was tried and reverted — the page architecture below is the
+  intended one.
 
 - **Rethemed from dark to light.** The original dark "control room" was a developer-tool
   convention that fought the actual use case — merchants looking at product photography,

@@ -2,78 +2,91 @@
 
 import { motion } from "framer-motion";
 import LiveClose from "./LiveClose";
-import { Button, Eyebrow, LiveDot } from "@/components/ui/primitives";
-import { IconArrow } from "@/components/ui/icons";
-import { Counter, Magnetic, SPRING_SOFT, SplitWords } from "@/components/motion";
+import { Button } from "@/components/ui/primitives";
+import { IconArrow, IconCheck } from "@/components/ui/icons";
+import { Magnetic, SPRING_SOFT, SplitWords } from "@/components/motion";
+import { HEADLINE_STATS } from "@/data/marketing";
 import { MERCHANTS } from "@/data/tenant";
 import { Marquee } from "@/components/motion";
+import { useLang } from "@/lib/i18n";
 
-const PROOF = [
-  { value: 231400, prefix: "৳", label: "closed in the last 24h", compact: true },
-  { value: 1.9, suffix: "m", label: "median time to order", decimals: 1 },
-  { value: 93.6, suffix: "%", label: "handled without a human", decimals: 1 },
+const REASSURE = [
+  { en: "No card needed", bn: "কার্ড লাগবে না" },
+  { en: "Set up in 10 minutes", bn: "১০ মিনিটেই সেটআপ" },
+  { en: "Cancel anytime", bn: "যখন খুশি বন্ধ" },
 ];
 
 export default function Hero() {
+  const { t } = useLang();
   return (
-    <section className="relative overflow-hidden pb-20 pt-28 lg:pb-28 lg:pt-36">
-      <div className="bg-grid pointer-events-none absolute inset-0 mask-fade-b opacity-70" />
+    <section className="relative overflow-hidden pb-16 pt-28 lg:pb-20 lg:pt-36">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full opacity-50 blur-[120px]"
-        style={{ background: "radial-gradient(circle, rgba(10,110,80,0.10), transparent 68%)" }}
+        className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full opacity-70 blur-[130px]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(10,110,80,0.13), rgba(74,59,196,0.06) 55%, transparent)",
+        }}
       />
 
-      <div className="relative mx-auto grid grid-cols-1 max-w-[1180px] items-center gap-14 px-5 lg:grid-cols-[minmax(0,1.06fr)_minmax(0,0.94fr)] lg:gap-16 lg:px-8">
-        {/* ---- copy ---- */}
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-14 px-5 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-14 lg:px-8">
         <div>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={SPRING_SOFT}
-            className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-line bg-surface/80 py-1.5 pl-2.5 pr-3.5"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[color:var(--signal-line)] bg-white py-1.5 pl-2 pr-4 shadow-[0_1px_2px_rgba(15,20,25,0.04)]"
           >
-            <LiveDot />
-            <span className="text-[12.5px] text-text-2">
-              Now billing on <span className="text-text">closed orders</span>, not conversations
+            <span className="rounded-full bg-signal px-2 py-0.5 font-[family-name:var(--font-hind)] text-[11px] font-semibold text-white">
+              নতুন
+            </span>
+            <span className="text-[13px] text-text-2">
+              {t(
+                "You only pay for orders it actually closes",
+                "যত অর্ডার ক্লোজ হবে, শুধু ততটুকুরই খরচ"
+              )}
             </span>
           </motion.div>
 
-          <h1 className="font-display text-[clamp(2.4rem,5.4vw,3.9rem)] font-semibold leading-[1.03] tracking-[-0.03em] text-text">
-            <SplitWords text="Your inbox is your" />
+          <h1 className="font-display text-[clamp(2.3rem,5vw,3.6rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-text">
+            <SplitWords text={t("Your shop keeps selling", "দোকান বন্ধ থাকলেও")} />
             <br />
-            <SplitWords text="best salesperson." delay={0.16} />
-            <br />
-            <motion.span
-              initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ ...SPRING_SOFT, delay: 0.42 }}
-              className="text-text-3"
-            >
-              It just never sleeps now.
-            </motion.span>
+            <SplitWords text={t("after you close it.", "বিক্রি চলতে থাকে।")} delay={0.16} />
           </h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ ...SPRING_SOFT, delay: 0.55 }}
-            className="mt-6 max-w-[30rem] text-pretty text-[16.5px] leading-relaxed text-text-2"
+            transition={{ ...SPRING_SOFT, delay: 0.4 }}
+            className="mt-4 font-[family-name:var(--font-hind)] text-[19px] leading-relaxed text-signal"
           >
-            NextProduct reads the Bangla, matches the screenshot to a real SKU, takes the address,
-            books Steadfast or Pathao and files the invoice — end to end, before your competitor has
-            opened their laptop.
+            {t(
+              "কাস্টমার মেসেজ করলেই উত্তর, অর্ডার, আর কুরিয়ার বুকিং — সব নিজে থেকেই।",
+              "উত্তর, অর্ডার আর কুরিয়ার বুকিং — সব নিজে থেকেই।"
+            )}
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...SPRING_SOFT, delay: 0.5 }}
+            className="mt-5 max-w-[32rem] text-pretty text-[16.5px] leading-relaxed text-text-2"
+          >
+            {t(
+              "NextProduct answers your customers on WhatsApp, Messenger and Instagram in their own language, takes the complete order, books Steadfast or Pathao, and sends the invoice — while you sleep, eat, or serve someone standing in front of you.",
+              "NextProduct আপনার কাস্টমারকে হোয়াটসঅ্যাপ, মেসেঞ্জার আর ইনস্টাগ্রামে তাদের নিজের ভাষায় উত্তর দেয়, পুরো অর্ডার নেয়, স্টেডফাস্ট বা পাঠাও বুক করে, আর চালান পাঠিয়ে দেয় — আপনি যখন ঘুমাচ্ছেন, খাচ্ছেন, বা সামনের কাস্টমারকে দেখছেন।"
+            )}
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ ...SPRING_SOFT, delay: 0.66 }}
+            transition={{ ...SPRING_SOFT, delay: 0.6 }}
             className="mt-8 flex flex-wrap items-center gap-3"
           >
             <Magnetic>
               <Button href="/console" size="lg" className="group">
-                See it running
+                {t("Start free — 40 orders", "ফ্রি শুরু করুন — ৪০ অর্ডার")}
                 <IconArrow
                   width={16}
                   height={16}
@@ -81,51 +94,60 @@ export default function Hero() {
                 />
               </Button>
             </Magnetic>
-            <Magnetic strength={0.2}>
-              <Button href="/pricing" size="lg" variant="outline">
-                40 free orders
+            <Magnetic strength={0.18}>
+              <Button href="/platform" size="lg" variant="outline">
+                {t("See how it works", "কীভাবে কাজ করে দেখুন")}
               </Button>
             </Magnetic>
           </motion.div>
 
-          {/* proof numbers */}
-          <motion.dl
+          <motion.ul
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.85, duration: 0.5 }}
-            className="mt-11 grid max-w-lg grid-cols-3 gap-5 border-t border-line pt-6"
+            transition={{ delay: 0.75, duration: 0.5 }}
+            className="mt-6 flex flex-wrap gap-x-5 gap-y-2"
           >
-            {PROOF.map((p) => (
-              <div key={p.label}>
-                <dt className="font-display text-[22px] font-semibold tracking-tight text-text">
-                  {p.compact ? (
-                    <>
-                      ৳<Counter to={231.4} decimals={1} />k
-                    </>
-                  ) : (
-                    <Counter
-                      to={p.value}
-                      prefix={p.prefix ?? ""}
-                      suffix={p.suffix ?? ""}
-                      decimals={p.decimals ?? 0}
-                    />
-                  )}
-                </dt>
-                <dd className="mt-1 text-[12px] leading-snug text-text-3">{p.label}</dd>
-              </div>
+            {REASSURE.map((r) => (
+              <li key={r.en} className="flex items-center gap-1.5 text-[13px] text-text-3">
+                <IconCheck width={13} height={13} className="text-signal" />
+                {t(r.en, r.bn)}
+              </li>
             ))}
-          </motion.dl>
+          </motion.ul>
         </div>
 
-        {/* ---- live simulation ---- */}
         <LiveClose />
       </div>
 
-      {/* merchant rail */}
-      <div className="relative mt-24 lg:mt-28">
-        <div className="mx-auto mb-5 max-w-[1180px] px-5 lg:px-8">
-          <Eyebrow>Running the inbox at</Eyebrow>
-        </div>
+      {/* stats + merchants */}
+      <div className="relative mx-auto mt-20 max-w-[1180px] px-5 lg:px-8">
+        <motion.dl
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={SPRING_SOFT}
+          className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line shadow-[0_1px_2px_rgba(15,20,25,0.04)] lg:grid-cols-4"
+        >
+          {HEADLINE_STATS.map((s) => (
+            <div key={s.label} className="bg-white px-5 py-6 text-center">
+              <dt className="font-display text-[clamp(1.4rem,2.6vw,1.9rem)] font-semibold tracking-tight text-signal">
+                {t(s.value, s.valueBn)}
+              </dt>
+              <dd className="mt-1.5 text-[12.5px] leading-snug text-text-3">
+                {t(s.label, s.labelBn)}
+              </dd>
+            </div>
+          ))}
+        </motion.dl>
+      </div>
+
+      <div className="relative mt-12">
+        <p className="mb-4 text-center text-[13px] text-text-3">
+          {t(
+            "Trusted by growing shops across Bangladesh",
+            "সারা বাংলাদেশের বাড়ন্ত দোকানগুলোর ভরসা"
+          )}
+        </p>
         <Marquee>
           {MERCHANTS.map((m, i) => (
             <span
@@ -133,7 +155,7 @@ export default function Hero() {
               className="flex items-center gap-3 whitespace-nowrap px-6 font-display text-[17px] font-medium text-text-2"
             >
               {m}
-              <span className="size-1 rounded-full bg-line" />
+              <span aria-hidden className="size-1 rounded-full bg-line" />
             </span>
           ))}
         </Marquee>

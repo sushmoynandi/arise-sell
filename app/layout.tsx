@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter_Tight, Hind_Siliguri, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AgentationProvider } from "@/components/AgentationProvider";
+import { LanguageProvider } from "@/lib/i18n";
 import { BRAND } from "@/lib/brand";
 
 const bricolage = Bricolage_Grotesque({
@@ -66,7 +67,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       className={`${bricolage.variable} ${interTight.variable} ${hind.variable} ${jetbrains.variable}`}
     >
       <body className="bg-canvas text-text antialiased" suppressHydrationWarning>
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
         <AgentationProvider />
       </body>
     </html>

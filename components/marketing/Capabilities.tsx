@@ -134,8 +134,12 @@ export default function Capabilities() {
                 Steadfast and Pathao booked on your own merchant account. COD lands in your wallet.
               </p>
               <div className="mt-5 flex flex-wrap gap-1.5">
-                <Badge tone="mint" dot>Steadfast</Badge>
-                <Badge tone="azure" dot>Pathao</Badge>
+                <Badge tone="mint" dot>
+                  Steadfast
+                </Badge>
+                <Badge tone="azure" dot>
+                  Pathao
+                </Badge>
                 <Badge tone="neutral">1-click bulk</Badge>
               </div>
             </div>

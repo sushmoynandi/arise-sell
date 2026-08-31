@@ -53,7 +53,7 @@ export default function LiveClose() {
 
   return (
     <div className="relative">
-      {/* aurora behind the device */}
+      {/* soft wash behind the device */}
       <div
         aria-hidden
         className="anim-aurora pointer-events-none absolute -inset-16 -z-10 opacity-70 blur-3xl"

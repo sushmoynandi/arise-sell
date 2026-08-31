@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/marketing/SiteHeader";
 import SiteFooter from "@/components/marketing/SiteFooter";
+import CtaBand from "@/components/marketing/CtaBand";
 import Lifecycle from "@/components/marketing/Lifecycle";
 import Trust from "@/components/marketing/Trust";
-import CtaBand from "@/components/marketing/CtaBand";
-import { Badge, Eyebrow, Panel } from "@/components/ui/primitives";
+import { Badge, Panel } from "@/components/ui/primitives";
 import {
   IconBox,
   IconBrain,
@@ -80,15 +80,17 @@ export default function PlatformPage() {
           <div className="bg-grid pointer-events-none absolute inset-0 mask-fade-b opacity-60" />
           <div className="relative mx-auto max-w-[1180px] px-5 lg:px-8">
             <Reveal>
-              <Eyebrow>Platform</Eyebrow>
-              <h1 className="mt-5 max-w-3xl text-balance font-display text-[clamp(2.2rem,4.6vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
-                Eight surfaces, one thread of work.
-                <span className="text-text-3"> Organised by the sale, not by the feature list.</span>
+              <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+                ফিচার
+              </p>
+              <h1 className="mt-3 max-w-3xl text-balance font-display text-[clamp(2.2rem,4.6vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
+                Everything you need to sell in the inbox.
+                <span className="text-text-3"> In one place.</span>
               </h1>
               <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-text-2">
-                Most tools in this category give you a page per module and leave the joining-up to
-                you. We built the console around the five stages an order actually passes through, so
-                the answer to &ldquo;where is this order&rdquo; is always one click away.
+                Your customers message you on four different apps. Your orders live in a notebook,
+                your courier in a browser tab, and your stock in your head. This puts all of it in
+                one screen — and does most of the work for you.
               </p>
             </Reveal>
           </div>
@@ -98,9 +100,11 @@ export default function PlatformPage() {
         <section id="channels" className="border-t border-line py-20 lg:py-24">
           <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
             <Reveal>
-              <Eyebrow>Where it listens</Eyebrow>
-              <h2 className="mt-5 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
-                Four channels. One customer.
+              <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+                সব চ্যানেলে
+              </p>
+              <h2 className="mt-3 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
+                Four apps your customers use. One inbox for you.
               </h2>
             </Reveal>
 
@@ -135,10 +139,11 @@ export default function PlatformPage() {
         <section id="fulfilment" className="border-t border-line py-20 lg:py-24">
           <div className="mx-auto max-w-[1180px] px-5 lg:px-8">
             <Reveal>
-              <Eyebrow>The console</Eyebrow>
-              <h2 className="mt-5 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
-                Eight places to look.
-                <span className="text-text-3"> Not thirty.</span>
+              <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+                আপনার ড্যাশবোর্ড
+              </p>
+              <h2 className="mt-3 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
+                Your whole shop, on eight simple screens.
               </h2>
             </Reveal>
 
