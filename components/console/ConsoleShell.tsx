@@ -7,7 +7,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
 import { Avatar, Badge, Meter, Wordmark } from "@/components/ui/primitives";
-import { NAV_ICON, IconClose, IconMenu, IconSearch, IconSpark } from "@/components/ui/icons";
+import {
+  NAV_ICON,
+  IconClose,
+  IconMenu,
+  IconSearch,
+  IconSpark,
+} from "@/components/ui/icons";
 import { SPRING, SPRING_SOFT } from "@/components/motion";
 import { cx } from "@/lib/format";
 
@@ -32,7 +38,9 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                     onClick={onNavigate}
                     className={cx(
                       "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13.5px] transition-colors duration-150",
-                      active ? "text-text" : "text-text-2 hover:bg-surface-2 hover:text-text"
+                      active
+                        ? "text-text"
+                        : "text-text-2 hover:bg-surface-2 hover:text-text",
                     )}
                   >
                     {active && (
@@ -47,7 +55,9 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                       height={16}
                       className={cx(
                         "shrink-0 transition-colors",
-                        active ? "text-signal" : "text-text-3 group-hover:text-text-2"
+                        active
+                          ? "text-signal"
+                          : "text-text-3 group-hover:text-text-2",
                       )}
                     />
                     <span className="flex-1 truncate">{item.label}</span>
@@ -77,10 +87,20 @@ function QuotaCard() {
       </div>
       <p className="mt-2 font-display text-[19px] font-semibold tracking-tight">
         {TENANT.ordersUsed.toLocaleString()}
-        <span className="text-[13px] font-normal text-text-3"> / {TENANT.ordersQuota.toLocaleString()}</span>
+        <span className="text-[13px] font-normal text-text-3">
+          {" "}
+          / {TENANT.ordersQuota.toLocaleString()}
+        </span>
       </p>
-      <Meter value={pct} max={100} tone={pct > 85 ? "amber" : "signal"} className="mt-2.5" />
-      <p className="mt-2 text-[11px] text-text-3">Resets in 9 days · then ৳4 each</p>
+      <Meter
+        value={pct}
+        max={100}
+        tone={pct > 85 ? "amber" : "signal"}
+        className="mt-2.5"
+      />
+      <p className="mt-2 text-[11px] text-text-3">
+        Resets in 9 days · then ৳4 each
+      </p>
     </div>
   );
 }
@@ -109,11 +129,26 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
             N
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-medium text-text">{TENANT.name}</span>
-            <span className="block truncate text-[11px] text-text-3">{TENANT.pages} pages</span>
+            <span className="block truncate text-[13px] font-medium text-text">
+              {TENANT.name}
+            </span>
+            <span className="block truncate text-[11px] text-text-3">
+              {TENANT.pages} pages
+            </span>
           </span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-text-3">
-            <path d="m8 10 4-4 4 4M8 14l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="text-text-3"
+          >
+            <path
+              d="m8 10 4-4 4 4M8 14l4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
 
@@ -131,7 +166,9 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                 </span>
               ))}
             </div>
-            <span className="text-[11.5px] text-text-3">{online.length} on shift</span>
+            <span className="text-[11.5px] text-text-3">
+              {online.length} on shift
+            </span>
           </div>
         </div>
       </aside>
@@ -148,7 +185,11 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
           </button>
 
           <label className="relative hidden min-w-0 flex-1 items-center sm:flex lg:max-w-sm">
-            <IconSearch width={15} height={15} className="pointer-events-none absolute left-3 text-text-3" />
+            <IconSearch
+              width={15}
+              height={15}
+              className="pointer-events-none absolute left-3 text-text-3"
+            />
             <input
               placeholder="Search orders, customers, SKUs…"
               className="h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-16 text-[13px] text-text placeholder:text-text-3 focus:border-[color:var(--signal-line)] focus:outline-none"

@@ -51,10 +51,11 @@ type BtnProps = {
   size?: "sm" | "md" | "lg";
   className?: string;
   type?: "button" | "submit";
+  disabled?: boolean;
 };
 
 const BTN_BASE =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[background-color,border-color,color,box-shadow] duration-200 whitespace-nowrap disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[background-color,border-color,color,box-shadow] duration-200 whitespace-nowrap disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
 
 const BTN_VARIANT = {
   signal:
@@ -81,6 +82,7 @@ export function Button({
   size = "md",
   className,
   type = "button",
+  disabled = false,
 }: BtnProps) {
   const cls = cx(BTN_BASE, BTN_VARIANT[variant], BTN_SIZE[size], className);
   if (href)
@@ -90,7 +92,7 @@ export function Button({
       </Link>
     );
   return (
-    <button type={type} onClick={onClick} className={cls}>
+    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
       {children}
     </button>
   );
