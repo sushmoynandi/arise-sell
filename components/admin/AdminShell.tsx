@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Wordmark } from "@/components/ui/primitives";
 import { IconClose, IconMenu } from "@/components/ui/icons";
-import { SPRING } from "@/components/motion";
 import { cx } from "@/lib/format";
 
 type SVGProps = {
@@ -227,24 +225,21 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-canvas bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(16,185,129,0.03),rgba(255,255,255,0))] text-text flex">
+    <div className="min-h-screen bg-canvas text-text flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-[272px] flex-col border-r border-line/80 bg-white/80 backdrop-blur-2xl shrink-0 sticky top-0 h-screen z-30 shadow-[inset_-1px_0_0_rgba(255,255,255,0.7)]">
+      <aside className="hidden lg:flex w-[260px] flex-col border-r border-line bg-white shrink-0 sticky top-0 h-screen z-30">
         {/* Clean Logo Header */}
-        <div className="p-5 border-b border-line/60">
-          <Link
-            href="/admin"
-            className="inline-block transition-transform active:scale-[0.98]"
-          >
+        <div className="p-5 border-b border-line">
+          <Link href="/admin" prefetch={true} className="inline-block">
             <Wordmark />
           </Link>
         </div>
 
-        {/* Navigation Groups with Generous Section Spacing */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-6">
+        {/* Navigation Groups - Clean, Borderless & Instant */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-5">
           {ADMIN_NAV.map((group) => (
             <div key={group.group}>
-              <p className="px-3 pb-2 text-[13px] font-bold text-text/85 tracking-tight select-none">
+              <p className="px-3 pb-1.5 text-[11px] font-mono uppercase font-bold text-text-3 tracking-wider select-none">
                 {group.group}
               </p>
               <ul className="space-y-0.5">
@@ -255,33 +250,20 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        prefetch={true}
                         className={cx(
-                          "group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-[14px] font-medium transition-colors duration-150 active:scale-[0.98]",
+                          "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] cursor-pointer select-none transition-colors duration-100",
                           active
-                            ? "text-signal font-semibold"
-                            : "text-text-2 hover:bg-surface-2 hover:text-text",
+                            ? "bg-signal/[0.09] text-signal font-bold"
+                            : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
                         )}
                       >
-                        {active && (
-                          <motion.span
-                            layoutId="admin-nav-active-pill"
-                            transition={{
-                              type: "spring",
-                              stiffness: 450,
-                              damping: 32,
-                              mass: 0.6,
-                            }}
-                            className="absolute inset-0 -z-10 rounded-xl border border-[color:var(--signal-line)] bg-signal-wash shadow-xs"
-                          />
-                        )}
                         <Icon
-                          width={18}
-                          height={18}
+                          width={17.5}
+                          height={17.5}
                           className={cx(
-                            "shrink-0 transition-colors",
-                            active
-                              ? "text-signal"
-                              : "text-text-3 group-hover:text-text",
+                            "shrink-0",
+                            active ? "text-signal" : "text-text-3",
                           )}
                         />
                         <span className="flex-1 whitespace-nowrap tracking-tight">
@@ -290,19 +272,19 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                         {item.badge && (
                           <span
                             className={cx(
-                              "rounded-md px-2 py-0.5 font-mono text-[11px] font-bold tracking-tight shadow-xs",
+                              "rounded-md px-1.5 py-0.5 font-mono text-[10.5px] font-bold tracking-tight",
                               item.badge === "Soon"
-                                ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                                ? "bg-amber-500/10 text-amber-700"
                                 : item.badge === "2 New"
-                                  ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
-                                  : "bg-signal/10 text-signal border border-signal/20",
+                                  ? "bg-rose-500/10 text-rose-600"
+                                  : "bg-signal/10 text-signal",
                             )}
                           >
                             {item.badge}
                           </span>
                         )}
                         {item.statusDot && (
-                          <span className="size-1.5 rounded-full bg-signal animate-pulse" />
+                          <span className="size-1.5 rounded-full bg-signal" />
                         )}
                       </Link>
                     </li>
@@ -314,9 +296,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </div>
 
         {/* Sidebar Minimalist Footer */}
-        <div className="p-3.5 border-t border-line/60 bg-surface-2/40 flex items-center justify-between text-[11.5px] text-text-3">
+        <div className="p-3.5 border-t border-line bg-canvas/40 flex items-center justify-between text-[11.5px] text-text-3">
           <span className="flex items-center gap-1.5 font-medium text-text-2">
-            <span className="size-1.5 rounded-full bg-signal animate-pulse" />
+            <span className="size-1.5 rounded-full bg-signal" />
             Platform Engine
           </span>
           <span className="font-mono text-[10.5px] text-text-3">
@@ -327,14 +309,14 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navbar with Translucent Glass Backdrop */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line/70 bg-white/80 px-5 lg:px-8 backdrop-blur-2xl shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          {/* Mobile Menu Button + Clean Page Title */}
+        {/* Top Navbar */}
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white px-5 lg:px-8">
+          {/* Mobile Menu Button + Page Title */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="grid size-9 place-items-center rounded-xl border border-line bg-white/90 text-text-2 shadow-xs lg:hidden cursor-pointer active:scale-95 transition-transform"
+              className="grid size-9 place-items-center rounded-xl border border-line bg-white text-text-2 lg:hidden cursor-pointer"
             >
               <IconMenu width={16} height={16} />
             </button>
@@ -349,17 +331,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Right Header Status & Admin Avatar with Interactive Dropdown */}
+          {/* Right Header Status & Admin Avatar */}
           <div className="flex items-center gap-2.5">
-            {/* Compact Live Telemetry Glass HUD */}
-            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-line/80 bg-white/90 backdrop-blur-md px-3 py-1.5 shadow-xs">
-              {/* Metric 1: AI Failover */}
+            {/* Live Telemetry HUD */}
+            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-1.5 shadow-2xs">
               <Link
                 href="/admin/ai-gateway"
-                title="AI Gateway & Live Failover Chain"
+                prefetch={true}
                 className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
               >
-                <span className="size-1.5 rounded-full bg-signal shrink-0 animate-pulse" />
+                <span className="size-1.5 rounded-full bg-signal shrink-0" />
                 <div className="text-left">
                   <p className="font-semibold text-text text-[11px] leading-tight">
                     Multi-AI (5 Keys)
@@ -370,12 +351,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 </div>
               </Link>
 
-              <span className="h-5 w-px bg-line" />
+              <span className="h-4 w-px bg-line" />
 
-              {/* Metric 2: 24h Message Volume & AI Resolution */}
               <Link
                 href="/admin/analytics"
-                title="24h Message Traffic & AI Resolution Rate"
+                prefetch={true}
                 className="hidden md:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
               >
                 <div className="text-left">
@@ -388,12 +368,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 </div>
               </Link>
 
-              <span className="hidden md:block h-5 w-px bg-line" />
+              <span className="hidden md:block h-4 w-px bg-line" />
 
-              {/* Metric 3: Active Couriers */}
               <Link
                 href="/admin/couriers"
-                title="Steadfast & Pathao Courier Auto-Routing"
+                prefetch={true}
                 className="hidden lg:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
               >
                 <div className="text-left">
@@ -406,12 +385,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 </div>
               </Link>
 
-              <span className="hidden lg:block h-5 w-px bg-line" />
+              <span className="hidden lg:block h-4 w-px bg-line" />
 
-              {/* Metric 4: Platform MRR */}
               <Link
                 href="/admin/subscriptions"
-                title="Monthly Recurring Revenue"
+                prefetch={true}
                 className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
               >
                 <div className="text-left">
@@ -425,198 +403,164 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               </Link>
             </div>
 
-            {/* Administrator Avatar Trigger (Only Trigger on Topbar) */}
+            {/* Administrator Avatar Trigger */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 aria-label="Admin Profile Menu"
-                className="grid size-9 place-items-center rounded-xl border border-line bg-white shadow-xs hover:border-signal/40 hover:shadow-sm active:scale-95 transition-all cursor-pointer select-none"
+                className="grid size-9 place-items-center rounded-xl border border-line bg-white shadow-2xs hover:border-signal/40 transition-colors cursor-pointer select-none"
               >
-                <div className="grid size-7 place-items-center rounded-lg bg-surface-2 border border-line/80 text-text font-bold text-[12px]">
+                <div className="grid size-7 place-items-center rounded-lg bg-surface-2 text-text font-bold text-[12px]">
                   A
                 </div>
               </button>
 
-              {/* Profile Dropdown Solid Menu */}
-              <AnimatePresence>
-                {profileDropdownOpen && (
-                  <>
-                    {/* Backdrop dismiss */}
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setProfileDropdownOpen(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                      transition={{ duration: 0.12 }}
-                      className="absolute right-0 mt-2 z-50 w-60 rounded-2xl border border-line bg-white p-2 shadow-2xl ring-1 ring-black/5"
-                    >
-                      {/* User Info Header with Avatar */}
-                      <div className="flex items-center gap-2.5 p-2.5 border-b border-line">
-                        <div className="grid size-8 place-items-center rounded-lg bg-surface-2 border border-line text-text font-bold text-[12px] shrink-0">
-                          A
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-bold text-text leading-tight truncate">
-                            Platform Admin
-                          </p>
-                          <p className="text-[11px] text-text-3 font-mono truncate mt-0.5">
-                            admin@nextproduct.ai
-                          </p>
-                        </div>
+              {/* Profile Dropdown Menu */}
+              {profileDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 z-50 w-60 rounded-2xl border border-line bg-white p-2 shadow-2xl ring-1 ring-black/5 animate-in fade-in">
+                    <div className="flex items-center gap-2.5 p-2.5 border-b border-line">
+                      <div className="grid size-8 place-items-center rounded-lg bg-surface-2 border border-line text-text font-bold text-[12px] shrink-0">
+                        A
                       </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold text-text leading-tight truncate">
+                          Platform Admin
+                        </p>
+                        <p className="text-[11px] text-text-3 font-mono truncate mt-0.5">
+                          admin@nextproduct.ai
+                        </p>
+                      </div>
+                    </div>
 
-                      {/* Dropdown Actions */}
-                      <div className="py-1.5 space-y-0.5 text-[13px]">
-                        <Link
-                          href="/admin/settings"
-                          onClick={() => setProfileDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-text-2 hover:bg-surface-2 hover:text-text transition-colors group"
+                    <div className="py-1 space-y-0.5 text-[13px]">
+                      <Link
+                        href="/admin/settings"
+                        prefetch={true}
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-text-2 hover:bg-surface-2 hover:text-text transition-colors"
+                      >
+                        <svg
+                          width={15}
+                          height={15}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-text-3"
                         >
-                          <svg
-                            width={15}
-                            height={15}
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.7"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-text-3 group-hover:text-text"
-                          >
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                          </svg>
-                          <span>Security & Settings</span>
-                        </Link>
-                      </div>
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                        <span>Security & Settings</span>
+                      </Link>
+                    </div>
 
-                      {/* Logout Button */}
-                      <div className="pt-1 border-t border-line">
-                        <Link
-                          href="/admin/login"
-                          onClick={() => setProfileDropdownOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] font-medium text-text-2 hover:bg-rose-50 hover:text-rose-600 transition-colors group"
+                    <div className="pt-1 border-t border-line">
+                      <Link
+                        href="/admin/login"
+                        prefetch={true}
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] font-medium text-text-2 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                      >
+                        <svg
+                          width={15}
+                          height={15}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-text-3"
                         >
-                          <svg
-                            width={15}
-                            height={15}
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.7"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-text-3 group-hover:text-rose-600"
-                          >
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                          </svg>
-                          <span>Log Out</span>
-                        </Link>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                        </svg>
+                        <span>Log Out</span>
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
 
         {/* Mobile Navigation Drawer */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 lg:hidden backdrop-blur-sm"
-              onClick={() => setMobileOpen(false)}
-            >
-              <motion.div
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={SPRING}
-                className="w-72 h-full bg-white border-r border-line p-5 flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between pb-4 border-b border-line">
-                  <Wordmark />
-                  <button
-                    type="button"
-                    onClick={() => setMobileOpen(false)}
-                    className="grid size-8 place-items-center rounded-lg border border-line text-text-2 cursor-pointer"
-                  >
-                    <IconClose width={14} height={14} />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto py-3 space-y-5">
-                  {ADMIN_NAV.map((group) => (
-                    <div key={group.group}>
-                      <p className="px-2.5 pb-1.5 text-[13px] font-bold text-text/85 tracking-tight select-none">
-                        {group.group}
-                      </p>
-                      <ul className="space-y-0.5">
-                        {group.items.map((item) => {
-                          const Icon = item.icon;
-                          const active = pathname === item.href;
-                          return (
-                            <li key={item.href}>
-                              <Link
-                                href={item.href}
-                                onClick={() => setMobileOpen(false)}
-                                className={cx(
-                                  "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[14px] font-medium",
-                                  active
-                                    ? "bg-signal-wash text-signal font-semibold border border-[color:var(--signal-line)]"
-                                    : "text-text-2 hover:bg-surface-2",
-                                )}
-                              >
-                                <Icon width={18} height={18} />
-                                <span className="flex-1 whitespace-nowrap">
-                                  {item.label}
-                                </span>
-                                {item.badge && (
-                                  <span
-                                    className={cx(
-                                      "rounded-md px-2 py-0.5 font-mono text-[11px] font-bold tracking-tight shadow-xs",
-                                      item.badge === "Soon"
-                                        ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                                        : item.badge === "2 New"
-                                          ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
-                                          : "bg-signal/10 text-signal border border-signal/20",
-                                    )}
-                                  >
-                                    {item.badge}
-                                  </span>
-                                )}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Page Content Body with Smooth Route Transition */}
-        <main className="flex-1 p-5 sm:p-7 lg:p-9 max-w-[1440px] w-full mx-auto">
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/40 lg:hidden"
+            onClick={() => setMobileOpen(false)}
           >
-            {children}
-          </motion.div>
+            <div
+              className="w-72 h-full bg-white border-r border-line p-5 flex flex-col animate-in slide-in-from-left duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-line">
+                <Wordmark />
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="grid size-8 place-items-center rounded-lg border border-line text-text-2 cursor-pointer"
+                >
+                  <IconClose width={14} height={14} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-3 space-y-5">
+                {ADMIN_NAV.map((group) => (
+                  <div key={group.group}>
+                    <p className="px-2.5 pb-1 text-[11px] font-mono uppercase font-bold text-text-3 tracking-wider select-none">
+                      {group.group}
+                    </p>
+                    <ul className="space-y-0.5">
+                      {group.items.map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.href;
+                        return (
+                          <li key={item.href}>
+                            <Link
+                              href={item.href}
+                              prefetch={true}
+                              onClick={() => setMobileOpen(false)}
+                              className={cx(
+                                "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium",
+                                active
+                                  ? "bg-signal/[0.09] text-signal font-bold"
+                                  : "text-text-2 hover:bg-surface-2",
+                              )}
+                            >
+                              <Icon width={17.5} height={17.5} />
+                              <span className="flex-1 whitespace-nowrap">
+                                {item.label}
+                              </span>
+                              {item.badge && (
+                                <span className="rounded-md px-1.5 py-0.5 font-mono text-[10.5px] font-bold">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Page Content Body (0ms Latency Instant Render) */}
+        <main className="flex-1 p-5 sm:p-7 lg:p-9 max-w-[1440px] w-full mx-auto">
+          {children}
         </main>
       </div>
     </div>
