@@ -1,0 +1,227 @@
+import type { Thread } from "./types";
+
+export const THREADS: Thread[] = [
+  {
+    id: "th-8841",
+    customer: "Sumaiya Islam",
+    handle: "+8801712 04xx xx",
+    channel: "whatsapp",
+    lang: "banglish",
+    district: "Dhaka",
+    status: "ai",
+    intent: "Saree — colour + delivery",
+    value: 6930,
+    unread: 0,
+    lastAt: "just now",
+    messages: [
+      {
+        id: "m1",
+        from: "customer",
+        lang: "banglish",
+        body: "apa ei saree tar dam koto? indigo ta ache?",
+        gloss: "How much is this saree? Do you have the indigo one?",
+        at: "14:31",
+        attachment: {
+          kind: "image",
+          src: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=60",
+          matchedSku: "JD-IND",
+          confidence: 0.94,
+        },
+      },
+      {
+        id: "m2",
+        from: "agent",
+        body: "জি আপা, এইটা আমাদের জামদানি হাতে বোনা শাড়ি 🌿 ইন্ডিগো রঙে ১২ পিস স্টকে আছে। দাম ৳৬,৮৫০ (আগে ছিল ৳৭,৯০০)। সাথে ম্যাচিং ব্লাউজ পিস ফ্রি।",
+        at: "14:31",
+        action: { label: "Photo matched", detail: "JD-IND · 94% confidence", tone: "signal" },
+      },
+      {
+        id: "m3",
+        from: "customer",
+        lang: "banglish",
+        body: "asol chobi ache? edited na to?",
+        gloss: "Do you have the real photo? Not edited, right?",
+        at: "14:32",
+      },
+      {
+        id: "m4",
+        from: "agent",
+        body: "অবশ্যই — এইটা আমাদের গুদামের আসল ছবি, কোনো এডিট নাই 👇",
+        at: "14:32",
+        action: { label: "Raw stock photo sent", detail: "media/JD-IND/warehouse-02.jpg", tone: "mint" },
+      },
+      {
+        id: "m5",
+        from: "customer",
+        lang: "banglish",
+        body: "nibo. Dhanmondi 27 e delivery koto din?",
+        gloss: "I'll take it. How many days to deliver in Dhanmondi 27?",
+        at: "14:33",
+      },
+      {
+        id: "m6",
+        from: "agent",
+        body: "ধানমন্ডিতে ২৪ ঘণ্টার মধ্যে, ডেলিভারি চার্জ ৳৮০ 🚚 অর্ডার কনফার্ম করতে আপনার নাম, ১১ ডিজিটের নাম্বার আর পুরো ঠিকানাটা দিন।",
+        at: "14:33",
+        action: { label: "KYC slots opened", detail: "name · phone · address", tone: "amber" },
+      },
+    ],
+  },
+  {
+    id: "th-8840",
+    customer: "Tanjila Akter",
+    handle: "@tanjila.wears",
+    channel: "instagram",
+    lang: "bn",
+    district: "Chattogram",
+    status: "waiting",
+    intent: "Kurta — size XXL out of stock",
+    value: 2390,
+    unread: 2,
+    lastAt: "6 min",
+    messages: [
+      {
+        id: "m1",
+        from: "customer",
+        lang: "bn",
+        body: "খাদি কুর্তা XXL সাইজ আছে?",
+        gloss: "Do you have the khadi kurta in XXL?",
+        at: "14:19",
+      },
+      {
+        id: "m2",
+        from: "agent",
+        body: "দুঃখিত, XXL এই মুহূর্তে স্টক আউট 😔 XL (৪২) আছে ৯ পিস — খাদি একটু রিল্যাক্সড ফিট, XL ভালো হবে। নাকি স্টক এলে জানাবো?",
+        at: "14:19",
+        action: { label: "Stock honesty rule fired", detail: "never claim unavailable stock", tone: "amber" },
+      },
+      {
+        id: "m3",
+        from: "customer",
+        lang: "bn",
+        body: "স্টক আসলে জানাবেন। আর দাম কি কমবে?",
+        gloss: "Let me know when it's in stock. And will the price drop?",
+        at: "14:25",
+      },
+      {
+        id: "m4",
+        from: "agent",
+        body: "রেস্টক হলেই আমি নিজে মেসেজ দিবো 🔔 দাম নিয়ে ডিসকাউন্ট আমি নিজে দিতে পারি না — টিমকে জানিয়ে দিলাম, ওরা দেখবে।",
+        at: "14:25",
+        action: { label: "Escalated to human", detail: "guardrail: discounts are owner-only", tone: "signal" },
+      },
+    ],
+  },
+  {
+    id: "th-8839",
+    customer: "Rezaul Karim",
+    handle: "Messenger · Nokshi Home",
+    channel: "messenger",
+    lang: "banglish",
+    district: "Sylhet",
+    status: "human",
+    intent: "Bulk — 40 kantha for hotel",
+    value: 188000,
+    unread: 1,
+    lastAt: "22 min",
+    messages: [
+      {
+        id: "m1",
+        from: "customer",
+        lang: "banglish",
+        body: "bhai amader hotel er jonno 40 ta kantha lagbe. bulk rate koto?",
+        gloss: "We need 40 kanthas for our hotel. What's the bulk rate?",
+        at: "14:03",
+      },
+      {
+        id: "m2",
+        from: "agent",
+        body: "৪০ পিস — দারুণ! এই সাইজের অর্ডার আমি নিজে কোট করি না, আমাদের টিম থেকে একজন এখনই আসছে ⏱️",
+        at: "14:03",
+        action: { label: "Auto-handoff", detail: "order value > ৳50,000", tone: "signal" },
+      },
+      {
+        id: "m3",
+        from: "human",
+        body: "Rezaul bhai, Imran here from Nokshi. For 40 king kantha we can do ৳4,850 each with 30% advance. Shall I send a proforma?",
+        at: "14:09",
+      },
+    ],
+  },
+  {
+    id: "th-8838",
+    customer: "Priya Das",
+    handle: "nokshi.com.bd",
+    channel: "web",
+    lang: "en",
+    district: "Dhaka",
+    status: "resolved",
+    intent: "Return — wrong cushion size",
+    value: 0,
+    unread: 0,
+    lastAt: "1 hr",
+    messages: [
+      {
+        id: "m1",
+        from: "customer",
+        lang: "en",
+        body: "I ordered the set of 4 but received set of 2. Order NP-20418.",
+        at: "13:12",
+      },
+      {
+        id: "m2",
+        from: "agent",
+        body: "Checked NP-20418 — you're right, the packing slip shows TC-SET2. That's on us. I've raised a free replacement for the set of 4, out with tomorrow's Steadfast pickup. Keep the set of 2, no return needed.",
+        at: "13:12",
+        action: { label: "Order looked up + replacement raised", detail: "NP-20418 → NP-20431", tone: "mint" },
+      },
+      {
+        id: "m3",
+        from: "customer",
+        lang: "en",
+        body: "That's very fair, thank you!",
+        at: "13:14",
+      },
+    ],
+  },
+];
+
+/** Scripted exchange for the marketing-site hero simulation. */
+export const HERO_SCRIPT: Array<{
+  from: "customer" | "agent";
+  body: string;
+  gloss?: string;
+  chip?: string;
+  delay: number;
+}> = [
+  {
+    from: "customer",
+    body: "vai ei kanthar dam koto? king size lagbe",
+    gloss: "How much is this kantha? I need king size.",
+    delay: 700,
+  },
+  {
+    from: "agent",
+    body: "নকশি কাঁথা কিং সাইজ ৳৫,৪০০ — দুইটা বালিশের কভার ফ্রি 🌾 স্টকে ৬ পিস আছে।",
+    chip: "Photo → NK-KING · 96%",
+    delay: 1500,
+  },
+  {
+    from: "customer",
+    body: "nibo. Uttara sector 7, 01712-04xxxx",
+    gloss: "I'll take it. Uttara sector 7.",
+    delay: 1400,
+  },
+  {
+    from: "agent",
+    body: "ঠিকানা আর নাম্বার পেয়েছি ✅ অর্ডার NP-20447 কনফার্ম, ডেলিভারি চার্জ ৳৮০, মোট ৳৫,৪৮০ (ক্যাশ অন ডেলিভারি)।",
+    chip: "Phone valid · address parsed",
+    delay: 1600,
+  },
+  {
+    from: "agent",
+    body: "কুরিয়ার বুক হয়ে গেছে — Steadfast, ট্র্যাকিং SF-7719042 📦 কাল দুপুরের মধ্যে পৌঁছে যাবে।",
+    chip: "Courier booked · CAPI Purchase sent",
+    delay: 1500,
+  },
+];

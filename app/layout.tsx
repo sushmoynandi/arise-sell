@@ -1,46 +1,71 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { Bricolage_Grotesque, Inter_Tight, Hind_Siliguri, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AgentationProvider } from "@/components/AgentationProvider";
+import { BRAND } from "@/lib/brand";
 
-const outfit = Outfit({
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-bricolage",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const interTight = Inter_Tight({
+  subsets: ["latin"],
+  variable: "--font-inter-tight",
   display: "swap",
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-body",
+const hind = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  variable: "--font-hind",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "HuntReady — The Launch Page That Gets You to #1 on Product Hunt",
-  description:
-    "Build hype before launch day with a referral waitlist, countdown timer, and auto-switching Product Hunt voting CTA. Everything founders need to crush their launch.",
+  metadataBase: new URL(`https://${BRAND.domain}`),
+  title: {
+    default: `${BRAND.nameFull} — ${BRAND.tagline}`,
+    template: `%s · ${BRAND.nameFull}`,
+  },
+  description: BRAND.description,
+  keywords: [
+    "conversational commerce",
+    "Bangla AI agent",
+    "WhatsApp commerce Bangladesh",
+    "Steadfast API",
+    "Pathao courier API",
+    "F-commerce automation",
+  ],
   openGraph: {
-    title: "HuntReady — The Launch Page That Gets You to #1 on Product Hunt",
-    description:
-      "Referral waitlist, countdown timer, demo embed, founder story, press kit, and auto-switching PH voting CTA — all in one page.",
     type: "website",
+    siteName: BRAND.nameFull,
+    title: `${BRAND.nameFull} — ${BRAND.tagline}`,
+    description: BRAND.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "HuntReady — Crush Your Product Hunt Launch",
-    description:
-      "Referral waitlist, countdown timer, and auto-switching PH voting CTA. Built for founders who ship.",
+    title: `${BRAND.nameFull} — ${BRAND.tagline}`,
+    description: BRAND.description,
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`}>
-      <body className="font-[family-name:var(--font-body)] antialiased" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${bricolage.variable} ${interTight.variable} ${hind.variable} ${jetbrains.variable}`}
+    >
+      <body className="bg-canvas text-text antialiased" suppressHydrationWarning>
         {children}
         <AgentationProvider />
       </body>

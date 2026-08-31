@@ -1,79 +1,95 @@
-import { INITIAL_ORDERS, AlapOrder } from "@/lib/alap-constants";
+import { ORDERS } from "@/data/operations";
+import { BD_PHONE } from "@/lib/format";
+import type { Order } from "@/data/types";
 
-let memoryOrders: AlapOrder[] = [...INITIAL_ORDERS];
+/**
+ * Demo order webhook — the shape documented at /docs#orders (contract v2).
+ * In-memory only; state resets whenever the server restarts. No backend yet.
+ */
+let received: Order[] = [...ORDERS];
+const seenKeys = new Map<string, string>();
 
 export async function GET() {
-  return Response.json({
-    status: "success",
-    count: memoryOrders.length,
-    orders: memoryOrders,
-  });
+  return Response.json({ count: received.length, orders: received });
 }
 
 export async function POST(req: Request) {
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
-    const idempotencyKey = req.headers.get("Idempotency-Key") || body.idempotency_key || `alap_ord_${Date.now()}`;
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "invalid_json" }, { status: 400 });
+  }
 
-    // Check duplicate
-    const existing = memoryOrders.find((o) => o.idempotency_key === idempotencyKey);
-    if (existing) {
-      return Response.json(
-        {
-          status: "duplicate",
-          message: "Order already processed with this Idempotency-Key",
-          order: existing,
-        },
-        { status: 200 }
-      );
-    }
+  const key = req.headers.get("Idempotency-Key");
+  if (!key) {
+    return Response.json(
+      { error: "missing_idempotency_key", detail: "Send an Idempotency-Key header." },
+      { status: 400 }
+    );
+  }
 
-    const newOrder: AlapOrder = {
-      id: `ALAP-${1043 + memoryOrders.length}`,
-      idempotency_key: idempotencyKey,
-      timestamp: "Just now",
-      channel: body.channel || "web_widget",
-      channel_user_id: body.channel_user_id || body.customer?.phone || "+8801700000000",
-      customer: {
-        name: body.customer?.name || "Customer",
-        phone: body.customer?.phone || "01700000000",
-        address: {
-          full_address: body.customer?.address?.full_address || "Dhaka, Bangladesh",
-          district: body.customer?.address?.district || "Dhaka",
-          area: body.customer?.address?.area || "Dhaka",
-          delivery_type: body.customer?.address?.delivery_type || "home",
-        },
-      },
-      items: body.order?.items || body.items || [],
-      subtotal: body.order?.subtotal || body.subtotal || 2450,
-      discount: body.order?.discount || body.discount || 0,
-      delivery_charge: body.order?.delivery_charge || body.delivery_charge || 80,
-      total_amount: body.order?.total_amount || body.total_amount || 2530,
-      payment_method: body.order?.payment_method || body.payment_method || "cod",
-      status: "confirmed",
-      courier: {
-        provider: "Steadfast",
-        consignment_id: `SF-${Math.floor(100000 + Math.random() * 900000)}`,
-        tracking_code: `SF${Math.floor(1000000 + Math.random() * 9000000)}`,
-        status: "Parcel Booked (Pickup Pending)",
-      },
-      notes: body.order?.notes || body.notes || "",
-    };
+  // Replay of a key we've already accepted returns the original result, not a new order.
+  const existing = seenKeys.get(key);
+  if (existing) {
+    return Response.json(
+      { status: "duplicate", ref: existing, detail: "Already processed." },
+      { status: 200 }
+    );
+  }
 
-    memoryOrders = [newOrder, ...memoryOrders];
+  const customer = (body.customer ?? {}) as {
+    name?: string;
+    phone?: string;
+    address?: { line?: string; district?: string };
+  };
 
+  if (!customer.phone || !BD_PHONE.test(customer.phone)) {
     return Response.json(
       {
-        status: "success",
-        message: "Order successfully received and booked with Steadfast Courier",
-        order_id: newOrder.id,
-        tracking_code: newOrder.courier?.tracking_code,
-        order: newOrder,
+        error: "invalid_phone",
+        detail: "Expected a Bangladeshi mobile number matching 01[3-9] plus 8 digits.",
       },
-      { status: 201 }
+      { status: 422 }
     );
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Invalid payload";
-    return Response.json({ status: "error", message: errorMsg }, { status: 400 });
   }
+
+  const lines = Array.isArray(body.lines) ? (body.lines as Order["lines"]) : [];
+  if (lines.length === 0) {
+    return Response.json(
+      { error: "empty_order", detail: "At least one line item is required." },
+      { status: 422 }
+    );
+  }
+
+  const ref = `NP-${20448 + received.length}`;
+  const order: Order = {
+    id: `ord-${ref.toLowerCase()}`,
+    ref,
+    customer: customer.name ?? "Customer",
+    phone: customer.phone,
+    address: customer.address?.line ?? "—",
+    district: customer.address?.district ?? "Dhaka",
+    channel: (body.channel as Order["channel"]) ?? "web",
+    lines,
+    delivery: Number(body.delivery_charge ?? 80),
+    discount: Number(body.discount ?? 0),
+    pay: (body.payment as { method?: Order["pay"] })?.method ?? "cod",
+    state: "confirmed",
+    placedAt: "Just now",
+  };
+
+  received = [order, ...received];
+  seenKeys.set(key, ref);
+
+  return Response.json(
+    {
+      status: "accepted",
+      ref,
+      state: order.state,
+      // Return a payment_url here to make the agent send a bKash/Nagad link instead of COD.
+      payment_url: null,
+    },
+    { status: 201 }
+  );
 }

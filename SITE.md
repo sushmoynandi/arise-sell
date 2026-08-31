@@ -1,107 +1,209 @@
-# NextProduct AI (আলাপ AI Engine Architecture)
+# NextProduct AI — Site Documentation
 
-> Enterprise-Grade Omnichannel Conversational AI Sales & Logistics Engine for Bangladeshi E-Commerce & F-Commerce.
-
----
-
-## 1. Core Platform Specifications Implemented
-
-### A. Omnichannel Messaging Gateway
-- **Official Meta WhatsApp Cloud API**: Real-time sales automation, template message triggers, 0% ban risk.
-- **Facebook Messenger & Instagram Direct**: Post comment automation (public reply + auto-DM catalog links) and direct chat resolution.
-- **Web Chat Widget**: Integrated with phone number KYC verification and live checkout.
-
-### B. Specialized Bangla / Banglish NLP & Multimodal Vision
-- Interprets colloquial Bangla script, phonetic Banglish (*"vai ei blue runner size 42 available ache? price koto?"*), and standard English.
-- **Multimodal Vision Engine**: Matches uploaded product screenshots with catalog SKU embeddings and pulls unedited warehouse photos.
-
-### C. Logistics Handshake (Steadfast & Pathao Courier)
-- **Steadfast Courier API**: Auto-creates parcels with 11-digit phone validation, address parsing, and COD assignment.
-- **Pathao Courier API**: Dynamic multi-store pickup location mapping and live rider tracking.
-
-### D. API Reference Endpoints
-- **Product Feed API (`GET /api/feed`)**: Conforms to standard Alap AI JSON catalog feed specification.
-- **Website Order API (`POST /api/orders`)**: Dispatches confirmed orders with `Idempotency-Key` deduplication.
-
-### E. Meta Conversions API (CAPI)
-- Server-side event pipeline for `Lead`, `QualifiedLead`, and `Purchase` to bypass browser signal loss.
-- Pre-flight test code validator (`TESTXXXX`) with event logs.
-
-### F. Automated Bangla PDF Invoicing
-- Itemized billing breakdown with delivery charges, discounts, terms in Bangla/English, and courier tracking details.
+> **The commerce engine that closes the order.**
+> A 24/7 conversational commerce platform for Bangladeshi e-commerce and F-commerce.
+> Frontend only — every number on screen comes from `data/`. There is no backend yet.
 
 ---
 
-## 2. Pages & Routes
-- **Landing Page (`/`)**: Alap-themed high-converting page with interactive simulation, trusted merchant marquee, capability grid, 4-step setup, client reviews, and ৳0 / ৳299 / ৳999 pricing tiers.
-- **Operations Hub (`/dashboard`)**: Full 8-tab operations hub (Overview, Live Omnichannel Inbox, Orders & Invoicing, Catalog Feed, WhatsApp Broadcasts, Courier Dispatch, Meta CAPI Attribution, and Agent Persona/Schema settings).
-- **Product Feed Endpoint (`/api/feed`)**: Live authenticated JSON feed endpoint.
-- **Order Webhook Endpoint (`/api/orders`)**: Live order processing and Steadfast consignment generation endpoint.
+## 1. What this product claims to do
 
-## Sections (in order)
-1. **Navbar** — Logo, nav links, "Join Waitlist" button. Sticky with blur backdrop. Mobile hamburger.
-2. **Hero** — Centered layout: bold headline with "#1" underline accent, subtitle, live countdown timer, email capture with social proof avatars. Below: a full product dashboard mockup (browser frame with waitlist stats, growth chart, position tracker, recent signups sidebar). Floating cards around the mockup show live metrics. Dot grid background. Auto-switches to PH voting banner on launch day.
-3. **Stats Bar** — 4 key metrics with colored icons on soft gray background.
-4. **Features** — 8 feature cards with colorful icon badges (each card a different color accent). 4-column grid.
-5. **Referral Waitlist** — Left: phone mockup illustration showing #47 position and viral connections. Right: 3-step explanation of viral referral loop.
-6. **How It Works** — 4 steps with colorful SVG illustrations (calendar, customizer, network graph, trophy).
-7. **Video Demo** — Browser window illustration with play button overlay. Placeholder for Loom/YouTube embed.
-8. **Founder Story** — Left: founder at laptop illustration. Right: personal narrative + founder card with social links.
-9. **Testimonials** — 4 review cards with star ratings, quotes, colored avatar badges.
-10. **Press Kit** — Left: 4 asset cards + download button. Right: folder/documents illustration.
-11. **Final CTA** — Indigo rounded card with geometric background shapes, email capture.
-12. **Footer** — Dark navy background with social icons, product links, resources.
+Most tools in this category sell "an AI that answers your customers." NextProduct sells
+**shipped orders**. The agent reads the Bangla or Banglish message, matches a customer's
+screenshot to a real SKU, collects a deliverable address, commits the order to the
+merchant's own store, books Steadfast or Pathao, issues a Bangla invoice, and reports the
+purchase back to Meta.
 
-## Illustrations & Graphics
-- `components/ui/Illustrations.tsx` — All SVG illustrations:
-  - **RocketIllustration** — Hero section rocket with stars, clouds, speed lines
-  - **WaitlistIllustration** — Phone mockup with position tracker and connected people avatars
-  - **CountdownIllustration** — Clock face with countdown number boxes
-  - **FounderIllustration** — Person at laptop with floating idea icons
-  - **PressKitIllustration** — Folder with documents, image previews, download button
-  - **DemoIllustration** — Browser window showing product UI mockup
-  - **StepIllustration** — 4 unique illustrations (calendar, customizer, growth chart, trophy)
+That framing drives three decisions you'll see everywhere in the code:
 
-## Components
-- `components/layout/Navbar.tsx` — Sticky navigation with blur backdrop
-- `components/layout/Footer.tsx` — Dark footer with social icons
-- `components/sections/Hero.tsx` — Hero with countdown + email form + rocket illustration
-- `components/sections/StatsSection.tsx` — Metrics with icons
-- `components/sections/FeaturesSection.tsx` — Color-coded feature cards
-- `components/sections/WaitlistPosition.tsx` — Referral waitlist with illustration
-- `components/sections/HowItWorks.tsx` — 4-step process with illustrations
-- `components/sections/VideoDemoSection.tsx` — Demo embed with browser illustration
-- `components/sections/FounderStory.tsx` — Story with illustration + social links
-- `components/sections/ReviewsSection.tsx` — Star-rated testimonial cards
-- `components/sections/PressKitSection.tsx` — Press kit cards with illustration
-- `components/sections/CTASection.tsx` — Indigo CTA with geometric shapes
-- `components/ui/Illustrations.tsx` — All SVG illustrations
+1. **Billing is per closed order**, not per conversation (`data/plans.ts`).
+2. **The console is organised by stage of the sale**, not by feature module.
+3. **Guardrails and evals are first-class product surfaces**, not settings.
 
-## Data Files
-- `data/features.ts` — 8 features
-- `data/reviews.ts` — 4 testimonials
-- `data/stats.ts` — 4 metrics
-- `data/howItWorks.ts` — 4 steps
-- `lib/constants.ts` — Product name, tagline, launch date, links
+---
 
-## How to Customize
-- **Change launch date:** Edit `lib/constants.ts` → `LAUNCH_DATE`
-- **Change product name/tagline:** Edit `lib/constants.ts`
-- **Change colors:** Edit CSS variables in `app/globals.css`
-- **Update features:** Edit `data/features.ts`
-- **Update testimonials:** Edit `data/reviews.ts`
-- **Update stats:** Edit `data/stats.ts`
-- **Add founder photo:** Replace the illustration in `components/sections/FounderStory.tsx` with an `<Image>` tag
-- **Add product demo video:** Replace the illustration in `components/sections/VideoDemoSection.tsx` with an iframe embed
-- **Swap illustrations:** Edit `components/ui/Illustrations.tsx` or replace with actual images
+## 2. Pages & routes
 
-## Recent Changes
-- Added 24/7 Autonomous AI Business Support & Operations Agent (`InteractiveAgentDemo.tsx`) with real-time customer query handling, calendar booking, order tracking, and human-in-the-loop escalation workflows.
-- Initial build: Complete HuntReady landing page
-- Redesign: Pure white theme, Outfit + Plus Jakarta Sans fonts, colorful SVG illustrations throughout, alternating white/gray sections, indigo + orange accent colors
-- Hero redesign: Replaced left/right split with centered layout. Added full product dashboard mockup (browser frame, stats, growth chart, position tracker, recent signups). Floating metric cards around mockup. Dot grid background. Social proof avatars below email form. Countdown timer prominently centered above CTA.
-- Added Features page (`/features`): Bento grid layout, alternating image showcases, comparison banner
-- Added Pricing page (`/pricing`): 3-tier pricing with toggle, FAQ accordion, social proof strip
-- Added About page (`/about`): Editorial hero, photo collage, timeline, team cards, values section
-- Added Showcase page (`/showcase`): Case studies with stats, masonry testimonials, results cards
-- Updated Navbar: Links now point to new pages (Features, Pricing, Showcase, About)
+### Marketing
+
+| Route | Purpose |
+|---|---|
+| `/` | Landing. Hero with a self-running order simulation, lifecycle stepper, capability bento, reply-time decay chart, eval/trust section, CTA. |
+| `/platform` | Channels in depth, the five-stage lifecycle, the eight console surfaces, trust section. |
+| `/pricing` | Three plans + enterprise, a billing-model comparison table, FAQ accordion. |
+| `/docs` | Developer contract v2 — catalog feed, order webhook, HMAC signature verification, fetcher limits. |
+| `/story` | Positioning, four product beliefs, timeline, contact. |
+
+### Console (the logged-in product, on mock data)
+
+| Route | What it owns |
+|---|---|
+| `/console` | **Pulse** — KPIs, revenue chart, live event stream, "waiting on a human", AI spend ceiling, channel mix. |
+| `/console/threads` | **Threads** — unified inbox, Bangla/Banglish transcripts with English glosses, photo-match chips, guardrail trace, human takeover. |
+| `/console/pipeline` | **Pipeline** — six-stage kanban. The agent proposes a stage move; a human confirms or rejects it (cards animate between columns). |
+| `/console/fulfilment` | **Fulfilment** — orders, courier tracker and the Bangla চালান invoice in one screen. |
+| `/console/catalog` | **Catalog** — products, variants, vision-index state, and the feed-sync history log. |
+| `/console/reach` | **Reach** — campaigns, comment automation rules, follow-up playbooks. |
+| `/console/brain` | **Brain** — persona, guardrails, knowledge, and the eval harness with held-back failures. |
+| `/console/signals` | **Signals** — server-side conversion events, ROAS, AI spend breakdown, pipeline health. |
+
+### Mock API (no database — in-memory only)
+
+| Route | Behaviour |
+|---|---|
+| `GET /api/feed` | Cursor-paginated catalog feed matching the v2 contract on `/docs`. |
+| `GET /api/orders` | Lists received orders. |
+| `POST /api/orders` | Requires `Idempotency-Key`; validates the BD phone rule `01[3-9]\d{8}`; rejects empty orders; replays return the original ref. |
+
+### Legacy redirects
+`/features → /platform`, `/about → /story`, `/showcase → /platform`, `/dashboard → /console`.
+
+---
+
+## 3. Design system
+
+Defined in `app/globals.css`. **Light commerce-admin** — white cards on a soft grey field,
+one jade accent. Chosen over a dark theme because merchants read product photos, invoices and
+courier slips all day, and light renders those honestly.
+
+| Token | Value | Use |
+|---|---|---|
+| `--canvas` | `#f7f8f9` | page + app field |
+| `--surface` / `--surface-2` / `--surface-3` | `#ffffff` / `#f1f3f5` / `#e4e7eb` | cards & sidebar / fills & hover / inputs & tracks |
+| `--line` / `--line-soft` | `#e2e5e9` / `#edeff2` | hairlines, row dividers |
+| `--text` / `--text-2` / `--text-3` | `#0f1419` / `#4a5561` / `#626b76` | primary / secondary / tertiary |
+| `--signal` | `#0a6e50` | **the** accent — CTAs, active state, positive data |
+| `--signal-ink` | `#ffffff` | text on the accent |
+| `--mint` `--amber` `--coral` `--iris` `--azure` | status + chart series | never a second brand colour |
+
+**Accessibility:** every page passes WCAG AA at 1440px and 380px, verified by a scripted
+contrast audit that measures rendered text against its actual rendered background. Status
+colours are deeper than typical Tailwind values because each also has to clear 4.5:1 against
+its own 10% tint (`bg-amber/10 text-amber`), not just against white.
+
+**Type:** Bricolage Grotesque (display) · Inter Tight (body) · Hind Siliguri (Bangla) ·
+JetBrains Mono (data, IDs, code).
+
+**Utilities:** `.panel`, `.panel-raised`, `.glass`, `.edge-lift`, `.bg-grid`, `.bg-dots`,
+`.mask-fade-b`, `.mask-fade-x`, and animation classes `.anim-float`, `.anim-marquee`,
+`.anim-ring`, `.anim-shimmer`, `.anim-typing`, `.anim-aurora`, `.anim-caret`, `.anim-dash`.
+All motion is disabled under `prefers-reduced-motion`.
+
+## 4. Motion
+
+`components/motion/index.tsx` — one spring vocabulary so nothing feels borrowed.
+
+| Export | Use |
+|---|---|
+| `SPRING` / `SPRING_SOFT` / `SPRING_POP` | the three house springs |
+| `Reveal` | scroll-triggered entrance (fade + rise + deblur) |
+| `Stagger` / `StaggerItem` | parent/child choreography |
+| `Magnetic` | cursor-attracted buttons |
+| `Tilt` | subtle 3D card response |
+| `Counter` | easeOutExpo number roll, fires on view |
+| `SplitWords` | per-word headline entrance |
+| `Marquee` | seamless infinite rail |
+| `ScrollProgress` | thin signal-coloured progress bar |
+
+---
+
+## 5. Components
+
+```
+components/
+  motion/index.tsx        all motion primitives
+  ui/primitives.tsx       Wordmark, Button, Badge, Panel, PanelHead, Meter,
+                          Sparkline, Avatar, Delta, ChannelChip, Eyebrow, LiveDot
+  ui/icons.tsx            line icon set + channel glyphs (no emoji anywhere)
+  marketing/
+    SiteHeader / SiteFooter
+    Hero                  headline + proof numbers + merchant marquee
+    LiveClose             the self-running order simulation
+    Lifecycle             interactive five-stage explainer
+    Capabilities          bento grid
+    ReplyDecay            conversion-vs-latency chart
+    Trust                 guardrails + eval report card
+    PricingTable / Faq / CodeBlock / CtaBand
+  console/
+    ConsoleShell          sidebar + topbar + mobile drawer
+    PageHeader
+    LiveStream            simulated push event feed
+    RevenueChart          interactive 14-day bar chart
+```
+
+---
+
+## 6. Demo data
+
+All in `data/`. The tenant is **Nokshi & Co.**, a fictional Dhaka handloom and home brand.
+
+| File | Contents |
+|---|---|
+| `types.ts` | shared domain types |
+| `tenant.ts` | merchant profile, team, channels, social-proof merchant names |
+| `catalog.ts` | 6 products with variants + `FEED_SYNCS` history (one deliberate failure) |
+| `threads.ts` | 4 conversations (Banglish, Bangla, bulk handoff, resolved return) + `HERO_SCRIPT` |
+| `operations.ts` | pipeline cards, orders, campaigns, comment rules, CAPI events, series, KPIs, spend |
+| `brain.ts` | persona, guardrails, knowledge, eval suite, playbooks |
+| `plans.ts` | three plans, enterprise, overage, FAQs |
+
+Order refs use the `NP-` prefix; idempotency keys use `np_ord_`.
+
+---
+
+## 7. How to customise
+
+| Want to change | Edit |
+|---|---|
+| Product name, tagline, nav | `lib/brand.ts` |
+| Console navigation / IA | `CONSOLE_NAV` in `lib/brand.ts` |
+| Colours, fonts, animations | `app/globals.css` |
+| Prices and plan features | `data/plans.ts` |
+| Demo merchant and products | `data/tenant.ts`, `data/catalog.ts` |
+| Demo conversations | `data/threads.ts` (`HERO_SCRIPT` drives the landing-page simulation) |
+| Currency / phone formatting | `lib/format.ts` |
+
+---
+
+## 8. Commands
+
+```bash
+npm run dev        # http://localhost:3000
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint
+npm run build      # production build
+```
+
+---
+
+## 9. Known state
+
+- **Frontend only.** No database, no auth, no real integrations. The console reads static
+  data from `data/`; interactions (confirm/reject, tab switches, filters) are local state.
+- `POST /api/orders` keeps orders in memory and resets on server restart.
+- Product photos are hosted on Unsplash; `next.config.ts` allowlists that host.
+
+## 10. Recent changes
+
+- **Rethemed from dark to light.** The original dark "control room" was a developer-tool
+  convention that fought the actual use case — merchants looking at product photography,
+  invoices and courier slips. Rebuilt as a light commerce-admin system: white cards on a soft
+  grey field, jade accent, tight shadows. Sidebar and footer are now white, the invoice
+  preview reads as a physical document, and decorative glows were pulled right back.
+- **Accessibility pass.** Scripted WCAG audit across all pages at two viewports; deepened the
+  status ramp and `--text-3` until every page hit zero AA failures.
+- **Full rebuild.** Replaced the leftover launch-page template with the NextProduct marketing
+  site and an eight-route console.
+- New dark design system with a single lime signal colour; removed all emoji iconography in
+  favour of a hand-built line icon set.
+- Restructured the console from an 8-tab single page into eight routed surfaces organised by
+  stage of the sale, merging orders/courier/invoice into **Fulfilment**, campaigns/comments/
+  follow-ups into **Reach**, and persona/knowledge/guardrails into **Brain**.
+- Added surfaces that didn't previously exist: pipeline kanban with human-in-the-loop
+  approval, feed-sync observability, AI spend ceilings, and the agent eval harness.
+- Moved billing from per-conversation to per-closed-order.
+- Upgraded the developer contract to v2: cursor pagination, HMAC-SHA256 request signing,
+  fail-closed stock, always-itemised orders.
+- Fixed mobile layout: every `fr` grid track is `minmax(0,…)` and every responsive grid has a
+  base `grid-cols-1`, so long Bangla strings and code blocks can no longer force horizontal
+  page overflow. `body` uses `overflow-x: clip` (not `hidden`) so sticky headers still work.

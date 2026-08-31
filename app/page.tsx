@@ -1,25 +1,27 @@
-import Navbar from "@/components/layout/Navbar";
-import Hero from "@/components/sections/Hero";
-import StatsSection from "@/components/sections/StatsSection";
-import FeaturesSection from "@/components/sections/FeaturesSection";
-import HowItWorks from "@/components/sections/HowItWorks";
-import ReviewsSection from "@/components/sections/ReviewsSection";
-import CTASection from "@/components/sections/CTASection";
-import Footer from "@/components/layout/Footer";
-import InteractiveAgentDemo from "@/components/ui/InteractiveAgentDemo";
+import SiteHeader from "@/components/marketing/SiteHeader";
+import SiteFooter from "@/components/marketing/SiteFooter";
+import Hero from "@/components/marketing/Hero";
+import Lifecycle from "@/components/marketing/Lifecycle";
+import Capabilities from "@/components/marketing/Capabilities";
+import ReplyDecay from "@/components/marketing/ReplyDecay";
+import Trust from "@/components/marketing/Trust";
+import CtaBand from "@/components/marketing/CtaBand";
+import { ScrollProgress } from "@/components/motion";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#f0f4f8] text-slate-900 selection:bg-sky-500 selection:text-white">
-      <Navbar />
-      <Hero />
-      <StatsSection />
-      <FeaturesSection />
-      <HowItWorks />
-      <ReviewsSection />
-      <CTASection />
-      <Footer />
-      <InteractiveAgentDemo />
-    </div>
+    <>
+      <ScrollProgress />
+      <SiteHeader />
+      <main>
+        <Hero />
+        <Lifecycle />
+        <Capabilities />
+        <ReplyDecay />
+        <Trust />
+        <CtaBand />
+      </main>
+      <SiteFooter />
+    </>
   );
 }
