@@ -1,90 +1,20 @@
 import type { SVGProps } from "react";
 
-type P = SVGProps<SVGSVGElement>;
+type P = SVGProps<SVGSVGElement> & {
+  className?: string;
+};
 
 const base = (p: P) => ({
-  width: 18,
-  height: 18,
+  width: p.width ?? 16,
+  height: p.height ?? 16,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.6,
+  strokeWidth: p.strokeWidth ?? 1.75,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
-  ...p,
+  className: p.className,
 });
-
-export const IconPulse = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M3 12h3.5l2-6 3.5 12 2.5-8 1.5 2H21" />
-  </svg>
-);
-
-export const IconThreads = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M20 11a7.4 7.4 0 0 1-8 7.3L7 21l1-3.4A7.4 7.4 0 1 1 20 11Z" />
-    <path d="M9 10h6M9 13.5h3.5" />
-  </svg>
-);
-
-export const IconPipeline = (p: P) => (
-  <svg {...base(p)}>
-    <rect x="3" y="4" width="5" height="7" rx="1.4" />
-    <rect x="3" y="14" width="5" height="6" rx="1.4" />
-    <rect x="16" y="4" width="5" height="6" rx="1.4" />
-    <rect x="16" y="13" width="5" height="7" rx="1.4" />
-    <path d="M8 7.5h4.5a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 0 1.5 1.5H16" />
-  </svg>
-);
-
-export const IconTruck = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h8A1.5 1.5 0 0 1 14 7.5V16H3Z" />
-    <path d="M14 10h3.6a2 2 0 0 1 1.7 1l1.7 2.8V16h-7" />
-    <circle cx="7" cy="17.5" r="1.8" />
-    <circle cx="17" cy="17.5" r="1.8" />
-  </svg>
-);
-
-export const IconBox = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M12 3 21 7.6v8.8L12 21l-9-4.6V7.6Z" />
-    <path d="m3 7.6 9 4.6 9-4.6M12 12.2V21" />
-  </svg>
-);
-
-export const IconMegaphone = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M4 10v4a2 2 0 0 0 2 2h1l2.4 4.2a1 1 0 0 0 1.8-.5V16l7.4 3.2A1 1 0 0 0 20 18.3V5.7a1 1 0 0 0-1.4-.9L11.2 8H6a2 2 0 0 0-2 2Z" />
-  </svg>
-);
-
-export const IconBrain = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M12 5.2A3.2 3.2 0 0 0 6 6.6 3 3 0 0 0 4.4 12 3.2 3.2 0 0 0 6.6 17 3.2 3.2 0 0 0 12 18.8Z" />
-    <path d="M12 5.2A3.2 3.2 0 0 1 18 6.6 3 3 0 0 1 19.6 12 3.2 3.2 0 0 1 17.4 17 3.2 3.2 0 0 1 12 18.8Z" />
-    <path d="M12 5.2v13.6" />
-  </svg>
-);
-
-export const IconChart = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M4 20V4M4 20h16" />
-    <path d="M8 20v-6M12.5 20V9M17 20v-9.5" />
-  </svg>
-);
-
-export const IconBolt = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M13.2 2 4.5 13.2h6L10.2 22l9.3-11.6h-6.6Z" />
-  </svg>
-);
-
-export const IconCheck = (p: P) => (
-  <svg {...base(p)}>
-    <path d="m4.5 12.5 5 5 10-11" />
-  </svg>
-);
 
 export const IconArrow = (p: P) => (
   <svg {...base(p)}>
@@ -92,16 +22,79 @@ export const IconArrow = (p: P) => (
   </svg>
 );
 
-export const IconPlus = (p: P) => (
+export const IconCheck = (p: P) => (
   <svg {...base(p)}>
-    <path d="M12 5v14M5 12h14" />
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
+
+export const IconCopy = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="13" height="13" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
 );
 
 export const IconSearch = (p: P) => (
   <svg {...base(p)}>
-    <circle cx="11" cy="11" r="6.5" />
-    <path d="m16 16 4.5 4.5" />
+    <circle cx="11" cy="11" r="7.5" />
+    <path d="m20.5 20.5-4.2-4.2" />
+  </svg>
+);
+
+export const IconPulse = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+  </svg>
+);
+
+export const IconThreads = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+export const IconPipeline = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="7" height="9" rx="1.5" />
+    <rect x="14" y="3" width="7" height="5" rx="1.5" />
+    <rect x="14" y="12" width="7" height="9" rx="1.5" />
+    <rect x="3" y="16" width="7" height="5" rx="1.5" />
+  </svg>
+);
+
+export const IconTruck = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="1" y="5" width="14" height="11" rx="1.5" />
+    <path d="M15 9h4l3 3v4h-7V9Z" />
+    <circle cx="5.5" cy="18" r="2" />
+    <circle cx="17.5" cy="18" r="2" />
+  </svg>
+);
+
+export const IconBox = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" />
+  </svg>
+);
+
+export const IconMegaphone = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m3 11 18-5v12L3 13v-2ZM11.6 16.8a3 3 0 1 1-5.8-1.6" />
+  </svg>
+);
+
+export const IconBrain = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04ZM14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z" />
+  </svg>
+);
+
+export const IconChart = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 3v18h18" />
+    <path d="m7 14 4-4 4 4 5-6" />
   </svg>
 );
 
@@ -116,6 +109,13 @@ export const IconEye = (p: P) => (
   <svg {...base(p)}>
     <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z" />
     <circle cx="12" cy="12" r="2.8" />
+  </svg>
+);
+
+export const IconEyeOff = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 
@@ -165,13 +165,6 @@ export const IconClose = (p: P) => (
   </svg>
 );
 
-export const IconEyeOff = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-);
-
 export const IconMail = (p: P) => (
   <svg {...base(p)}>
     <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -204,6 +197,12 @@ export const IconGoogle = (p: SVGProps<SVGSVGElement>) => (
       fill="#34A853"
       d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
     />
+  </svg>
+);
+
+export const IconBolt = (p: P) => (
+  <svg {...base(p)}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
   </svg>
 );
 
