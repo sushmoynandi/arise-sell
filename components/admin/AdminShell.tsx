@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Wordmark } from "@/components/ui/primitives";
 import { IconClose, IconMenu } from "@/components/ui/icons";
@@ -217,6 +217,7 @@ const ADMIN_NAV: { group: string; items: AdminNavItem[] }[] = [
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
@@ -230,7 +231,12 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <aside className="hidden lg:flex w-[260px] flex-col border-r border-line bg-white shrink-0 sticky top-0 h-screen z-30">
         {/* Clean Logo Header */}
         <div className="p-5 border-b border-line">
-          <Link href="/admin" prefetch={true} className="inline-block">
+          <Link
+            href="/admin"
+            prefetch={true}
+            onMouseEnter={() => router.prefetch("/admin")}
+            className="inline-block"
+          >
             <Wordmark />
           </Link>
         </div>
@@ -251,8 +257,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                       <Link
                         href={item.href}
                         prefetch={true}
+                        onMouseEnter={() => router.prefetch(item.href)}
                         className={cx(
-                          "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] cursor-pointer select-none transition-colors duration-100",
+                          "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] cursor-pointer select-none transition-colors duration-75",
                           active
                             ? "bg-signal/[0.09] text-signal font-bold"
                             : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
@@ -321,7 +328,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <IconMenu width={16} height={16} />
             </button>
             <div className="flex items-center">
-              <h1 className="text-[15.5px] font-bold text-text tracking-tight">
+              <h1 className="text-[18px] sm:text-[19px] font-bold text-text tracking-tight font-display">
                 {pathname === "/admin/settings"
                   ? "Security & Settings"
                   : pathname === "/admin/system"
@@ -558,8 +565,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        {/* Page Content Body (0ms Latency Instant Render) */}
-        <main className="flex-1 p-5 sm:p-7 lg:p-9 max-w-[1440px] w-full mx-auto">
+        {/* Page Content Body (Smooth 100ms Native Transition) */}
+        <main
+          key={pathname}
+          className="flex-1 p-5 sm:p-7 lg:p-9 max-w-[1440px] w-full mx-auto animate-in fade-in duration-100"
+        >
           {children}
         </main>
       </div>
