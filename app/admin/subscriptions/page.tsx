@@ -1840,71 +1840,36 @@ export default function AdminSubscriptionsPage() {
               />
             </div>
 
-            <div className="flex items-center rounded-xl border border-line bg-white p-0.5 text-[11.5px] font-semibold">
-              <button
-                type="button"
-                onClick={() => setFilterMethod("all")}
-                className={cx(
-                  "rounded-lg px-2.5 py-1 transition-all cursor-pointer",
-                  filterMethod === "all"
-                    ? "bg-signal text-white shadow-2xs font-bold"
-                    : "text-text-3 hover:text-text",
-                )}
+            {/* Filter Method Dropdown */}
+            <div className="relative">
+              <select
+                value={filterMethod}
+                onChange={(e) => setFilterMethod(e.target.value)}
+                className="appearance-none rounded-xl border border-line bg-white pl-3 pr-8 py-1.5 text-[12px] font-semibold text-text focus:border-signal outline-none cursor-pointer shadow-2xs hover:border-line-2 transition-colors"
               >
-                All
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterMethod("bkash")}
-                className={cx(
-                  "rounded-lg px-2.5 py-1 transition-all cursor-pointer",
-                  filterMethod === "bkash"
-                    ? "bg-signal text-white shadow-2xs font-bold"
-                    : "text-text-3 hover:text-text",
-                )}
-              >
-                bKash
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterMethod("nagad")}
-                className={cx(
-                  "rounded-lg px-2.5 py-1 transition-all cursor-pointer",
-                  filterMethod === "nagad"
-                    ? "bg-signal text-white shadow-2xs font-bold"
-                    : "text-text-3 hover:text-text",
-                )}
-              >
-                Nagad
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterMethod("ssl")}
-                className={cx(
-                  "rounded-lg px-2.5 py-1 transition-all cursor-pointer",
-                  filterMethod === "ssl"
-                    ? "bg-signal text-white shadow-2xs font-bold"
-                    : "text-text-3 hover:text-text",
-                )}
-              >
-                SSL
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterMethod("promo")}
-                className={cx(
-                  "rounded-lg px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1 font-mono",
-                  filterMethod === "promo"
-                    ? "bg-signal text-white shadow-2xs font-bold"
-                    : "text-text-3 hover:text-text",
-                )}
-              >
-                <span>🏷️ Promo</span>
-              </button>
+                <option value="all">All Invoices</option>
+                <option value="bkash">bKash Direct</option>
+                <option value="nagad">Nagad Direct</option>
+                <option value="ssl">SSLCommerz</option>
+                <option value="promo">🏷️ Promo Codes</option>
+              </select>
+              <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3">
+                <svg
+                  width="10"
+                  height="6"
+                  viewBox="0 0 10 6"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M1 1L5 5L9 1"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
