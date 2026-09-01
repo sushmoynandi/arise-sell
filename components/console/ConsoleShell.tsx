@@ -65,9 +65,13 @@ const INITIAL_NOTIFICATIONS: Notification[] = [
 function NavList({
   collapsed,
   onNavigate,
+  expandedGroups,
+  onToggleGroup,
 }: {
   collapsed?: boolean;
   onNavigate?: () => void;
+  expandedGroups: Record<string, boolean>;
+  onToggleGroup: (group: string) => void;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -75,93 +79,113 @@ function NavList({
 
   return (
     <nav className="space-y-6">
-      {CONSOLE_NAV.map((group) => (
-        <div key={group.group}>
-          {!collapsed && (
-            <div className="flex items-center gap-2 px-2.5 pb-1.5 select-none">
-              <span className="size-2 rounded-full bg-signal ring-2 ring-signal/20 shrink-0" />
-              <p className="text-[13px] sm:text-[13.5px] uppercase font-bold tracking-wide text-text">
-                {group.group}
-              </p>
-            </div>
-          )}
-          <ul className="space-y-1">
-            {group.items.map((item) => {
-              const Icon = NAV_ICON[item.icon as keyof typeof NAV_ICON];
-              const active =
-                pathname === item.href ||
-                (item.href === "/console/inbox" &&
-                  pathname === "/console/threads") ||
-                (item.href === "/console/orders" &&
-                  pathname === "/console/fulfilment") ||
-                (item.href === "/console/campaigns" &&
-                  pathname === "/console/reach" &&
-                  !searchParams.get("tab")) ||
-                (item.href === "/console/comments" &&
-                  (pathname === "/console/comments" ||
-                    (pathname === "/console/reach" &&
-                      searchParams.get("tab") === "comments"))) ||
-                (item.href === "/console/automation" &&
-                  pathname === "/console/signals") ||
-                (item.href === "/console/products" &&
-                  pathname === "/console/catalog") ||
-                (item.href === "/console/playground" &&
-                  pathname === "/console/test-ai");
-              return (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    prefetch={true}
-                    onMouseEnter={() => router.prefetch(item.href)}
-                    onClick={onNavigate}
-                    title={
-                      collapsed ? `${item.label} — ${item.hint}` : undefined
-                    }
-                    className={cx(
-                      "group relative flex items-center rounded-xl py-1.5 transition-all duration-100 cursor-pointer select-none text-[14px] sm:text-[14.5px]",
-                      collapsed ? "justify-center px-2" : "gap-2.5 px-2.5",
-                      active
-                        ? "bg-signal/[0.08] text-signal font-bold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.75 before:rounded-full before:bg-signal"
-                        : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
-                    )}
-                  >
-                    <Icon
-                      width={18.5}
-                      height={18.5}
-                      className={cx(
-                        "shrink-0 transition-transform duration-100 group-hover:scale-105",
-                        active
-                          ? "text-signal"
-                          : "text-text-3 group-hover:text-text",
-                      )}
-                    />
-                    {!collapsed && (
-                      <>
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {"badge" in item && item.badge && (
-                          <span
-                            className={cx(
-                              "rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-bold",
-                              item.badge === "BETA"
-                                ? "bg-amber-500/10 text-amber-600"
-                                : "bg-signal/15 text-signal",
-                            )}
-                          >
-                            {item.badge}
-                          </span>
+      {CONSOLE_NAV.map((group) => {
+        const isOpen = expandedGroups[group.group] ?? true;
+
+        return (
+          <div key={group.group}>
+            {!collapsed && (
+              <button
+                type="button"
+                onClick={() => onToggleGroup(group.group)}
+                className="flex w-full items-center gap-2 px-2.5 pb-1.5 text-left select-none transition-colors hover:text-text"
+              >
+                <span className="size-2 rounded-full bg-signal ring-2 ring-signal/20 shrink-0" />
+                <p className="flex-1 text-[13px] sm:text-[13.5px] uppercase font-bold tracking-wide text-text">
+                  {group.group}
+                </p>
+                <IconChevronUp
+                  width={12}
+                  height={12}
+                  className={cx(
+                    "text-text-3 transition-transform duration-150",
+                    isOpen ? "rotate-0" : "-rotate-180",
+                  )}
+                />
+              </button>
+            )}
+            {isOpen && (
+              <ul className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = NAV_ICON[item.icon as keyof typeof NAV_ICON];
+                  const active =
+                    pathname === item.href ||
+                    (item.href === "/console/inbox" &&
+                      pathname === "/console/threads") ||
+                    (item.href === "/console/orders" &&
+                      pathname === "/console/fulfilment") ||
+                    (item.href === "/console/campaigns" &&
+                      pathname === "/console/reach" &&
+                      !searchParams.get("tab")) ||
+                    (item.href === "/console/comments" &&
+                      (pathname === "/console/comments" ||
+                        (pathname === "/console/reach" &&
+                          searchParams.get("tab") === "comments"))) ||
+                    (item.href === "/console/automation" &&
+                      pathname === "/console/signals") ||
+                    (item.href === "/console/products" &&
+                      pathname === "/console/catalog") ||
+                    (item.href === "/console/playground" &&
+                      pathname === "/console/test-ai");
+                  return (
+                    <li key={item.label}>
+                      <Link
+                        href={item.href}
+                        prefetch={true}
+                        onMouseEnter={() => router.prefetch(item.href)}
+                        onClick={onNavigate}
+                        title={
+                          collapsed ? `${item.label} — ${item.hint}` : undefined
+                        }
+                        className={cx(
+                          "group relative flex items-center rounded-xl py-1.5 transition-all duration-100 cursor-pointer select-none text-[14px] sm:text-[14.5px]",
+                          collapsed ? "justify-center px-2" : "gap-2.5 px-2.5",
+                          active
+                            ? "bg-signal/[0.08] text-signal font-bold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.75 before:rounded-full before:bg-signal"
+                            : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
                         )}
-                      </>
-                    )}
-                    {collapsed && "badge" in item && item.badge && (
-                      <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-signal" />
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+                      >
+                        <Icon
+                          width={18.5}
+                          height={18.5}
+                          className={cx(
+                            "shrink-0 transition-transform duration-100 group-hover:scale-105",
+                            active
+                              ? "text-signal"
+                              : "text-text-3 group-hover:text-text",
+                          )}
+                        />
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1 truncate">
+                              {item.label}
+                            </span>
+                            {"badge" in item && item.badge && (
+                              <span
+                                className={cx(
+                                  "rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-bold",
+                                  item.badge === "BETA"
+                                    ? "bg-amber-500/10 text-amber-600"
+                                    : "bg-signal/15 text-signal",
+                                )}
+                              >
+                                {item.badge}
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {collapsed && "badge" in item && item.badge && (
+                          <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-signal" />
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -232,6 +256,9 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(CONSOLE_NAV.map((group) => [group.group, true])),
+  );
 
   const online = TEAM.filter((t) => t.online);
   const pct = Math.round((TENANT.ordersUsed / TENANT.ordersQuota) * 100);
@@ -247,6 +274,13 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
 
   const markAllAsRead = () => {
     setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [group]: !(prev[group] ?? true),
+    }));
   };
 
   return (
@@ -414,7 +448,11 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           </div>
 
           {/* Navigation List */}
-          <NavList collapsed={collapsed} />
+          <NavList
+            collapsed={collapsed}
+            expandedGroups={expandedGroups}
+            onToggleGroup={toggleGroup}
+          />
         </div>
 
         {/* Bottom User Profile Footer (Pinned to Sidebar Bottom) */}
@@ -946,7 +984,11 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <NavList onNavigate={() => setMobileNav(false)} />
+              <NavList
+                onNavigate={() => setMobileNav(false)}
+                expandedGroups={expandedGroups}
+                onToggleGroup={toggleGroup}
+              />
             </div>
           </aside>
         </div>
