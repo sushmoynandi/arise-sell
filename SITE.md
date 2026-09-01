@@ -190,6 +190,13 @@ npm run build      # production build
 
 ## 10. Recent changes
 
+- **Aligned the public navbar controls.** The language switcher and Sign in button now share
+  the same height and vertical rhythm on desktop and mobile.
+- **Refined the navbar proportions.** The language switcher and Sign in button now use the same
+  40px height, rounded shape, and balanced label sizing.
+- **Separated language-control sizing by area.** The public navbar keeps its larger 40px
+  switcher, while the Console header uses a compact 32px version suited to its tighter toolbar.
+
 - **Refined the floating AI Support panel.** The conversation area is now shorter and grows
   more comfortably, while message bubbles, quick questions, the attachment button, and the
   message box use tighter text and spacing so the panel stays compact and easy to scan.
@@ -235,6 +242,9 @@ npm run build      # production build
 - **Audited the support workflow end to end.** The Support Desk now includes all ticket states,
   lets admins correct category and priority, avoids ticket ID collisions across reloads, and
   keeps uploaded file details attached to console escalations.
+- **Hardened the support workflow.** Console AI now asks for confirmation before escalating an
+  unresolved issue, malformed demo storage no longer crashes ticket creation, attachments do
+  not leak into the next ticket, and in-progress status has its own visual treatment.
 
 - **Rebuilt the marketing site as a business site, not a developer site.** The previous version
   read as a tool for engineers: mono type throughout, HMAC/eval/spec language on the landing

@@ -946,7 +946,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
             </div>
 
             {/* 2. Middle: Official Rounded-Full Homepage Language Switcher */}
-            <LanguageToggle size="sm" />
+            <LanguageToggle size="console" />
 
             {/* 3. Right: Borderless Notification Bell */}
             <div className="relative">

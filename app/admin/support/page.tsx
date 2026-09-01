@@ -92,7 +92,9 @@ export default function AdminSupportPage() {
     }
 
     setPatchSuccess(
-      "Knowledge Base prompt rule patched! Fix deployed to production bot.",
+      selectedTicket?.reportedChatSnippet
+        ? "Knowledge Base prompt rule patched! Fix deployed to production bot."
+        : "Ticket resolved and the merchant has been notified.",
     );
     setTimeout(() => setPatchSuccess(null), 4000);
     setAdminNote("");
@@ -285,7 +287,9 @@ export default function AdminSupportPage() {
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                         t.status === "open"
                           ? "bg-amber-50 text-amber-700"
-                          : "bg-signal/[0.08] text-signal"
+                          : t.status === "in_progress"
+                            ? "bg-azure/10 text-azure"
+                            : "bg-signal/[0.08] text-signal"
                       }`}
                     >
                       <span className="size-1.5 rounded-full bg-current" />

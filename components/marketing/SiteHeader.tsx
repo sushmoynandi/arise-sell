@@ -234,7 +234,7 @@ export default function SiteHeader() {
               <Button
                 href="/login"
                 size="sm"
-                className="relative overflow-hidden rounded-full border border-signal/20 bg-linear-to-b from-[#0c7855] to-[#07593f] px-4 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_12px_rgba(10,110,80,0.4)] active:scale-[0.98]"
+                className="relative h-10 overflow-hidden rounded-full border border-signal/20 bg-linear-to-b from-[#0c7855] to-[#07593f] px-4 text-[12.5px] font-semibold leading-none text-white shadow-[0_2px_8px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_12px_rgba(10,110,80,0.4)] active:scale-[0.98]"
               >
                 {t("Sign in", "লগইন")}
               </Button>

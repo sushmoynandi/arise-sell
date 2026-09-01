@@ -58,6 +58,9 @@ export default function FloatingSupportAssistant({
     },
   ]);
   const [typing, setTyping] = useState(false);
+  const [pendingEscalation, setPendingEscalation] = useState<string | null>(
+    null,
+  );
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<
     { name: string; size: number }[]
@@ -111,8 +114,17 @@ export default function FloatingSupportAssistant({
 
   const sendAdminTicket = (body: string) => {
     const stored = window.localStorage.getItem(SUPPORT_INBOX_STORAGE_KEY);
-    const tickets = stored ? (JSON.parse(stored) as SupportTicket[]) : [];
+    let tickets: SupportTicket[] = [];
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) tickets = parsed as SupportTicket[];
+      } catch {
+        window.localStorage.removeItem(SUPPORT_INBOX_STORAGE_KEY);
+      }
+    }
     const latestStoredSequence = tickets.reduce((latest, ticket) => {
+      if (!ticket || typeof ticket.id !== "string") return latest;
       const match = ticket.id.match(/^console-(\d+)$/);
       return Math.max(latest, match ? Number(match[1]) : 0);
     }, 0);
@@ -158,13 +170,30 @@ export default function FloatingSupportAssistant({
           : `Your support ticket ${ticketNo} is with the admin team now. They can reply from the Support desk.`,
       },
     ]);
+    setPendingEscalation(null);
+    setUploadedFiles([]);
   };
 
   const handleReply = (prompt: string) => {
     const trimmed = prompt.trim();
     if (!trimmed) return;
 
+    if (pendingEscalation) {
+      if (/^(yes|y|send|confirm|হ্যাঁ|পাঠান|পাঠিয়ে দিন)$/i.test(trimmed)) {
+        sendAdminTicket(pendingEscalation);
+      } else if (/^(no|n|cancel|না|বাদ)$/i.test(trimmed)) {
+        setPendingEscalation(null);
+        setMessages((prev) => [
+          ...prev,
+          { from: "user", text: trimmed },
+          { from: "agent", text: "Okay. I’ll keep helping here with AI." },
+        ]);
+      }
+      return;
+    }
+
     const lowercase = trimmed.toLowerCase();
+    const serious = SERIOUS_ISSUE_PATTERN.test(lowercase);
     const isBilling = /bill|quota|pricing|plan|payment|invoice/.test(lowercase);
     const isDelivery = /delivery|courier|pathao|steadfast|ship|tracking/.test(
       lowercase,
@@ -180,7 +209,17 @@ export default function FloatingSupportAssistant({
         !(isBilling || isDelivery || isCod || isCatalog || isTeam));
 
     if (needsAdmin) {
-      sendAdminTicket(trimmed);
+      setPendingEscalation(trimmed);
+      setMessages((prev) => [
+        ...prev,
+        { from: "user", text: trimmed },
+        {
+          from: "agent",
+          text: serious
+            ? "This looks serious and may need the admin team. Should I create a high-priority ticket for manual help?"
+            : "I couldn’t solve this confidently. Should I send it to the admin team for manual help?",
+        },
+      ]);
       return;
     }
 
@@ -220,10 +259,14 @@ export default function FloatingSupportAssistant({
   };
 
   const suggestions = [
-    "Delivery time?",
-    "COD details",
-    "Billing & quota",
-    "Product/size help",
+    ...(pendingEscalation
+      ? ["Send to admin", "Continue with AI"]
+      : [
+          "Delivery time?",
+          "COD details",
+          "Billing & quota",
+          "Product/size help",
+        ]),
   ];
 
   return (
@@ -325,7 +368,17 @@ export default function FloatingSupportAssistant({
                   <button
                     key={suggestion}
                     type="button"
-                    onClick={() => handleReply(suggestion)}
+                    onClick={() => {
+                      if (suggestion === "Send to admin" && pendingEscalation) {
+                        sendAdminTicket(pendingEscalation);
+                        return;
+                      }
+                      if (suggestion === "Continue with AI") {
+                        handleReply("no");
+                        return;
+                      }
+                      handleReply(suggestion);
+                    }}
                     className="rounded-full border border-line bg-surface px-2 py-1 text-[10.5px] text-text-2 transition-colors hover:border-signal/25 hover:bg-signal/6 hover:text-signal"
                   >
                     {suggestion}
