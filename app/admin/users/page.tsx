@@ -176,20 +176,19 @@ export default function AdminUsersPage() {
           <table className="w-full text-left text-[13px]">
             <thead className="bg-surface-2/60 border-b border-line text-text-3 text-[11px] font-bold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 pl-5 pr-3">Store & Merchant</th>
+                <th className="py-3.5 pl-5 pr-3">Store &amp; Merchant</th>
                 <th className="py-3.5 px-3">Location</th>
                 <th className="py-3.5 px-3">Plan / Tier</th>
                 <th className="py-3.5 px-3">Channels</th>
                 <th className="py-3.5 px-3">Monthly GMV</th>
                 <th className="py-3.5 px-3">AI Bot Rate</th>
-                <th className="py-3.5 px-3">Status</th>
-                <th className="py-3.5 pr-5 text-right">Actions</th>
+                <th className="py-3.5 pr-5 text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-text-3">
+                  <td colSpan={7} className="py-12 text-center text-text-3">
                     No merchants found matching your search and filter criteria.
                   </td>
                 </tr>
@@ -198,15 +197,15 @@ export default function AdminUsersPage() {
                   <tr
                     key={m.id}
                     onClick={() => setSelectedMerchant(m)}
-                    className="hover:bg-surface-2/40 transition-colors cursor-pointer"
+                    className="hover:bg-surface-2/40 transition-colors cursor-pointer group"
                   >
                     <td className="py-4 pl-5 pr-3">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-signal/[0.08] text-signal font-bold text-sm">
+                        <div className="grid size-9 place-items-center rounded-xl bg-signal/[0.08] text-signal font-bold text-sm group-hover:bg-signal group-hover:text-white transition-colors">
                           {m.storeName.charAt(0)}
                         </div>
                         <div>
-                          <p className="font-bold text-text hover:text-signal transition-colors">
+                          <p className="font-bold text-text group-hover:text-signal transition-colors">
                             {m.storeName}
                           </p>
                           <p className="text-[11.5px] text-text-3">
@@ -255,7 +254,7 @@ export default function AdminUsersPage() {
                         {m.aiResolutionRate}%
                       </span>
                     </td>
-                    <td className="py-4 px-3">
+                    <td className="py-4 pr-5 text-right">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           m.status === "active"
@@ -268,18 +267,6 @@ export default function AdminUsersPage() {
                         <span className="size-1.5 rounded-full bg-current" />
                         {m.status.toUpperCase()}
                       </span>
-                    </td>
-                    <td
-                      className="py-4 pr-5 text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMerchant(m)}
-                        className="rounded-lg border border-line bg-white px-2.5 py-1 text-[11.5px] font-semibold text-text hover:border-signal hover:text-signal transition-colors shadow-sm cursor-pointer"
-                      >
-                        Inspect
-                      </button>
                     </td>
                   </tr>
                 ))
