@@ -19,7 +19,7 @@ export default function LanguageToggle({
       aria-label="Language selector"
       className={cx(
         "relative grid grid-cols-2 items-center rounded-full border border-line bg-surface/90 p-0.5 select-none shadow-2xs backdrop-blur-md",
-        size === "sm" ? "h-[31px] w-[76px]" : "h-[36px] w-[90px]",
+        size === "sm" ? "h-7.75 w-19" : "h-9 w-22.5",
         className,
       )}
     >
@@ -52,7 +52,7 @@ export default function LanguageToggle({
         aria-pressed={isBn}
         aria-label="Switch to Bangla"
         className={cx(
-          "relative z-10 flex h-full w-full items-center justify-center rounded-full font-bold transition-colors duration-150 cursor-pointer font-[family-name:var(--font-hind)] text-center",
+          "relative z-10 flex h-full w-full items-center justify-center rounded-full font-bold transition-colors duration-150 cursor-pointer font-(family-name:--font-hind) text-center",
           size === "sm" ? "text-[12px]" : "text-[13.5px]",
           isBn ? "text-white" : "text-text-3 hover:text-text",
         )}

@@ -143,7 +143,7 @@ export default function Lifecycle() {
       id="lifecycle"
       className="relative border-t border-line py-20 lg:py-28 bg-white"
     >
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <Eyebrow>{t("One engine, five stages", "একটি ইঞ্জিনে বিক্রির ৫টি ধাপ")}</Eyebrow>
           <h2 className="mt-4 max-w-2xl text-balance font-display text-[clamp(1.9rem,3.6vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
@@ -167,7 +167,7 @@ export default function Lifecycle() {
                   className={cx(
                     "group relative w-full min-w-[210px] shrink-0 rounded-xl border px-4 py-3.5 text-left transition-colors duration-200 lg:min-w-0 cursor-pointer",
                     on
-                      ? "border-[color:var(--signal-line)] bg-surface"
+                      ? "border-(--signal-line) bg-surface"
                       : "border-transparent hover:bg-surface/60",
                   )}
                 >

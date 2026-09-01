@@ -42,28 +42,33 @@ export default function Trust() {
             "linear-gradient(90deg,transparent,var(--signal-line),transparent)",
         }}
       />
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
           <div>
             <Reveal>
-              <Eyebrow>{t("The part nobody demos", "বিশ্বাসযোগ্যতা ও নিরাপত্তা")}</Eyebrow>
+              <Eyebrow>
+                {t("The part nobody demos", "বিশ্বাসযোগ্যতা ও নিরাপত্তা")}
+              </Eyebrow>
               <h2 className="mt-4 text-balance font-display text-[clamp(1.9rem,3.6vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
                 {t("An AI that sells must", "বিক্রয়কারী এআই যেন")}
                 <span className="text-text-3">
                   {" "}
-                  {t("never lie about your stock.", "কখনোই স্টকের ব্যাপারে মিথ্যা না বলে।")}
+                  {t(
+                    "never lie about your stock.",
+                    "কখনোই স্টকের ব্যাপারে মিথ্যা না বলে।",
+                  )}
                 </span>
               </h2>
               <p className="mt-4 max-w-md text-[15px] leading-relaxed text-text-2">
                 {t(
                   "Every prompt change automatically runs through 240 recorded real conversations before touching a buyer — covering Banglish, Sylheti, bargaining, and discount requests.",
-                  "কাস্টমারের কাছে পৌঁছানোর আগে প্রতিটি এআই আপডেটকে ২৪০টি বাস্তব চ্যাট টেস্ট কেস পার হতে হয় — যাতে বাংলিশ, দরদাম কিংবা আঞ্চলিক ভাষা সব নির্ভুল থাকে।"
+                  "কাস্টমারের কাছে পৌঁছানোর আগে প্রতিটি এআই আপডেটকে ২৪০টি বাস্তব চ্যাট টেস্ট কেস পার হতে হয় — যাতে বাংলিশ, দরদাম কিংবা আঞ্চলিক ভাষা সব নির্ভুল থাকে।",
                 )}
               </p>
               <p className="mt-3 max-w-md text-[14px] leading-relaxed text-text-3">
                 {t(
                   "If price accuracy or order completion drops, the change never ships. You get accurate closed orders instead of customer complaints.",
-                  "মূল্যের সঠিকতা বা তথ্য নির্ভুল না হলে আপডেট লাইভ হয় না। ফলে ভুল তথ্যের পরিবর্তে নিশ্চিত সন্তুষ্টি মেলে।"
+                  "মূল্যের সঠিকতা বা তথ্য নির্ভুল না হলে আপডেট লাইভ হয় না। ফলে ভুল তথ্যের পরিবর্তে নিশ্চিত সন্তুষ্টি মেলে।",
                 )}
               </p>
             </Reveal>
@@ -97,10 +102,16 @@ export default function Trust() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
                 <div>
                   <h3 className="font-display text-[15px] font-semibold tracking-tight">
-                    {t("Automated Eval Suite · Run #482", "স্বয়ংক্রিয় টেস্ট স্যুট · রান #৪৮২")}
+                    {t(
+                      "Automated Eval Suite · Run #482",
+                      "স্বয়ংক্রিয় টেস্ট স্যুট · রান #৪৮২",
+                    )}
                   </h3>
                   <p className="mt-0.5 font-mono text-[11px] text-text-3">
-                    {t("240 test scenarios verified", "২৪০টি টেস্ট কেস ভেরিফাইড")}
+                    {t(
+                      "240 test scenarios verified",
+                      "২৪০টি টেস্ট কেস ভেরিফাইড",
+                    )}
                   </p>
                 </div>
                 <Badge tone="mint" dot>
@@ -164,7 +175,7 @@ export default function Trust() {
                 <p>
                   {t(
                     "Guaranteed fail-closed on inventory queries when confidence is below 90%.",
-                    "৯০% এর কম নিশ্চয়তা থাকলে স্টক সম্পর্কিত তথ্যে কখনোই আন্দাজে উত্তর দেওয়া হয় না।"
+                    "৯০% এর কম নিশ্চয়তা থাকলে স্টক সম্পর্কিত তথ্যে কখনোই আন্দাজে উত্তর দেওয়া হয় না।",
                   )}
                 </p>
               </div>

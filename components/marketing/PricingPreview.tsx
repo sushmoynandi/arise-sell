@@ -15,10 +15,10 @@ export default function PricingPreview() {
       id="pricing"
       className="relative border-t border-line py-20 lg:py-28"
     >
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+            <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
               {t("Transparent pricing", "সহজ দাম")}
             </p>
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -47,7 +47,7 @@ export default function PricingPreview() {
                   className={cx(
                     "relative flex h-full flex-col rounded-2xl border bg-white p-6",
                     p.featured
-                      ? "border-[color:var(--signal-line)] shadow-[0_2px_8px_rgba(10,110,80,0.08),0_18px_40px_-20px_rgba(10,110,80,0.35)]"
+                      ? "border-(--signal-line) shadow-[0_2px_8px_rgba(10,110,80,0.08),0_18px_40px_-20px_rgba(10,110,80,0.35)]"
                       : "border-line shadow-[0_1px_2px_rgba(15,20,25,0.04)]",
                   )}
                 >
@@ -62,7 +62,7 @@ export default function PricingPreview() {
                       {t(p.name, p.nameBn)}
                     </h3>
                     {t(
-                      <span className="font-[family-name:var(--font-hind)] text-[14px] text-text-3">
+                      <span className="font-(family-name:--font-hind) text-[14px] text-text-3">
                         {p.nameBn}
                       </span>,
                       null,
@@ -86,7 +86,7 @@ export default function PricingPreview() {
                       `${p.orders.toLocaleString()} অর্ডার অন্তর্ভুক্ত`,
                     )}
                   </p>
-                  <p className="mt-2 min-h-[40px] text-[13.5px] leading-snug text-text-3">
+                  <p className="mt-2 min-h-10 text-[13.5px] leading-snug text-text-3">
                     {t(p.blurb, p.blurbBn)}
                   </p>
 
@@ -148,7 +148,7 @@ export default function PricingPreview() {
 
           <Reveal delay={0.1} className="mt-8">
             <Panel className="overflow-x-auto">
-              <table className="w-full min-w-[620px] text-left">
+              <table className="w-full min-w-155 text-left">
                 <thead>
                   <tr className="border-b border-line bg-surface-2/40">
                     <th className="px-5 py-3.5 font-mono text-[11px] uppercase tracking-wider text-text-3">

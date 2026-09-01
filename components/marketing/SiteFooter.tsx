@@ -68,11 +68,11 @@ export default function SiteFooter() {
   const { t } = useLang();
 
   return (
-    <footer className="relative overflow-hidden border-t border-black/[0.07] bg-gradient-to-b from-white via-[#f6faf8] to-[#edf5f1]">
+    <footer className="relative overflow-hidden border-t border-black/7 bg-linear-to-b from-white via-[#f6faf8] to-[#edf5f1]">
       {/* Soft Ambient Theme Lighting Orbs */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-64 w-[750px] rounded-full opacity-60 blur-3xl"
+        className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-64 w-187.5 rounded-full opacity-60 blur-3xl"
         style={{
           background:
             "radial-gradient(closest-side, rgba(10,110,80,0.12), rgba(10,110,80,0.02) 60%, transparent)",
@@ -87,7 +87,7 @@ export default function SiteFooter() {
         }}
       />
 
-      <div className="relative mx-auto max-w-[1280px] px-5 pt-12 pb-8 lg:px-8">
+      <div className="relative mx-auto max-w-7xl px-5 pt-12 pb-8 lg:px-8">
         {/* 3-Column Balanced Grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.5fr_1fr_1.3fr] lg:gap-14 items-start">
           {/* Column 1: Brand & Status */}
@@ -107,7 +107,7 @@ export default function SiteFooter() {
             </p>
 
             <div className="pt-0.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/80 px-3.5 py-1 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white/80 px-3.5 py-1 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.02)] backdrop-blur-sm">
                 <IconGlobe width={13} height={13} className="text-signal" />
                 {t(
                   "Banani, Dhaka 1213, Bangladesh",
@@ -153,7 +153,7 @@ export default function SiteFooter() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}
-                    className={`grid size-9 place-items-center rounded-full border border-black/[0.08] bg-white/90 text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-sm transition-all duration-150 hover:border-signal/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer ${s.hoverClass}`}
+                    className={`grid size-9 place-items-center rounded-full border border-black/8 bg-white/90 text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-sm transition-all duration-150 hover:border-signal/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer ${s.hoverClass}`}
                   >
                     <Icon width={16} height={16} />
                   </a>
@@ -179,7 +179,7 @@ export default function SiteFooter() {
         </div>
 
         {/* Fine Clean Divider */}
-        <div className="my-8 border-t border-black/[0.06]" />
+        <div className="my-8 border-t border-black/6" />
 
         {/* Bottom Centered Copyright */}
         <div className="text-center text-[12.5px] text-text-3">

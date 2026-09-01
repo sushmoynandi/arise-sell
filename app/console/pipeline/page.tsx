@@ -32,7 +32,7 @@ function Card({
       transition={SPRING}
       className={cx(
         "panel edge-lift group cursor-grab p-3.5 active:cursor-grabbing",
-        card.proposal && "border-[color:var(--signal-line)]",
+        card.proposal && "border-(--signal-line)",
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -91,7 +91,7 @@ function Card({
             transition={SPRING}
             className="overflow-hidden"
           >
-            <div className="mt-3 rounded-lg border border-[color:var(--signal-line)] bg-signal-wash p-2.5">
+            <div className="mt-3 rounded-lg border border-(--signal-line) bg-signal-wash p-2.5">
               <p className="flex items-center gap-1.5 font-mono text-[10px] text-signal">
                 <IconSpark width={10} height={10} />
                 MOVE TO {card.proposal.to.toUpperCase()}

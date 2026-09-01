@@ -67,7 +67,7 @@ export default function FulfilmentPage() {
             }
           />
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] text-left">
+            <table className="w-full min-w-155 text-left">
               <thead>
                 <tr className="border-b border-line font-mono text-[10px] uppercase tracking-wider text-text-3">
                   <th className="px-5 py-2.5 font-normal">Order</th>
@@ -315,7 +315,7 @@ export default function FulfilmentPage() {
                   transition={SPRING_SOFT}
                   className="bg-canvas p-5"
                 >
-                  <div className="rounded-xl border border-line bg-white p-5 font-[family-name:var(--font-hind)] text-[#111] shadow-[0_1px_2px_rgba(15,20,25,0.06),0_10px_24px_-12px_rgba(15,20,25,0.18)]">
+                  <div className="rounded-xl border border-line bg-white p-5 font-(family-name:--font-hind) text-[#111] shadow-[0_1px_2px_rgba(15,20,25,0.06),0_10px_24px_-12px_rgba(15,20,25,0.18)]">
                     <div className="flex items-start justify-between border-b border-black/10 pb-3">
                       <div>
                         <p className="text-[15px] font-bold">{TENANT.nameBn}</p>
@@ -355,7 +355,7 @@ export default function FulfilmentPage() {
                         {o.lines.map((l) => (
                           <tr
                             key={l.sku}
-                            className="border-b border-black/[0.06]"
+                            className="border-b border-black/6"
                           >
                             <td className="py-2">
                               <span className="block">{l.name}</span>

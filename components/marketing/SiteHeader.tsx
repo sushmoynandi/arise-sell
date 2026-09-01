@@ -148,19 +148,19 @@ export default function SiteHeader() {
       <header
         className={cx(
           "fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-out",
-          "backdrop-blur-2xl backdrop-saturate-[180%]",
+          "backdrop-blur-2xl backdrop-saturate-180",
           lifted
-            ? "bg-white/65 border-b border-black/[0.06] shadow-[0_8px_30px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)]"
-            : "bg-white/45 border-b border-black/[0.03] shadow-[0_2px_12px_rgba(0,0,0,0.01)]",
+            ? "bg-white/65 border-b border-black/6 shadow-[0_8px_30px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)]"
+            : "bg-white/45 border-b border-black/3 shadow-[0_2px_12px_rgba(0,0,0,0.01)]",
         )}
       >
         {/* Specular Liquid Glass Top Glow Line */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-90"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/80 to-transparent opacity-90"
         />
 
-        <nav className="mx-auto flex h-[68px] lg:h-[70px] max-w-[1280px] items-center justify-between gap-4 px-5 lg:px-8">
+        <nav className="mx-auto flex h-17 lg:h-17.5 max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
           <Link
             href="/"
             aria-label="NextProduct home"
@@ -173,7 +173,7 @@ export default function SiteHeader() {
           {/* Right aligned nav items and action buttons */}
           <div className="hidden items-center gap-4 lg:flex">
             {/* Apple-style Liquid Glass Nav Capsule */}
-            <div className="relative rounded-full border border-black/[0.06] bg-black/[0.03] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-xl">
+            <div className="relative rounded-full border border-black/6 bg-black/3 p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03),0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-xl">
               <ul className="flex items-center gap-0.5">
                 {NAV.map((l) => {
                   const active = activeHref === l.href;
@@ -188,7 +188,7 @@ export default function SiteHeader() {
                             stiffness: 380,
                             damping: 30,
                           }}
-                          className="absolute inset-0 rounded-full border border-black/[0.06] bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)]"
+                          className="absolute inset-0 rounded-full border border-black/6 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.9)]"
                         />
                       )}
                       {l.external ? (
@@ -198,7 +198,7 @@ export default function SiteHeader() {
                           rel="noopener noreferrer"
                           className={cx(
                             "relative z-10 block rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-150",
-                            t("", "font-[family-name:var(--font-hind)]"),
+                            t("", "font-(family-name:--font-hind)"),
                             active
                               ? "text-signal font-semibold"
                               : "text-text-2 hover:text-text",
@@ -212,7 +212,7 @@ export default function SiteHeader() {
                           onClick={(e) => handleNavClick(e, l.href)}
                           className={cx(
                             "relative z-10 block rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-150",
-                            t("", "font-[family-name:var(--font-hind)]"),
+                            t("", "font-(family-name:--font-hind)"),
                             active
                               ? "text-signal font-semibold"
                               : "text-text-2 hover:text-text",
@@ -227,14 +227,14 @@ export default function SiteHeader() {
               </ul>
             </div>
 
-            <span className="h-4 w-px bg-black/[0.08]" />
+            <span className="h-4 w-px bg-black/8" />
 
             <div className="flex items-center gap-2.5">
               <LanguageToggle size="sm" />
               <Button
                 href="/login"
                 size="sm"
-                className="relative overflow-hidden rounded-full border border-signal/20 bg-gradient-to-b from-[#0c7855] to-[#07593f] px-4 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_12px_rgba(10,110,80,0.4)] active:scale-[0.98]"
+                className="relative overflow-hidden rounded-full border border-signal/20 bg-linear-to-b from-[#0c7855] to-[#07593f] px-4 py-1.5 text-[12.5px] font-semibold text-white shadow-[0_2px_8px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_12px_rgba(10,110,80,0.4)] active:scale-[0.98]"
               >
                 {t("Sign in", "লগইন")}
               </Button>
@@ -245,7 +245,7 @@ export default function SiteHeader() {
             <LanguageToggle size="sm" />
             <button
               onClick={() => setOpen(true)}
-              className="grid size-9 place-items-center rounded-full border border-black/[0.06] bg-black/[0.03] text-text-2 transition-colors hover:bg-black/[0.06] hover:text-text"
+              className="grid size-9 place-items-center rounded-full border border-black/6 bg-black/3 text-text-2 transition-colors hover:bg-black/6 hover:text-text"
               aria-label={t("Open menu", "মেনু খুলুন")}
             >
               <IconMenu width={18} height={18} />
@@ -262,13 +262,13 @@ export default function SiteHeader() {
             animate={{ opacity: 1, backdropFilter: "blur(28px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[70] flex flex-col bg-white/80 backdrop-blur-3xl backdrop-saturate-[200%] lg:hidden"
+            className="fixed inset-0 z-70 flex flex-col bg-white/80 backdrop-blur-3xl backdrop-saturate-200 lg:hidden"
           >
-            <div className="flex h-[68px] items-center justify-between border-b border-black/[0.06] px-5">
+            <div className="flex h-17 items-center justify-between border-b border-black/6 px-5">
               <Wordmark />
               <button
                 onClick={() => setOpen(false)}
-                className="grid size-9 place-items-center rounded-full border border-black/[0.06] bg-black/[0.03] text-text-2 hover:bg-black/[0.06] hover:text-text"
+                className="grid size-9 place-items-center rounded-full border border-black/6 bg-black/3 text-text-2 hover:bg-black/6 hover:text-text"
                 aria-label={t("Close menu", "মেনু বন্ধ করুন")}
               >
                 <IconClose width={18} height={18} />
@@ -298,7 +298,7 @@ export default function SiteHeader() {
                       hidden: { opacity: 0, x: -16 },
                       show: { opacity: 1, x: 0, transition: SPRING },
                     }}
-                    className="border-b border-black/[0.04]"
+                    className="border-b border-black/4"
                   >
                     {l.external ? (
                       <a
@@ -316,7 +316,7 @@ export default function SiteHeader() {
                         <span
                           className={cx(
                             "font-display text-[20px] tracking-tight",
-                            t("", "font-[family-name:var(--font-hind)]"),
+                            t("", "font-(family-name:--font-hind)"),
                           )}
                         >
                           {t(l.en, l.bn)}
@@ -344,7 +344,7 @@ export default function SiteHeader() {
                         <span
                           className={cx(
                             "font-display text-[20px] tracking-tight",
-                            t("", "font-[family-name:var(--font-hind)]"),
+                            t("", "font-(family-name:--font-hind)"),
                           )}
                         >
                           {t(l.en, l.bn)}
@@ -361,12 +361,12 @@ export default function SiteHeader() {
               })}
             </motion.ul>
 
-            <div className="border-t border-black/[0.06] p-5">
+            <div className="border-t border-black/6 p-5">
               <Button
                 href="/login"
                 size="lg"
                 onClick={() => setOpen(false)}
-                className="w-full justify-center rounded-2xl bg-gradient-to-b from-[#0c7855] to-[#07593f] py-4 text-[16px] text-white shadow-[0_2px_8px_rgba(10,110,80,0.35)]"
+                className="w-full justify-center rounded-2xl bg-linear-to-b from-[#0c7855] to-[#07593f] py-4 text-[16px] text-white shadow-[0_2px_8px_rgba(10,110,80,0.35)]"
               >
                 {t("Sign in to console", "কনসোলে লগইন করুন")}
                 <IconArrow width={16} height={16} />

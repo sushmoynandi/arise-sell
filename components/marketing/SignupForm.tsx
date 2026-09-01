@@ -110,19 +110,19 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="relative w-full max-w-[400px]">
+    <div className="relative w-full max-w-100">
       {/* Ambient background soft glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-4 -z-10 rounded-[32px] bg-gradient-to-b from-signal/20 via-signal/5 to-transparent blur-2xl opacity-75"
+        className="pointer-events-none absolute -inset-4 -z-10 rounded-4xl bg-linear-to-b from-signal/20 via-signal/5 to-transparent blur-2xl opacity-75"
       />
 
       {/* Main Glassmorphic Signup Card */}
-      <div className="relative overflow-hidden rounded-3xl border border-black/[0.08] bg-white/85 p-6 sm:p-7 shadow-[0_20px_50px_-15px_rgba(10,110,80,0.15),0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] backdrop-blur-2xl backdrop-saturate-[190%]">
+      <div className="relative overflow-hidden rounded-3xl border border-black/8 bg-white/85 p-6 sm:p-7 shadow-[0_20px_50px_-15px_rgba(10,110,80,0.15),0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] backdrop-blur-2xl backdrop-saturate-190">
         {/* Specular glass reflection line */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white to-transparent opacity-90"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent opacity-90"
         />
 
         {/* Brand Header */}
@@ -150,12 +150,12 @@ export default function SignupForm() {
             type="button"
             onClick={handleGoogleSignup}
             disabled={googleLoading || loading}
-            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-black/[0.08] bg-white px-4 text-[13.5px] font-medium text-text shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] transition-all duration-200 hover:border-black/[0.14] hover:bg-neutral-50/80 hover:shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-black/8 bg-white px-4 text-[13.5px] font-medium text-text shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] transition-all duration-200 hover:border-black/[0.14] hover:bg-neutral-50/80 hover:shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
             {googleLoading ? (
               <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-text-3 border-t-signal" />
             ) : (
-              <IconGoogle className="size-[17px] shrink-0" />
+              <IconGoogle className="size-4.25 shrink-0" />
             )}
             <span>{t("Sign up with Google", "গুগল দিয়ে সহজে শুরু করুন")}</span>
           </button>
@@ -163,7 +163,7 @@ export default function SignupForm() {
 
         {/* Divider */}
         <div className="relative my-4 flex items-center justify-center">
-          <div className="w-full border-t border-black/[0.08]" />
+          <div className="w-full border-t border-black/8" />
           <span className="absolute bg-white/95 px-3 text-[11.5px] font-medium text-text-3 backdrop-blur-sm">
             {t("or register with email", "অথবা ইমেইল দিয়ে")}
           </span>
@@ -200,7 +200,7 @@ export default function SignupForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="merchant@example.com"
-                className="h-10 w-full rounded-xl border border-black/[0.09] bg-white/75 pl-9 pr-3 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
+                className="h-10 w-full rounded-xl border border-black/9 bg-white/75 pl-9 pr-3 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
               />
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function SignupForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="h-10 w-full rounded-xl border border-black/[0.09] bg-white/75 pl-9 pr-9 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
+                className="h-10 w-full rounded-xl border border-black/9 bg-white/75 pl-9 pr-9 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
               />
               <button
                 type="button"
@@ -289,7 +289,7 @@ export default function SignupForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="h-10 w-full rounded-xl border border-black/[0.09] bg-white/75 pl-9 pr-9 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
+                className="h-10 w-full rounded-xl border border-black/9 bg-white/75 pl-9 pr-9 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
               />
               <button
                 type="button"
@@ -342,7 +342,7 @@ export default function SignupForm() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-1.5 flex h-10.5 w-full items-center justify-center rounded-xl border border-signal/20 bg-gradient-to-b from-[#0c7855] to-[#07593f] text-[13.5px] font-semibold text-white shadow-[0_3px_12px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-200 hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_16px_rgba(10,110,80,0.4)] active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="mt-1.5 flex h-10.5 w-full items-center justify-center rounded-xl border border-signal/20 bg-linear-to-b from-[#0c7855] to-[#07593f] text-[13.5px] font-semibold text-white shadow-[0_3px_12px_rgba(10,110,80,0.3),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-200 hover:from-[#0e8861] hover:to-[#096648] hover:shadow-[0_4px_16px_rgba(10,110,80,0.4)] active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
               <span className="inline-block size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

@@ -14,10 +14,10 @@ export default function HowItWorks() {
       id="how-it-works"
       className="relative border-t border-line py-20 lg:py-28"
     >
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+            <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
               তিন ধাপে শুরু
             </p>
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -47,7 +47,7 @@ export default function HowItWorks() {
                 <motion.span
                   whileHover={{ scale: 1.08, rotate: -4 }}
                   transition={SPRING}
-                  className="relative z-10 mx-auto grid size-14 place-items-center rounded-2xl bg-signal font-[family-name:var(--font-hind)] text-[22px] font-bold text-white shadow-[0_6px_18px_-6px_rgba(10,110,80,0.5)] md:mx-0"
+                  className="relative z-10 mx-auto grid size-14 place-items-center rounded-2xl bg-signal font-(family-name:--font-hind) text-[22px] font-bold text-white shadow-[0_6px_18px_-6px_rgba(10,110,80,0.5)] md:mx-0"
                 >
                   {s.n}
                 </motion.span>
@@ -55,7 +55,7 @@ export default function HowItWorks() {
                   {t(s.title, s.titleBn)}
                 </h3>
                 {t(
-                  <p className="mt-1 font-[family-name:var(--font-hind)] text-[14px] text-text-3">
+                  <p className="mt-1 font-(family-name:--font-hind) text-[14px] text-text-3">
                     {s.titleBn}
                   </p>,
                   null,

@@ -54,7 +54,7 @@ export default function ChannelsSection() {
 
   return (
     <section id="channels" className="relative border-t border-line py-20 lg:py-28 bg-canvas">
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow>{t("Omnichannel", "সকল প্ল্যাটফর্মে")}</Eyebrow>

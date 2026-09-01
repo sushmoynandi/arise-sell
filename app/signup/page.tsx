@@ -17,7 +17,7 @@ export default function SignupPage() {
       {/* Background ambient lighting effects */}
       <div
         aria-hidden
-        className="pointer-events-none fixed -top-40 left-1/2 h-[560px] w-[900px] -translate-x-1/2 rounded-full opacity-60 blur-[140px]"
+        className="pointer-events-none fixed -top-40 left-1/2 h-[560px] w-225 -translate-x-1/2 rounded-full opacity-60 blur-[140px]"
         style={{
           background:
             "radial-gradient(closest-side, rgba(10,110,80,0.18), rgba(5,98,68,0.06) 60%, transparent)",
@@ -33,10 +33,10 @@ export default function SignupPage() {
       />
 
       {/* Top minimal header */}
-      <header className="relative z-10 mx-auto flex w-full max-w-[1280px] items-center justify-between px-5 py-4 sm:px-8">
+      <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <Link
           href="/"
-          className="group inline-flex items-center rounded-full border border-black/[0.06] bg-white/70 px-3.5 py-1 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all hover:border-black/[0.12] hover:bg-white hover:text-text hover:shadow-sm"
+          className="group inline-flex items-center rounded-full border border-black/6 bg-white/70 px-3.5 py-1 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all hover:border-black/[0.12] hover:bg-white hover:text-text hover:shadow-sm"
         >
           Back to Home
         </Link>
@@ -52,7 +52,7 @@ export default function SignupPage() {
       </main>
 
       {/* Bottom security trust markers */}
-      <footer className="relative z-10 mx-auto w-full max-w-[1280px] px-5 py-3 text-center sm:px-8">
+      <footer className="relative z-10 mx-auto w-full max-w-7xl px-5 py-3 text-center sm:px-8">
         <div className="flex flex-wrap items-center justify-center gap-6 text-[12.5px] text-text-3">
           <span className="inline-flex items-center gap-1.5">
             <IconBolt width={13} height={13} className="text-signal" />

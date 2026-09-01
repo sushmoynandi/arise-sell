@@ -155,7 +155,7 @@ export default function AdminAiGatewayPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-bricolage)] text-2xl font-bold tracking-tight text-text">
+          <h1 className="font-(family-name:--font-bricolage) text-2xl font-bold tracking-tight text-text">
             Multi-AI Gateway & Failover Vault
           </h1>
           <p className="text-[13.5px] text-text-3">
@@ -352,7 +352,7 @@ export default function AdminAiGatewayPage() {
           <span className="text-[12px] font-semibold uppercase text-text-3">
             24h Tokens Burned
           </span>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             {(totalTokens / 1_000_000).toFixed(1)}M Tokens
           </p>
           <p className="text-[12px] text-text-3">
@@ -364,7 +364,7 @@ export default function AdminAiGatewayPage() {
           <span className="text-[12px] font-semibold uppercase text-text-3">
             Total 24h AI Cost
           </span>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             ${totalCostUSD.toFixed(2)}{" "}
             <span className="text-sm font-normal text-text-3">
               ({formatTaka(totalCostBDT)})
@@ -379,7 +379,7 @@ export default function AdminAiGatewayPage() {
           <span className="text-[12px] font-semibold uppercase text-text-3">
             Active Providers & Keys
           </span>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-signal">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-signal">
             {keys.length} Registered Keys
           </p>
           <p className="text-[12px] text-text-3">

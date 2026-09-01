@@ -41,7 +41,7 @@ function ChatDemo() {
               className={cx(
                 "rounded-2xl px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed",
                 l.me
-                  ? "rounded-tr-sm bg-signal font-[family-name:var(--font-hind)] text-white"
+                  ? "rounded-tr-sm bg-signal font-(family-name:--font-hind) text-white"
                   : "rounded-tl-sm border border-line bg-white text-text",
               )}
             >
@@ -78,7 +78,7 @@ function MatchDemo() {
         </div>
         <div className="min-w-0">
           <p className="text-[12px] text-text-3">Customer sent</p>
-          <p className="mt-0.5 font-[family-name:var(--font-hind)] text-[13.5px] text-text">
+          <p className="mt-0.5 font-(family-name:--font-hind) text-[13.5px] text-text">
             “এইটা আছে?”
           </p>
         </div>
@@ -89,7 +89,7 @@ function MatchDemo() {
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         transition={{ ...SPRING, delay: 0.25 }}
-        className="rounded-2xl border border-[color:var(--signal-line)] bg-[#f2faf6] p-4"
+        className="rounded-2xl border border-(--signal-line) bg-[#f2faf6] p-4"
       >
         <div className="flex items-center justify-between">
           <p className="text-[12px] font-medium text-signal">
@@ -181,7 +181,7 @@ export default function Spotlights() {
 
   return (
     <section className="relative border-t border-line bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-[1280px] space-y-20 px-5 lg:space-y-28 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-20 px-5 lg:space-y-28 lg:px-8">
         {SPOTLIGHTS.map((s, i) => {
           const Demo = DEMOS[s.demo];
           const flip = i % 2 === 1;
@@ -193,7 +193,7 @@ export default function Spotlights() {
               className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16"
             >
               <Reveal className={cx(flip && "lg:order-2")}>
-                <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+                <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
                   {s.kicker}
                 </p>
                 <h3 className="mt-3 text-balance font-display text-[clamp(1.6rem,3vw,2.3rem)] font-semibold leading-[1.12] tracking-[-0.025em]">

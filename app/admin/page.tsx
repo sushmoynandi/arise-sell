@@ -22,7 +22,7 @@ export default function AdminOverviewPage() {
       {/* Top Banner & Quick Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-bricolage)] text-2xl font-bold tracking-tight text-text">
+          <h1 className="font-(family-name:--font-bricolage) text-2xl font-bold tracking-tight text-text">
             Executive Command Center
           </h1>
           <p className="text-[13.5px] text-text-3">
@@ -67,7 +67,7 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="mt-3">
-            <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+            <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
               {formatTaka(ADMIN_KPI.mrrBDT)}
             </p>
             <p className="mt-1 text-[12px] text-text-3">
@@ -87,7 +87,7 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="mt-3">
-            <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+            <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
               {formatTaka(ADMIN_KPI.platformGmvBDT)}
             </p>
             <p className="mt-1 text-[12px] text-text-3">
@@ -108,7 +108,7 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="mt-3">
-            <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+            <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
               {ADMIN_KPI.totalMerchants}
             </p>
             <p className="mt-1 text-[12px] text-text-3">
@@ -129,7 +129,7 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="mt-3">
-            <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+            <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
               {ADMIN_KPI.aiAutoResolutionRate}%
             </p>
             <p className="mt-1 text-[12px] text-text-3">

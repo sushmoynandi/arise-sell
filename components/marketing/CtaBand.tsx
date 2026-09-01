@@ -50,12 +50,12 @@ export default function CtaBand() {
             "radial-gradient(60% 90% at 50% 0%, rgba(10,110,80,0.10), transparent 70%)",
         }}
       />
-      <div className="relative mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
         <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-[0_2px_8px_rgba(15,20,25,0.05),0_24px_50px_-28px_rgba(15,20,25,0.25)]">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div className="p-8 lg:p-12">
               <Reveal>
-                <p className="font-[family-name:var(--font-hind)] text-[16px] font-medium text-signal">
+                <p className="font-(family-name:--font-hind) text-[16px] font-medium text-signal">
                   {t("Get started today", "আজই শুরু করুন")}
                 </p>
                 <h2 className="mt-3 text-balance font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-semibold leading-[1.1] tracking-[-0.028em]">

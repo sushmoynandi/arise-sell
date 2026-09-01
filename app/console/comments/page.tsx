@@ -263,7 +263,7 @@ export default function CommentsPage() {
                 />
               </div>
 
-              <div className="flex-1 divide-y divide-line/60 overflow-y-auto max-h-[520px]">
+              <div className="flex-1 divide-y divide-line/60 overflow-y-auto max-h-130">
                 {filteredActivities.map((act) => (
                   <div key={act.id} className="p-4 space-y-2 hover:bg-surface-2/40 transition-colors">
                     <div className="flex items-center justify-between gap-2">

@@ -310,7 +310,7 @@ export function ScrollProgress() {
   return (
     <motion.div
       style={{ scaleX, transformOrigin: "0%" }}
-      className="fixed inset-x-0 top-0 z-[100] h-[4px] bg-signal shadow-[0_1px_8px_rgba(10,110,80,0.5)] pointer-events-none"
+      className="fixed inset-x-0 top-0 z-100 h-1 bg-signal shadow-[0_1px_8px_rgba(10,110,80,0.5)] pointer-events-none"
     />
   );
 }
@@ -323,7 +323,7 @@ export function RightScrollProgress() {
     restDelta: 0.001,
   });
   return (
-    <div className="fixed right-0 top-0 bottom-0 z-50 w-[3px] bg-black/[0.03] pointer-events-none">
+    <div className="fixed right-0 top-0 bottom-0 z-50 w-0.75 bg-black/3 pointer-events-none">
       <motion.div
         style={{ scaleY, transformOrigin: "0% 0%" }}
         className="w-full h-full bg-signal shadow-[0_0_8px_rgba(10,110,80,0.6)]"

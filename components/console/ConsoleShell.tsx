@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
@@ -121,7 +121,7 @@ function NavList({
                       "group relative flex items-center rounded-xl py-1.5 transition-all duration-100 cursor-pointer select-none text-[14px] sm:text-[14.5px]",
                       collapsed ? "justify-center px-2" : "gap-2.5 px-2.5",
                       active
-                        ? "bg-signal/[0.08] text-signal font-bold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-signal"
+                        ? "bg-signal/[0.08] text-signal font-bold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.75 before:rounded-full before:bg-signal"
                         : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
                     )}
                   >
@@ -222,7 +222,7 @@ function getQuotaTone(pct: number) {
   };
 }
 
-export default function ConsoleShell({ children }: { children: ReactNode }) {
+function ConsoleShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
@@ -952,5 +952,19 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ConsoleShell({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-canvas text-sm text-text-3">
+          Loading console…
+        </div>
+      }
+    >
+      <ConsoleShellInner>{children}</ConsoleShellInner>
+    </Suspense>
   );
 }

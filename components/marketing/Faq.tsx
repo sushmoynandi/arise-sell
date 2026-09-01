@@ -72,10 +72,10 @@ export function FaqSection({ items }: { items: readonly Item[] }) {
   const { t } = useLang();
   return (
     <section className="border-t border-line py-20 lg:py-28">
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+            <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
               {t("Frequently asked questions", "প্রশ্ন ও উত্তর")}
             </p>
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">

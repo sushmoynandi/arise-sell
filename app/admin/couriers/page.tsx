@@ -61,7 +61,7 @@ export default function AdminCouriersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-bricolage)] text-2xl font-bold tracking-tight text-text">
+          <h1 className="font-(family-name:--font-bricolage) text-2xl font-bold tracking-tight text-text">
             Courier API Gateways & Smart Auto-Routing
           </h1>
           <p className="text-[13.5px] text-text-3">

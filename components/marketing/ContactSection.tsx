@@ -66,7 +66,7 @@ export default function ContactSection() {
   )}`;
 
   return (
-    <div className="relative mx-auto max-w-[1280px] px-5 lg:px-8">
+    <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
       {/* Hero Header */}
       <div className="pt-32 lg:pt-40 pb-12">
         <Reveal>

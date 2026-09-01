@@ -14,7 +14,7 @@ export default function AdminSubscriptionsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="font-[family-name:var(--font-bricolage)] text-2xl font-bold tracking-tight text-text">
+        <h1 className="font-(family-name:--font-bricolage) text-2xl font-bold tracking-tight text-text">
           Subscriptions & Billing Revenue
         </h1>
         <p className="text-[13.5px] text-text-3">
@@ -29,7 +29,7 @@ export default function AdminSubscriptionsPage() {
           <span className="text-[12px] font-semibold uppercase text-text-3">
             Total Platform MRR
           </span>
-          <p className="mt-2 font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="mt-2 font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             {formatTaka(ADMIN_KPI.mrrBDT)}
           </p>
           <p className="mt-1 text-[12px] text-signal font-medium">
@@ -41,7 +41,7 @@ export default function AdminSubscriptionsPage() {
           <span className="text-[12px] font-semibold uppercase text-text-3">
             Annual Run Rate (ARR)
           </span>
-          <p className="mt-2 font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="mt-2 font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             {formatTaka(ADMIN_KPI.arrBDT)}
           </p>
           <p className="mt-1 text-[12px] text-text-3">
@@ -53,7 +53,7 @@ export default function AdminSubscriptionsPage() {
           <span className="text-[12px] font-semibold uppercase text-text-3">
             Payment Success Rate
           </span>
-          <p className="mt-2 font-[family-name:var(--font-bricolage)] text-2xl font-bold text-signal">
+          <p className="mt-2 font-(family-name:--font-bricolage) text-2xl font-bold text-signal">
             99.2%
           </p>
           <p className="mt-1 text-[12px] text-text-3">

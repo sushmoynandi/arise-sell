@@ -22,22 +22,22 @@ export default function Hero() {
     <section className="relative overflow-hidden pb-12 pt-20 lg:pb-16 lg:pt-24">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full opacity-70 blur-[130px]"
+        className="pointer-events-none absolute -top-48 left-1/2 h-130 w-225 -translate-x-1/2 rounded-full opacity-70 blur-[130px]"
         style={{
           background:
             "radial-gradient(closest-side, rgba(10,110,80,0.14), rgba(5,98,68,0.06) 55%, transparent)",
         }}
       />
 
-      <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-10 px-4 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-12 lg:px-6">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-12 lg:px-6">
         <div>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={SPRING_SOFT}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[color:var(--signal-line)] bg-white py-1.5 pl-2 pr-4 shadow-[0_1px_2px_rgba(15,20,25,0.04)]"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-(--signal-line) bg-white py-1.5 pl-2 pr-4 shadow-[0_1px_2px_rgba(15,20,25,0.04)]"
           >
-            <span className="rounded-full bg-signal px-2 py-0.5 font-[family-name:var(--font-hind)] text-[11px] font-semibold text-white">
+            <span className="rounded-full bg-signal px-2 py-0.5 font-(family-name:--font-hind) text-[11px] font-semibold text-white">
               নতুন
             </span>
             <span className="text-[13px] text-text-2">
@@ -63,7 +63,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...SPRING_SOFT, delay: 0.4 }}
-            className="mt-4 font-[family-name:var(--font-hind)] text-[19px] leading-relaxed text-signal"
+            className="mt-4 font-(family-name:--font-hind) text-[19px] leading-relaxed text-signal"
           >
             {t(
               "Instant replies, complete order taking, and courier booking — 100% on autopilot.",
@@ -75,7 +75,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...SPRING_SOFT, delay: 0.5 }}
-            className="mt-5 max-w-[32rem] text-pretty text-[16.5px] leading-relaxed text-text-2"
+            className="mt-5 max-w-lg text-pretty text-[16.5px] leading-relaxed text-text-2"
           >
             {t(
               "NextProduct answers your customers on WhatsApp, Messenger and Instagram in their own language, takes the complete order, books Steadfast or Pathao, and sends the invoice — while you sleep, eat, or serve someone standing in front of you.",
@@ -128,7 +128,7 @@ export default function Hero() {
       </div>
 
       {/* stats + merchants */}
-      <div className="relative mx-auto mt-20 max-w-[1280px] px-5 lg:px-8">
+      <div className="relative mx-auto mt-20 max-w-7xl px-5 lg:px-8">
         <motion.dl
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}

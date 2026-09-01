@@ -116,7 +116,7 @@ export default function AdminLoginPage() {
       <div />
 
       {/* Main Center Auth Card */}
-      <div className="w-full max-w-[400px] mx-auto my-auto py-4">
+      <div className="w-full max-w-100 mx-auto my-auto py-4">
         <div className="rounded-2xl border border-line bg-white p-7 sm:p-8 shadow-xl shadow-black/[0.03] space-y-6">
           {/* Brand Logo & Header */}
           <div className="text-center space-y-2">

@@ -95,7 +95,7 @@ export default function LiveClose() {
               </p>
             </div>
           </div>
-          <span className="flex items-center gap-1.5 rounded-full border border-[color:var(--signal-line)] bg-signal-wash px-2 py-[3px] font-mono text-[10px] text-signal">
+          <span className="flex items-center gap-1.5 rounded-full border border-(--signal-line) bg-signal-wash px-2 py-0.75 font-mono text-[10px] text-signal">
             <span className="size-1.5 rounded-full bg-signal" />
             AGENT LIVE
           </span>
@@ -136,7 +136,7 @@ export default function LiveClose() {
                     <span
                       className={
                         m.from === "agent"
-                          ? "font-[family-name:var(--font-hind)]"
+                          ? "font-(family-name:--font-hind)"
                           : ""
                       }
                     >

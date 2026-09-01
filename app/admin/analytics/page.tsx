@@ -26,7 +26,7 @@ export default function AdminAnalyticsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="font-[family-name:var(--font-bricolage)] text-2xl font-bold tracking-tight text-text">
+        <h1 className="font-(family-name:--font-bricolage) text-2xl font-bold tracking-tight text-text">
           Platform AI & Channel Intelligence
         </h1>
         <p className="text-[13.5px] text-text-3">
@@ -46,7 +46,7 @@ export default function AdminAnalyticsPage() {
               NLU Engine
             </span>
           </div>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             98.4%
           </p>
           <p className="text-[12px] text-text-3">
@@ -63,7 +63,7 @@ export default function AdminAnalyticsPage() {
               Vision AI
             </span>
           </div>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             96.1%
           </p>
           <p className="text-[12px] text-text-3">
@@ -80,7 +80,7 @@ export default function AdminAnalyticsPage() {
               Ultra Fast
             </span>
           </div>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             1.24s
           </p>
           <p className="text-[12px] text-text-3">
@@ -97,7 +97,7 @@ export default function AdminAnalyticsPage() {
               Logistics
             </span>
           </div>
-          <p className="font-[family-name:var(--font-bricolage)] text-2xl font-bold text-text">
+          <p className="font-(family-name:--font-bricolage) text-2xl font-bold text-text">
             89.6%
           </p>
           <p className="text-[12px] text-text-3">Steadfast & Pathao APIs</p>

@@ -15,7 +15,7 @@ export default function AdminFraudShieldPage() {
           <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
           <span>COMING SOON · IN ACTIVE DEVELOPMENT</span>
         </div>
-        <h1 className="font-[family-name:var(--font-bricolage)] text-3xl font-bold tracking-tight text-text">
+        <h1 className="font-(family-name:--font-bricolage) text-3xl font-bold tracking-tight text-text">
           Fake COD & Fraud Protection Shield
         </h1>
         <p className="text-[14px] text-text-3 max-w-2xl">
@@ -87,7 +87,7 @@ export default function AdminFraudShieldPage() {
       </div>
 
       {/* Beta Activation Callout */}
-      <div className="rounded-3xl border border-line bg-gradient-to-br from-white to-surface-2 p-8 shadow-sm space-y-4">
+      <div className="rounded-3xl border border-line bg-linear-to-br from-white to-surface-2 p-8 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-text">

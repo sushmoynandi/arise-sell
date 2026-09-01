@@ -236,7 +236,7 @@ export default function ThreadsPage() {
                             "rounded-tr-sm bg-iris/15 text-text ring-1 ring-iris/30",
                         )}
                       >
-                        <span className="font-[family-name:var(--font-hind)]">
+                        <span className="font-(family-name:--font-hind)">
                           {m.body}
                         </span>
                       </div>

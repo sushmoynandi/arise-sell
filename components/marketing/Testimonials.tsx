@@ -32,10 +32,10 @@ export default function Testimonials() {
   const { t: t2 } = useLang();
   return (
     <section className="relative border-t border-line bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+            <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
               {t2("What shop owners say", "বিক্রেতারা কী বলছেন")}
             </p>
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -60,7 +60,7 @@ export default function Testimonials() {
                   “{t2(x.quote, x.quoteBn)}”
                 </blockquote>
 
-                <div className="mt-6 rounded-xl border border-[color:var(--signal-line)] bg-[#f2faf6] px-4 py-3">
+                <div className="mt-6 rounded-xl border border-(--signal-line) bg-[#f2faf6] px-4 py-3">
                   <p className="font-display text-[22px] font-semibold leading-none tracking-tight text-signal">
                     {t2(x.result, x.resultBn)}
                   </p>

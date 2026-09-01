@@ -94,7 +94,7 @@ export default function CatalogPage() {
                 <motion.span
                   layoutId="cat-pill"
                   transition={SPRING}
-                  className="absolute inset-0 -z-10 rounded-lg border border-[color:var(--signal-line)] bg-signal-wash"
+                  className="absolute inset-0 -z-10 rounded-lg border border-(--signal-line) bg-signal-wash"
                 />
               )}
               {c}
@@ -143,7 +143,7 @@ export default function CatalogPage() {
                         <h3 className="truncate text-[14px] font-medium text-text">
                           {p.name}
                         </h3>
-                        <p className="truncate font-[family-name:var(--font-hind)] text-[12px] text-text-3">
+                        <p className="truncate font-(family-name:--font-hind) text-[12px] text-text-3">
                           {p.nameBn}
                         </p>
                       </div>

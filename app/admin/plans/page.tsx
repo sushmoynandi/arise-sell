@@ -70,7 +70,7 @@ export default function AdminPlansPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-bricolage)] text-2xl font-bold tracking-tight text-text">
+          <h1 className="font-(family-name:--font-bricolage) text-2xl font-bold tracking-tight text-text">
             Subscription Plan & Pricing Tier Builder
           </h1>
           <p className="text-[13.5px] text-text-3">
@@ -136,7 +136,7 @@ export default function AdminPlansPage() {
               <p className="text-[12.5px] text-text-2">{plan.tagline}</p>
 
               <div>
-                <span className="font-[family-name:var(--font-bricolage)] text-3xl font-bold text-text">
+                <span className="font-(family-name:--font-bricolage) text-3xl font-bold text-text">
                   {formatTaka(plan.priceBDT)}
                 </span>
                 <span className="text-text-3 text-[12px]"> / month</span>

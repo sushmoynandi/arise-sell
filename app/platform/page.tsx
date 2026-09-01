@@ -109,9 +109,9 @@ export default function PlatformPage() {
         {/* hero */}
         <section className="relative overflow-hidden pb-16 pt-32 lg:pt-40">
           <div className="bg-grid pointer-events-none absolute inset-0 mask-fade-b opacity-60" />
-          <div className="relative mx-auto max-w-[1280px] px-5 lg:px-8">
+          <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
             <Reveal>
-              <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+              <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
                 ফিচার
               </p>
               <h1 className="mt-3 max-w-3xl text-balance font-display text-[clamp(2.2rem,4.6vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
@@ -130,9 +130,9 @@ export default function PlatformPage() {
 
         {/* channels */}
         <section id="channels" className="border-t border-line py-20 lg:py-24">
-          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <Reveal>
-              <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+              <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
                 সব চ্যানেলে
               </p>
               <h2 className="mt-3 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
@@ -174,9 +174,9 @@ export default function PlatformPage() {
           id="fulfilment"
           className="border-t border-line py-20 lg:py-24"
         >
-          <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <Reveal>
-              <p className="font-[family-name:var(--font-hind)] text-[15px] font-medium text-signal">
+              <p className="font-(family-name:--font-hind) text-[15px] font-medium text-signal">
                 আপনার ড্যাশবোর্ড
               </p>
               <h2 className="mt-3 max-w-2xl text-balance font-display text-[clamp(1.7rem,3.2vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">

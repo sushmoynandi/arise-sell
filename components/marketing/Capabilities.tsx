@@ -47,7 +47,7 @@ export default function Capabilities() {
       id="capabilities"
       className="relative border-t border-line py-20 lg:py-28 bg-white"
     >
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal>
           <Eyebrow>{t("What it actually does", "কী কী কাজ করে")}</Eyebrow>
           <h2 className="mt-4 max-w-2xl text-balance font-display text-[clamp(1.9rem,3.6vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.025em]">

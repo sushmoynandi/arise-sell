@@ -29,9 +29,7 @@ export function Wordmark({
         height={60}
         className={cx(
           "block p-0 m-0 object-contain transition-transform duration-200 hover:scale-[1.02]",
-          compact
-            ? "h-6.5 w-auto"
-            : "h-[32px] sm:h-[34px] w-auto max-w-[152px]",
+          compact ? "h-6.5 w-auto" : "h-8 sm:h-8.5 w-auto max-w-38",
         )}
         priority
       />
@@ -59,9 +57,9 @@ const BTN_BASE =
 
 const BTN_VARIANT = {
   signal:
-    "bg-signal text-signal-ink hover:bg-[color:var(--signal-deep)] shadow-[0_1px_2px_rgba(15,20,25,0.08)]",
+    "bg-signal text-signal-ink hover:bg-(--signal-deep) shadow-[0_1px_2px_rgba(15,20,25,0.08)]",
   outline:
-    "border border-line bg-surface text-text shadow-[0_1px_2px_rgba(15,20,25,0.04)] hover:border-[color:var(--signal-line)] hover:bg-surface-2",
+    "border border-line bg-surface text-text shadow-[0_1px_2px_rgba(15,20,25,0.04)] hover:border-(--signal-line) hover:bg-surface-2",
   ghost: "text-text-2 hover:text-text hover:bg-surface-2",
   quiet: "bg-surface-2 text-text-2 hover:bg-surface-3 hover:text-text",
 };
@@ -101,7 +99,7 @@ export function Button({
 /* ------------------------------------------------------------------ Badge */
 
 const TONE = {
-  signal: "bg-signal-wash text-signal border-[color:var(--signal-line)]",
+  signal: "bg-signal-wash text-signal border-(--signal-line)",
   mint: "bg-mint/10 text-mint border-mint/25",
   amber: "bg-amber/10 text-amber border-amber/25",
   coral: "bg-coral/10 text-coral border-coral/25",
@@ -126,7 +124,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] text-[11px] font-medium leading-none",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.75 text-[11px] font-medium leading-none",
         TONE[tone],
         className,
       )}

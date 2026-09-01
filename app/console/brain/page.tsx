@@ -133,7 +133,7 @@ export default function BrainPage() {
                     sub="Rendered with the current persona."
                   />
                   <div className="p-5">
-                    <div className="rounded-2xl rounded-tl-sm bg-signal px-4 py-3 font-[family-name:var(--font-hind)] text-[13.5px] leading-relaxed text-signal-ink">
+                    <div className="rounded-2xl rounded-tl-sm bg-signal px-4 py-3 font-(family-name:--font-hind) text-[13.5px] leading-relaxed text-signal-ink">
                       জি আপা, জামদানি শাড়িটা ইন্ডিগো রঙে ১২ পিস আছে 🌿 দাম
                       ৳৬,৮৫০, সাথে ম্যাচিং ব্লাউজ পিস ফ্রি। ঢাকার ভিতরে ২৪
                       ঘণ্টায় ডেলিভারি, চার্জ ৳৮০।
@@ -342,7 +342,7 @@ export default function BrainPage() {
                           <p className="font-mono text-[10.5px] uppercase tracking-wider text-text-3">
                             {f.set}
                           </p>
-                          <p className="mt-1.5 font-[family-name:var(--font-hind)] text-[13.5px] text-text">
+                          <p className="mt-1.5 font-(family-name:--font-hind) text-[13.5px] text-text">
                             “{f.input}”
                           </p>
                           <p className="mt-1 text-[12px] text-text-3">

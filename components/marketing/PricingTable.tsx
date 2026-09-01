@@ -16,7 +16,7 @@ export default function PricingTable() {
             <Panel
               className={cx(
                 "relative flex h-full flex-col p-6",
-                p.featured && "border-[color:var(--signal-line)]"
+                p.featured && "border-(--signal-line)"
               )}
             >
               {p.featured && (
@@ -36,11 +36,11 @@ export default function PricingTable() {
                 <h3 className="font-display text-[21px] font-semibold tracking-tight text-text">
                   {p.name}
                 </h3>
-                <span className="font-[family-name:var(--font-hind)] text-[14px] text-text-3">
+                <span className="font-(family-name:--font-hind) text-[14px] text-text-3">
                   {p.nameBn}
                 </span>
               </div>
-              <p className="mt-2 min-h-[40px] text-[13px] leading-snug text-text-3">{p.blurb}</p>
+              <p className="mt-2 min-h-10 text-[13px] leading-snug text-text-3">{p.blurb}</p>
 
               <div className="mt-6 flex items-baseline gap-1.5">
                 <span className="font-display text-[40px] font-semibold leading-none tracking-tight text-text">
