@@ -3,20 +3,29 @@
 import { motion } from "framer-motion";
 import { Badge, Button, Panel } from "@/components/ui/primitives";
 import { IconCheck, IconClose } from "@/components/ui/icons";
-import { Counter, Magnetic, SPRING, Stagger, StaggerItem } from "@/components/motion";
+import {
+  Counter,
+  Magnetic,
+  SPRING,
+  Stagger,
+  StaggerItem,
+} from "@/components/motion";
 import { ENTERPRISE, OVERAGE, PLANS } from "@/data/plans";
 import { cx } from "@/lib/format";
 
 export default function PricingTable() {
   return (
     <>
-      <Stagger className="grid grid-cols-1 gap-4 lg:grid-cols-3" amount={0.05}>
+      <Stagger
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        amount={0.05}
+      >
         {PLANS.map((p) => (
           <StaggerItem key={p.id}>
             <Panel
               className={cx(
                 "relative flex h-full flex-col p-6",
-                p.featured && "border-(--signal-line)"
+                p.featured && "border-(--signal-line)",
               )}
             >
               {p.featured && (
@@ -24,7 +33,10 @@ export default function PricingTable() {
                   <div
                     aria-hidden
                     className="pointer-events-none absolute -inset-px -z-10 rounded-[14px] opacity-40 blur-xl"
-                    style={{ background: "radial-gradient(60% 50% at 50% 0%, rgba(10,110,80,0.16), transparent)" }}
+                    style={{
+                      background:
+                        "radial-gradient(60% 50% at 50% 0%, rgba(10,110,80,0.16), transparent)",
+                    }}
                   />
                   <Badge tone="signal" className="absolute -top-2.5 left-6">
                     Most shops start here
@@ -40,7 +52,9 @@ export default function PricingTable() {
                   {p.nameBn}
                 </span>
               </div>
-              <p className="mt-2 min-h-10 text-[13px] leading-snug text-text-3">{p.blurb}</p>
+              <p className="mt-2 min-h-10 text-[13px] leading-snug text-text-3">
+                {p.blurb}
+              </p>
 
               <div className="mt-6 flex items-baseline gap-1.5">
                 <span className="font-display text-[40px] font-semibold leading-none tracking-tight text-text">
@@ -53,7 +67,9 @@ export default function PricingTable() {
                 <p className="font-display text-[17px] font-semibold tracking-tight text-signal">
                   {p.orders.toLocaleString()} closed orders
                 </p>
-                <p className="mt-0.5 text-[11.5px] text-text-3">included every month</p>
+                <p className="mt-0.5 text-[11.5px] text-text-3">
+                  included every month
+                </p>
               </div>
 
               <div className="mt-6">
@@ -79,14 +95,26 @@ export default function PricingTable() {
                     transition={{ ...SPRING, delay: i * 0.03 }}
                     className="flex items-start gap-2.5"
                   >
-                    <IconCheck width={13} height={13} className="mt-0.5 shrink-0 text-signal" />
-                    <span className="text-[13px] leading-snug text-text-2">{f}</span>
+                    <IconCheck
+                      width={13}
+                      height={13}
+                      className="mt-0.5 shrink-0 text-signal"
+                    />
+                    <span className="text-[13px] leading-snug text-text-2">
+                      {f}
+                    </span>
                   </motion.li>
                 ))}
                 {p.absent.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 opacity-45">
-                    <IconClose width={13} height={13} className="mt-0.5 shrink-0 text-text-3" />
-                    <span className="text-[13px] leading-snug text-text-3 line-through">{f}</span>
+                    <IconClose
+                      width={13}
+                      height={13}
+                      className="mt-0.5 shrink-0 text-text-3"
+                    />
+                    <span className="text-[13px] leading-snug text-text-3 line-through">
+                      {f}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -112,13 +140,20 @@ export default function PricingTable() {
               ))}
             </ul>
           </div>
-          <Button href="https://wa.me/8801710000000" target="_blank" variant="outline" size="lg">
+          <Button
+            href="https://wa.me/8801710000000"
+            target="_blank"
+            variant="outline"
+            size="lg"
+          >
             Talk to us
           </Button>
         </Panel>
       </div>
 
-      <p className="mt-6 text-center font-mono text-[12px] text-text-3">{OVERAGE}</p>
+      <p className="mt-6 text-center font-mono text-[12px] text-text-3">
+        {OVERAGE}
+      </p>
     </>
   );
 }

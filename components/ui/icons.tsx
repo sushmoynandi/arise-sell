@@ -368,6 +368,26 @@ export const IconZap = (p: P) => (
   </svg>
 );
 
+export const IconTrash = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+  </svg>
+);
+
+export const IconKey = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m21 2-2 2m-1.5 1.5L14 9M19 5l2 2-2 2-2-2 2-2ZM9.5 14.5 3 21v-3l6.5-6.5" />
+    <circle cx="15.5" cy="8.5" r="4.5" />
+  </svg>
+);
+
+export const IconTag = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+    <path d="M7 7h.01" />
+  </svg>
+);
+
 export const NAV_ICON = {
   home: IconHome,
   pulse: IconPulse,
