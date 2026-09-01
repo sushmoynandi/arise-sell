@@ -182,8 +182,12 @@ export default function AdminUsersPage() {
                 <th className="py-3.5 px-3 whitespace-nowrap">Location</th>
                 <th className="py-3.5 px-3 whitespace-nowrap">Plan / Tier</th>
                 <th className="py-3.5 px-3 whitespace-nowrap">Channels</th>
-                <th className="py-3.5 px-3 whitespace-nowrap">Monthly GMV</th>
-                <th className="py-3.5 px-3 whitespace-nowrap">AI Bot Rate</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">
+                  Monthly GMV
+                </th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">
+                  AI Bot Rate
+                </th>
                 <th className="py-3.5 pr-5 text-right whitespace-nowrap">
                   Status
                 </th>
@@ -250,10 +254,10 @@ export default function AdminUsersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-4 px-3 font-semibold text-text whitespace-nowrap">
+                    <td className="py-4 px-3 text-right font-semibold text-text whitespace-nowrap">
                       {formatTaka(m.monthlyGMV)}
                     </td>
-                    <td className="py-4 px-3 whitespace-nowrap">
+                    <td className="py-4 px-3 text-right whitespace-nowrap">
                       <span className="font-semibold text-signal">
                         {m.aiResolutionRate}%
                       </span>
