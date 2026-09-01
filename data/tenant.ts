@@ -13,10 +13,38 @@ export const TENANT = {
 } as const;
 
 export const TEAM = [
-  { name: "Farhana Rahman", role: "Owner", initials: "FR", online: true, hue: 82 },
-  { name: "Imran Kabir", role: "Ops lead", initials: "IK", online: true, hue: 200 },
-  { name: "Sadia Noor", role: "Moderator", initials: "SN", online: false, hue: 320 },
-  { name: "Rafi Chowdhury", role: "Moderator", initials: "RC", online: true, hue: 26 },
+  {
+    name: "Farhana Rahman",
+    role: "Owner",
+    initials: "FR",
+    online: true,
+    hue: 82,
+    platforms: ["facebook", "instagram", "whatsapp"] as const,
+  },
+  {
+    name: "Imran Kabir",
+    role: "Ops Lead",
+    initials: "IK",
+    online: true,
+    hue: 200,
+    platforms: ["whatsapp", "messenger"] as const,
+  },
+  {
+    name: "Rafi Chowdhury",
+    role: "Moderator",
+    initials: "RC",
+    online: true,
+    hue: 26,
+    platforms: ["facebook", "instagram"] as const,
+  },
+  {
+    name: "Sadia Noor",
+    role: "Moderator",
+    initials: "SN",
+    online: false,
+    hue: 320,
+    platforms: ["instagram"] as const,
+  },
 ] as const;
 
 export const CHANNELS = [

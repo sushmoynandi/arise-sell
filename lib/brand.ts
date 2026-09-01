@@ -24,66 +24,92 @@ export const SITE_NAV = [
 ] as const;
 
 /**
- * Console IA — organised by *stage of the sale*, not by feature module.
- * Each route owns one contiguous slice of the lifecycle.
+ * Seller Console IA — Modern Commerce OS Architecture:
+ * 1. OPERATIONS (Dashboard, Live Inbox, Comments Auto-Reply, Orders, Leads)
+ * 2. GROWTH & AUTOMATION (Campaigns, Automation Tools, Integrations)
+ * 3. AI SALES ENGINE (Products, Knowledge Base, AI Playground)
  */
 export const CONSOLE_NAV = [
   {
-    group: "Run",
+    group: "OPERATIONS",
     items: [
       {
-        label: "Pulse",
+        label: "Dashboard",
         href: "/console",
         icon: "pulse",
-        hint: "Live revenue stream",
+        hint: "Daily activity & revenue",
       },
       {
-        label: "Threads",
+        label: "Inbox",
         href: "/console/threads",
         icon: "threads",
-        hint: "Every conversation",
+        hint: "Omnichannel conversations",
         badge: "4",
       },
       {
-        label: "Pipeline",
-        href: "/console/pipeline",
-        icon: "pipeline",
-        hint: "Intent → order",
+        label: "Comments",
+        href: "/console/reach?tab=comments",
+        icon: "comments",
+        hint: "Post & ad comment auto-responder",
       },
       {
-        label: "Fulfilment",
+        label: "Orders",
         href: "/console/fulfilment",
         icon: "truck",
-        hint: "Order, courier, invoice",
+        hint: "Courier bookings & COD status",
+      },
+      {
+        label: "Leads & Pipeline",
+        href: "/console/pipeline",
+        icon: "pipeline",
+        hint: "Buyer pipeline & follow-ups",
       },
     ],
   },
   {
-    group: "Build",
+    group: "GROWTH & AUTOMATION",
     items: [
       {
-        label: "Catalog",
-        href: "/console/catalog",
-        icon: "box",
-        hint: "Products & vision index",
-      },
-      {
-        label: "Reach",
+        label: "Campaigns",
         href: "/console/reach",
         icon: "megaphone",
-        hint: "Campaigns & comments",
+        hint: "Targeted promos & broadcasts",
+        badge: "BETA",
       },
       {
-        label: "Brain",
+        label: "Automation Tools",
+        href: "/console/signals",
+        icon: "zap",
+        hint: "Ad signals, CAPI & auto-triggers",
+      },
+      {
+        label: "Integrations",
+        href: "/console/integrations",
+        icon: "plug",
+        hint: "Meta, WhatsApp & Courier API",
+      },
+    ],
+  },
+  {
+    group: "AI SALES ENGINE",
+    items: [
+      {
+        label: "Products",
+        href: "/console/catalog",
+        icon: "box",
+        hint: "Products, stock & vision index",
+      },
+      {
+        label: "Knowledge Base",
         href: "/console/brain",
         icon: "brain",
-        hint: "Persona, rules, evals",
+        hint: "Store knowledge, FAQs & policies",
       },
       {
-        label: "Signals",
-        href: "/console/signals",
-        icon: "chart",
-        hint: "Attribution & spend",
+        label: "AI Playground",
+        href: "/console/test-ai",
+        icon: "bot",
+        hint: "Live simulator & chat testing",
       },
     ],
   },
