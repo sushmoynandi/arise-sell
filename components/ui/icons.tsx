@@ -247,6 +247,18 @@ export const IconGoogle = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const IconBolt = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M13 2 4 13h6l-1 9 9-11h-6l1-9Z" />
+  </svg>
+);
+
+export const IconPlus = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
 /* --- Channel glyphs ------------------------------------------------------ */
 
 export const IconWhatsApp = (p: P) => (
