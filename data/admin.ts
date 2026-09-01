@@ -30,12 +30,13 @@ export type AdminMerchant = {
 };
 
 export const ADMIN_KPI = {
-  totalMerchants: 148,
-  activePaidMerchants: 112,
-  trialMerchants: 29,
-  suspendedMerchants: 7,
-  mrrBDT: 684000,
-  arrBDT: 8208000,
+  totalMerchants: 154,
+  activePaidMerchants: 126, // 44 Growth + 56 Business Pro + 20 VIP Scale + 6 Custom Enterprise
+  trialMerchants: 28,
+  customEnterpriseMerchants: 6,
+  suspendedMerchants: 0,
+  mrrBDT: 173000, // 44×৳200 (8.8k) + 56×৳700 (39.2k) + 20×৳2500 (50k) + 6 Custom (75k) = ৳1,73,000/mo
+  arrBDT: 2076000, // ৳1,73,000 × 12 = ৳20,76,000 ARR
   platformGmvBDT: 48920000, // ~4.89 Crore BDT GMV
   messages24h: 38450,
   aiAutoResolutionRate: 94.4,
@@ -241,7 +242,9 @@ export type AdminPlan = {
   nameBn: string;
   tagline: string;
   priceBDT: number;
-  billingPeriod: "monthly" | "yearly";
+  yearlyPriceBDT?: number;
+  yearlyDiscountPercent?: number;
+  billingPeriod: "monthly" | "yearly" | "both";
   messageLimit: number;
   catalogLimit: number;
   courierChannels: number;
@@ -249,6 +252,8 @@ export type AdminPlan = {
   badge?: string;
   popular?: boolean;
   activeMerchants: number;
+  monthlySubscribers?: number;
+  yearlySubscribers?: number;
   status: "active" | "archived" | "draft";
 };
 
@@ -259,7 +264,9 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     nameBn: "ফ্রি শুরু",
     tagline: "Prove it on your own catalog before paying anything",
     priceBDT: 0,
-    billingPeriod: "monthly",
+    yearlyPriceBDT: 0,
+    yearlyDiscountPercent: 0,
+    billingPeriod: "both",
     messageLimit: 40,
     catalogLimit: 50,
     courierChannels: 1,
@@ -271,6 +278,8 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
       "In-chat automated order taking",
     ],
     activeMerchants: 28,
+    monthlySubscribers: 28,
+    yearlySubscribers: 0,
     status: "active",
   },
   {
@@ -279,7 +288,9 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     nameBn: "গ্রোথ",
     tagline: "For growing Facebook & WhatsApp shops with daily orders",
     priceBDT: 200,
-    billingPeriod: "monthly",
+    yearlyPriceBDT: 2000,
+    yearlyDiscountPercent: 17,
+    billingPeriod: "both",
     messageLimit: 200,
     catalogLimit: 250,
     courierChannels: 2,
@@ -293,6 +304,8 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
       "2 team member seats",
     ],
     activeMerchants: 44,
+    monthlySubscribers: 32,
+    yearlySubscribers: 12,
     status: "active",
   },
   {
@@ -301,7 +314,9 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     nameBn: "বিজনেস প্রো",
     tagline: "For scaling multi-channel brands running paid traffic",
     priceBDT: 700,
-    billingPeriod: "monthly",
+    yearlyPriceBDT: 7000,
+    yearlyDiscountPercent: 17,
+    billingPeriod: "both",
     messageLimit: 800,
     catalogLimit: 1000,
     courierChannels: 2,
@@ -316,6 +331,8 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
       "5 team member seats",
     ],
     activeMerchants: 56,
+    monthlySubscribers: 38,
+    yearlySubscribers: 18,
     status: "active",
   },
   {
@@ -324,7 +341,9 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     nameBn: "ভিআইপি স্কেল",
     tagline: "For established retail powerhouses with massive volume",
     priceBDT: 2500,
-    billingPeriod: "monthly",
+    yearlyPriceBDT: 25000,
+    yearlyDiscountPercent: 17,
+    billingPeriod: "both",
     messageLimit: 3500,
     catalogLimit: 5000,
     courierChannels: 4,
@@ -338,6 +357,8 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
       "Unlimited team seats",
     ],
     activeMerchants: 20,
+    monthlySubscribers: 14,
+    yearlySubscribers: 6,
     status: "active",
   },
 ];
@@ -769,86 +790,138 @@ export const ADMIN_MERCHANTS: AdminMerchant[] = [
   },
 ];
 
-export const ADMIN_INVOICES = [
+export type AdminInvoice = {
+  id: string;
+  merchantName: string;
+  plan: string;
+  amountBDT: number;
+  originalAmountBDT?: number;
+  promoCode?: string;
+  discountBDT?: number;
+  method: string;
+  txId: string;
+  date: string;
+  status: "paid" | "pending" | "refunded";
+};
+
+export const ADMIN_INVOICES: AdminInvoice[] = [
+  {
+    id: "INV-2026-0893",
+    merchantName: "Aarong Fashion Flagship",
+    plan: "Custom Enterprise",
+    amountBDT: 18500,
+    method: "bKash Merchant API",
+    txId: "BKH99441188",
+    date: "2026-09-01",
+    status: "paid",
+  },
+  {
+    id: "INV-2026-0892",
+    merchantName: "Bata Shoes Bangladesh",
+    plan: "Custom Enterprise",
+    amountBDT: 24500,
+    method: "SSLCommerz (Corporate Visa)",
+    txId: "SSL77229911",
+    date: "2026-08-31",
+    status: "paid",
+  },
   {
     id: "INV-2026-0891",
     merchantName: "Bongo Cosmetics",
-    plan: "Enterprise Tier",
-    amountBDT: 24999,
+    plan: "VIP Scale",
+    amountBDT: 2000,
+    originalAmountBDT: 2500,
+    promoCode: "SCALEVIP20",
+    discountBDT: 500,
     method: "bKash Merchant API",
     txId: "BKH92819827",
     date: "2026-08-31",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0890",
     merchantName: "Gadget Planet Banani",
-    plan: "Scale Plan",
-    amountBDT: 9999,
+    plan: "Business Pro",
+    amountBDT: 350,
+    originalAmountBDT: 700,
+    promoCode: "BOISHAKH50",
+    discountBDT: 350,
     method: "bKash Merchant API",
     txId: "BKH91827364",
     date: "2026-08-30",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0889",
     merchantName: "Tech Haven BD",
-    plan: "Scale Plan",
-    amountBDT: 9999,
+    plan: "VIP Scale",
+    amountBDT: 2500,
     method: "SSLCommerz (Visa)",
     txId: "SSL88291029",
     date: "2026-08-29",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0888",
     merchantName: "Artisan Leather Dhaka",
-    plan: "Scale Plan",
-    amountBDT: 9999,
+    plan: "Business Pro",
+    amountBDT: 560,
+    originalAmountBDT: 700,
+    promoCode: "EIDMUBARAK",
+    discountBDT: 140,
     method: "Nagad Gateway",
     txId: "NGD77625143",
     date: "2026-08-28",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0887",
     merchantName: "Saree Heritage BD",
-    plan: "Growth Plan",
-    amountBDT: 5999,
+    plan: "Growth",
+    amountBDT: 100,
+    originalAmountBDT: 200,
+    promoCode: "STARTUP50",
+    discountBDT: 100,
     method: "bKash Merchant API",
     txId: "BKH66251428",
     date: "2026-08-27",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0886",
     merchantName: "Chorkhi Lifestyle",
-    plan: "Growth Plan",
-    amountBDT: 5999,
+    plan: "Growth",
+    amountBDT: 200,
     method: "SSLCommerz (Mastercard)",
     txId: "SSL55443322",
     date: "2026-08-26",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0885",
     merchantName: "Modest Wear BD",
-    plan: "Growth Plan",
-    amountBDT: 5999,
+    plan: "Business Pro",
+    amountBDT: 560,
+    originalAmountBDT: 700,
+    promoCode: "EIDMUBARAK",
+    discountBDT: 140,
     method: "bKash Merchant API",
     txId: "BKH44332211",
     date: "2026-08-25",
-    status: "paid" as const,
+    status: "paid",
   },
   {
     id: "INV-2026-0884",
     merchantName: "Organic Food Sylhet",
-    plan: "Starter Plan",
-    amountBDT: 2999,
+    plan: "Growth",
+    amountBDT: 100,
+    originalAmountBDT: 200,
+    promoCode: "STARTUP50",
+    discountBDT: 100,
     method: "Nagad Gateway",
     txId: "NGD33221100",
     date: "2026-08-24",
-    status: "paid" as const,
+    status: "paid",
   },
 ];
 

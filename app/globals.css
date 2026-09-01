@@ -461,3 +461,11 @@ html.lang-bn h6 {
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================================================
+   Standard A4 Paper Print Formatting
+   ========================================================================= */
+@page {
+  size: A4 portrait;
+  margin: 15mm 15mm;
+}

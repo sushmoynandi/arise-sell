@@ -9,7 +9,9 @@ export const PLANS = [
     name: "Free",
     nameBn: "ফ্রি শুরু",
     price: 0,
+    yearlyPrice: 0,
     period: "free forever",
+    periodBn: "চিরকাল ফ্রি",
     orders: 40,
     blurb: "Prove it on your own catalog before you pay anything.",
     blurbBn: "টাকা দেওয়ার আগে নিজের পণ্য দিয়েই যাচাই করে নিন।",
@@ -40,7 +42,12 @@ export const PLANS = [
     name: "Growth",
     nameBn: "গ্রোথ",
     price: 200,
+    yearlyPrice: 2000,
+    yearlyDiscount: "Save 17%",
+    yearlyDiscountBn: "১৭% ছাড় (২ মাস ফ্রি)",
+    yearlySavingsBDT: 400,
     period: "per month",
+    periodBn: "প্রতি মাস",
     orders: 200,
     blurb: "For growing Facebook & WhatsApp shops with daily orders.",
     blurbBn: "যাঁরা প্রতিদিনই ইনবক্সে ২০-৫০টি অর্ডার নিচ্ছেন তাঁদের জন্য।",
@@ -73,7 +80,12 @@ export const PLANS = [
     name: "Business Pro",
     nameBn: "বিজনেস প্রো",
     price: 700,
+    yearlyPrice: 7000,
+    yearlyDiscount: "Save 17%",
+    yearlyDiscountBn: "১৭% ছাড় (২ মাস ফ্রি)",
+    yearlySavingsBDT: 1400,
     period: "per month",
+    periodBn: "প্রতি মাস",
     orders: 800,
     blurb: "For scaling multi-channel brands running paid traffic.",
     blurbBn: "যাঁরা বিজ্ঞাপন চালিয়ে প্রচুর মেসেজ ও সেল পান তাঁদের জন্য।",
@@ -106,7 +118,12 @@ export const PLANS = [
     name: "VIP Scale",
     nameBn: "ভিআইপি স্কেল",
     price: 2500,
+    yearlyPrice: 25000,
+    yearlyDiscount: "Save 17%",
+    yearlyDiscountBn: "১৭% ছাড় (২ মাস ফ্রি)",
+    yearlySavingsBDT: 5000,
     period: "per month",
+    periodBn: "প্রতি মাস",
     orders: 3500,
     blurb: "For established retail powerhouses with massive volume.",
     blurbBn: "বড় রিটেইল ব্র্যান্ড এবং হাই-ভলিউম ই-কমার্সের জন্য।",
@@ -140,11 +157,19 @@ export const ENTERPRISE = {
   name: "Custom Enterprise",
   blurb:
     "Above 3,500 orders a month, or you need on-premise catalog hosting, private LLM fine-tuning, and a signed SLA.",
-  points: ["Custom order volume", "Private LLM fine-tuning", "SSO + audit log", "Named engineer", "99.99% SLA"],
+  points: [
+    "Custom order volume",
+    "Private LLM fine-tuning",
+    "SSO + audit log",
+    "Named engineer",
+    "99.99% SLA",
+  ],
 };
 
-export const OVERAGE = "৳4 per extra closed order — never a surprise cap, never a hard stop.";
-export const OVERAGE_BN = "প্ল্যানের লিমিট শেষ হলে প্রতি অতিরিক্ত অর্ডারে মাত্র ৳৪ — হঠাৎ সার্ভিস বন্ধ হয়ে যাওয়ার ভয় নেই।";
+export const OVERAGE =
+  "৳4 per extra closed order — never a surprise cap, never a hard stop.";
+export const OVERAGE_BN =
+  "প্ল্যানের লিমিট শেষ হলে প্রতি অতিরিক্ত অর্ডারে মাত্র ৳৪ — হঠাৎ সার্ভিস বন্ধ হয়ে যাওয়ার ভয় নেই।";
 
 export const FAQS = [
   {

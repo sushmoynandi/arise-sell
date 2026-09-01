@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { INITIAL_ADMIN_PLANS, type AdminPlan } from "@/data/admin";
+import { getStoredPlans, saveStoredPlans, subscribePlans } from "@/lib/plans-store";
 import {
   IconCheck,
   IconClose,
@@ -60,9 +61,19 @@ const INITIAL_FESTIVAL_OFFERS: FestivalOffer[] = [
 ];
 
 export default function AdminPlansPage() {
-  const [plans, setPlans] = useState<AdminPlan[]>(INITIAL_ADMIN_PLANS);
-  const [festivalOffers, setFestivalOffers] = useState<FestivalOffer[]>(INITIAL_FESTIVAL_OFFERS);
-  
+  const plans = useSyncExternalStore(
+    subscribePlans,
+    getStoredPlans,
+    () => INITIAL_ADMIN_PLANS,
+  );
+  const [festivalOffers, setFestivalOffers] = useState<FestivalOffer[]>(
+    INITIAL_FESTIVAL_OFFERS,
+  );
+
+  // Billing view toggle on the cards: "monthly" vs "yearly"
+  const [billingView, setBillingView] = useState<"monthly" | "yearly">("monthly");
+  const isYearlyView = billingView === "yearly";
+
   // Modals state for Plans
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<AdminPlan | null>(null);
@@ -70,8 +81,10 @@ export default function AdminPlansPage() {
 
   // Modals state for Festival Offers
   const [addFestivalModalOpen, setAddFestivalModalOpen] = useState(false);
-  const [editingFestivalOffer, setEditingFestivalOffer] = useState<FestivalOffer | null>(null);
-  const [deletingFestivalOffer, setDeletingFestivalOffer] = useState<FestivalOffer | null>(null);
+  const [editingFestivalOffer, setEditingFestivalOffer] =
+    useState<FestivalOffer | null>(null);
+  const [deletingFestivalOffer, setDeletingFestivalOffer] =
+    useState<FestivalOffer | null>(null);
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -81,6 +94,8 @@ export default function AdminPlansPage() {
   const [nameBn, setNameBn] = useState("");
   const [tagline, setTagline] = useState("");
   const [priceBDT, setPriceBDT] = useState(200);
+  const [yearlyPriceBDT, setYearlyPriceBDT] = useState(2000);
+  const [billingPeriod, setBillingPeriod] = useState<"both" | "monthly" | "yearly">("both");
   const [messageLimit, setMessageLimit] = useState(200);
   const [catalogLimit, setCatalogLimit] = useState(250);
   const [courierChannels, setCourierChannels] = useState(2);
@@ -94,7 +109,9 @@ export default function AdminPlansPage() {
   const [festCode, setFestCode] = useState("");
   const [festDiscount, setFestDiscount] = useState(25);
   const [festBonus, setFestBonus] = useState(500);
-  const [festValidity, setFestValidity] = useState("Limited Time Festival Offer");
+  const [festValidity, setFestValidity] = useState(
+    "Limited Time Festival Offer",
+  );
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -146,28 +163,42 @@ export default function AdminPlansPage() {
         f.id === editingFestivalOffer.id
           ? {
               ...editingFestivalOffer,
-              couponCode: editingFestivalOffer.couponCode.toUpperCase().replace(/\s+/g, ""),
+              couponCode: editingFestivalOffer.couponCode
+                .toUpperCase()
+                .replace(/\s+/g, ""),
             }
           : f,
       ),
     );
-    setSuccessMsg(`Festival offer "${editingFestivalOffer.festivalName}" updated successfully!`);
+    setSuccessMsg(
+      `Festival offer "${editingFestivalOffer.festivalName}" updated successfully!`,
+    );
     setTimeout(() => setSuccessMsg(null), 3500);
     setEditingFestivalOffer(null);
   };
 
   const handleConfirmDeleteFestivalOffer = () => {
     if (deletingFestivalOffer) {
-      setFestivalOffers((prev) => prev.filter((f) => f.id !== deletingFestivalOffer.id));
+      setFestivalOffers((prev) =>
+        prev.filter((f) => f.id !== deletingFestivalOffer.id),
+      );
       setDeletingFestivalOffer(null);
       setSuccessMsg("Festival offer deleted.");
       setTimeout(() => setSuccessMsg(null), 3000);
     }
   };
 
+  const syncAndSetPlans = (updater: (prev: AdminPlan[]) => AdminPlan[]) => {
+    const next = updater(plans);
+    saveStoredPlans(next);
+  };
+
   const handleCreatePlan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
+
+    const calculatedYearly = Number(yearlyPriceBDT) || (Number(priceBDT) * 10);
+    const yearlySavingsPercent = priceBDT > 0 ? Math.round(((priceBDT * 12 - calculatedYearly) / (priceBDT * 12)) * 100) : 0;
 
     const newPlan: AdminPlan = {
       id: `plan-${Date.now()}`,
@@ -175,7 +206,9 @@ export default function AdminPlansPage() {
       nameBn: nameBn || name,
       tagline,
       priceBDT: Number(priceBDT),
-      billingPeriod: "monthly",
+      yearlyPriceBDT: calculatedYearly,
+      yearlyDiscountPercent: yearlySavingsPercent > 0 ? yearlySavingsPercent : undefined,
+      billingPeriod,
       messageLimit: Number(messageLimit),
       catalogLimit: Number(catalogLimit),
       courierChannels: Number(courierChannels),
@@ -185,7 +218,7 @@ export default function AdminPlansPage() {
       status: "active",
     };
 
-    setPlans((prev) => [...prev, newPlan]);
+    syncAndSetPlans((prev) => [...prev, newPlan]);
     setSuccessMsg(`Plan "${name}" published live to storefront checkout!`);
     setTimeout(() => setSuccessMsg(null), 3500);
     setCreateModalOpen(false);
@@ -194,13 +227,15 @@ export default function AdminPlansPage() {
     setNameBn("");
     setTagline("");
     setBadge("");
+    setPriceBDT(200);
+    setYearlyPriceBDT(2000);
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPlan) return;
 
-    setPlans((prev) =>
+    syncAndSetPlans((prev) =>
       prev.map((p) => (p.id === editingPlan.id ? editingPlan : p)),
     );
     setSuccessMsg(`Plan "${editingPlan.name}" updated successfully!`);
@@ -209,7 +244,7 @@ export default function AdminPlansPage() {
   };
 
   const handleToggleStatus = (id: string) => {
-    setPlans((prev) =>
+    syncAndSetPlans((prev) =>
       prev.map((p) =>
         p.id === id
           ? { ...p, status: p.status === "active" ? "archived" : "active" }
@@ -220,7 +255,7 @@ export default function AdminPlansPage() {
 
   const handleConfirmDelete = () => {
     if (deletingPlan) {
-      setPlans((prev) => prev.filter((p) => p.id !== deletingPlan.id));
+      syncAndSetPlans((prev) => prev.filter((p) => p.id !== deletingPlan.id));
       setDeletingPlan(null);
       setSuccessMsg("Plan removed from live tiers.");
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -237,7 +272,7 @@ export default function AdminPlansPage() {
           </h1>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-signal/[0.08] px-3 py-0.5 text-[12px] font-bold text-signal">
             <span className="size-1.5 rounded-full bg-signal animate-pulse" />
-            4 Live Plans
+            {plans.filter((p) => p.status === "active").length} Live Plans
           </span>
         </div>
 
@@ -262,7 +297,11 @@ export default function AdminPlansPage() {
             className="rounded-xl border border-signal/30 bg-signal/[0.07] p-3.5 text-[13px] font-medium text-signal shadow-2xs flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-2.5">
-              <IconCheck width={16} height={16} className="shrink-0 text-signal" />
+              <IconCheck
+                width={16}
+                height={16}
+                className="shrink-0 text-signal"
+              />
               <span>{successMsg}</span>
             </div>
             <button
@@ -298,7 +337,7 @@ export default function AdminPlansPage() {
             className="gap-1.5 font-semibold text-[12.5px] h-8.5 px-3 border-line text-text hover:border-signal hover:text-signal cursor-pointer"
           >
             <IconPlus width={13} height={13} />
-            <span>Add Festival Offer</span>
+            <span>Add Festival Coupon</span>
           </Button>
         </div>
 
@@ -306,11 +345,11 @@ export default function AdminPlansPage() {
           <table className="w-full text-left text-[13px]">
             <thead className="border-b border-line bg-surface-2/40 text-[11px] font-bold uppercase tracking-wider text-text-3 font-mono">
               <tr>
-                <th className="py-3 px-4.5">Campaign Name</th>
-                <th className="py-3 px-4">Coupon Code</th>
-                <th className="py-3 px-4">Discount &amp; Bonus</th>
+                <th className="py-3 px-4.5">Campaign &amp; Coupon</th>
+                <th className="py-3 px-4">Discount</th>
+                <th className="py-3 px-4">Bonus Orders</th>
                 <th className="py-3 px-4">Validity</th>
-                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-4">Live Status</th>
                 <th className="py-3 px-4.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -318,90 +357,85 @@ export default function AdminPlansPage() {
               {festivalOffers.map((offer) => {
                 const isCopied = copiedCode === offer.couponCode;
                 return (
-                  <tr key={offer.id} className="hover:bg-surface-2/30 transition-colors">
-                    {/* Campaign Name */}
+                  <tr
+                    key={offer.id}
+                    className="hover:bg-surface-2/30 transition-colors"
+                  >
                     <td className="py-3.5 px-4.5">
-                      <span className="font-bold text-text text-[13.5px]">
-                        {offer.festivalName}
-                      </span>
+                      <div className="flex items-center gap-2.5">
+                        <div>
+                          <p className="font-bold text-text text-[13.5px]">
+                            {offer.festivalName}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="font-mono font-bold text-[11px] bg-surface-2 text-text px-2 py-0.5 rounded border border-line">
+                              {offer.couponCode}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCode(offer.couponCode)}
+                              className="text-text-3 hover:text-signal p-0.5 cursor-pointer"
+                              title="Copy coupon code"
+                            >
+                              {isCopied ? (
+                                <IconCheck
+                                  width={12}
+                                  height={12}
+                                  className="text-signal"
+                                />
+                              ) : (
+                                <IconCopy width={12} height={12} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </td>
 
-                    {/* Coupon Code */}
                     <td className="py-3.5 px-4">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCode(offer.couponCode)}
-                        className="inline-flex items-center gap-1.5 font-mono font-bold text-[12px] text-text bg-surface-2 hover:bg-surface-2/80 px-2.5 py-1 rounded-lg border border-line cursor-pointer transition-colors"
-                        title="Copy Coupon"
-                      >
-                        <span>{offer.couponCode}</span>
-                        {isCopied ? (
-                          <IconCheck width={12} height={12} className="text-signal" />
-                        ) : (
-                          <IconCopy width={12} height={12} className="text-text-3" />
-                        )}
-                      </button>
-                    </td>
-
-                    {/* Discount & Bonus */}
-                    <td className="py-3.5 px-4 font-mono text-[12.5px]">
-                      <span className="font-bold text-signal">
+                      <span className="font-bold text-signal font-mono text-[14px]">
                         {offer.discountPercent}% OFF
                       </span>
-                      <span className="text-text-3 ml-1.5">
-                        +{offer.bonusOrders} Extra Orders
-                      </span>
                     </td>
 
-                    {/* Validity */}
-                    <td className="py-3.5 px-4 text-[12.5px] text-text-3 font-mono">
+                    <td className="py-3.5 px-4 font-mono font-semibold text-text">
+                      +{offer.bonusOrders.toLocaleString()} orders
+                    </td>
+
+                    <td className="py-3.5 px-4 text-text-3 font-mono text-[12px]">
                       {offer.validity}
                     </td>
 
-                    {/* Status */}
-                    <td className="py-3.5 px-3">
-                      <span
+                    <td className="py-3.5 px-4">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFestivalOffer(offer.id)}
                         className={cx(
-                          "inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full font-mono",
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold font-mono transition-colors cursor-pointer",
                           offer.active
-                            ? "bg-signal/[0.08] text-signal font-bold"
+                            ? "bg-signal/[0.08] text-signal border border-signal/20"
                             : "bg-surface-2 text-text-3 border border-line",
                         )}
                       >
                         <span
                           className={cx(
                             "size-1.5 rounded-full",
-                            offer.active ? "bg-signal animate-pulse" : "bg-text-3",
+                            offer.active ? "bg-signal" : "bg-text-3",
                           )}
                         />
                         {offer.active ? "LIVE" : "PAUSED"}
-                      </span>
+                      </button>
                     </td>
 
-                    {/* Actions */}
                     <td className="py-3.5 px-4.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleFestivalOffer(offer.id)}
-                          className={cx(
-                            "rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-colors cursor-pointer",
-                            offer.active
-                              ? "border border-amber-300 text-amber-900 bg-amber-50/60 hover:bg-amber-100"
-                              : "border border-line bg-white text-text-2 hover:border-signal hover:text-signal",
-                          )}
-                        >
-                          {offer.active ? "Pause" : "Activate"}
-                        </button>
-
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
                           onClick={() => setEditingFestivalOffer(offer)}
-                          className="rounded-lg border border-line px-2 py-1 text-[11.5px] font-medium text-text-2 hover:border-signal hover:text-signal transition-colors cursor-pointer"
+                          className="text-text-3 hover:text-signal hover:bg-surface-2 p-1.5 rounded-lg transition-colors cursor-pointer text-[12px] font-semibold"
                         >
                           Edit
                         </button>
-
                         <button
                           type="button"
                           onClick={() => setDeletingFestivalOffer(offer)}
@@ -420,20 +454,59 @@ export default function AdminPlansPage() {
         </div>
       </div>
 
-      {/* ─── 3. Main Commercial Plans (4 Clean Cards) ─── */}
+      {/* ─── 3. Main Commercial Plans (Monthly & Yearly Pricing View) ─── */}
       <div className="space-y-3 pt-1">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-bold text-text">
-            Commercial Storefront Plans ({plans.length})
-          </h2>
-          <span className="text-[12px] text-text-3 font-mono">
-            Auto-Sync with Landing &amp; Pricing Pages
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          <div>
+            <h2 className="text-[15.5px] font-bold text-text">
+              Commercial Storefront Plans ({plans.length})
+            </h2>
+            <p className="text-[12px] text-text-3">
+              Auto-synchronized with storefront checkout and Subscriptions billing.
+            </p>
+          </div>
+
+          {/* Monthly vs Yearly Billing Switch */}
+          <div className="flex items-center rounded-xl border border-line bg-surface-2/40 p-0.5 text-[12px] font-semibold font-mono self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setBillingView("monthly")}
+              className={cx(
+                "rounded-lg px-3 py-1 transition-all cursor-pointer",
+                !isYearlyView
+                  ? "bg-white text-text shadow-2xs border border-line"
+                  : "text-text-3 hover:text-text",
+              )}
+            >
+              Monthly Billing
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingView("yearly")}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1 transition-all cursor-pointer",
+                isYearlyView
+                  ? "bg-white text-text shadow-2xs border border-line"
+                  : "text-text-3 hover:text-text",
+              )}
+            >
+              <span>Yearly (বাৎসরিক)</span>
+              <span className="rounded-md bg-signal/[0.12] text-signal px-1.5 py-0.2 text-[10px] font-bold">
+                Save 17%
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((p) => {
             const isFree = p.priceBDT === 0;
+            const displayedPrice = isYearlyView
+              ? (p.yearlyPriceBDT ?? p.priceBDT * 10)
+              : p.priceBDT;
+            const monthlyEquivalent = isYearlyView && !isFree ? Math.round(displayedPrice / 12) : null;
+            const savingsBDT = isYearlyView && !isFree ? (p.priceBDT * 12 - displayedPrice) : 0;
+
             return (
               <div
                 key={p.id}
@@ -470,16 +543,28 @@ export default function AdminPlansPage() {
                   </div>
 
                   {/* Price */}
-                  <div className="border-y border-line/60 py-3">
+                  <div className="border-y border-line/60 py-3 space-y-1">
                     <div className="flex items-baseline gap-1">
                       <span className="text-[29px] font-bold text-text font-(family-name:--font-bricolage)">
-                        {isFree ? "৳০" : formatTaka(p.priceBDT)}
+                        {isFree ? "৳০" : formatTaka(displayedPrice)}
                       </span>
                       <span className="text-[12px] text-text-3 font-mono">
-                        {isFree ? "free" : "/ mo"}
+                        {isFree ? "free" : isYearlyView ? "/ yr" : "/ mo"}
                       </span>
                     </div>
-                    <p className="text-[12.5px] text-signal font-semibold mt-0.5">
+
+                    {isYearlyView && !isFree && (
+                      <div className="flex items-center gap-1.5 text-[11.5px] font-mono">
+                        <span className="text-text-3">৳{monthlyEquivalent}/mo</span>
+                        {savingsBDT > 0 && (
+                          <span className="text-signal font-bold bg-signal/[0.08] px-1.5 py-0.2 rounded border border-signal/20">
+                            Save {formatTaka(savingsBDT)}/yr
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <p className="text-[12.5px] text-signal font-semibold pt-0.5">
                       {p.messageLimit.toLocaleString()} orders included
                     </p>
                   </div>
@@ -490,8 +575,15 @@ export default function AdminPlansPage() {
 
                   <ul className="space-y-2 text-[12.5px] pt-1">
                     {p.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-text-2">
-                        <IconCheck width={13.5} height={13.5} className="text-signal shrink-0 mt-0.5" />
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2 text-text-2"
+                      >
+                        <IconCheck
+                          width={13.5}
+                          height={13.5}
+                          className="text-signal shrink-0 mt-0.5"
+                        />
                         <span className="leading-snug">{feat}</span>
                       </li>
                     ))}
@@ -502,7 +594,7 @@ export default function AdminPlansPage() {
                 <div className="pt-4 border-t border-line/60 mt-5 flex items-center justify-between text-[12px]">
                   <span className="text-text-3 font-mono flex items-center gap-1.5">
                     <span className="size-1.5 rounded-full bg-signal/80" />
-                    {p.activeMerchants} stores
+                    {p.activeMerchants || 0} stores
                   </span>
 
                   <div className="flex items-center gap-2">
@@ -556,10 +648,13 @@ export default function AdminPlansPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditFestivalOffer} className="space-y-3.5 text-[13px]">
+            <form
+              onSubmit={handleSaveEditFestivalOffer}
+              className="space-y-3.5 text-[13px]"
+            >
               <div>
                 <label className="block font-bold text-text mb-1">
-                  Festival Campaign Name
+                  Offer Name
                 </label>
                 <input
                   type="text"
@@ -575,25 +670,24 @@ export default function AdminPlansPage() {
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-text mb-1">
-                  Coupon Code
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editingFestivalOffer.couponCode}
-                  onChange={(e) =>
-                    setEditingFestivalOffer({
-                      ...editingFestivalOffer,
-                      couponCode: e.target.value,
-                    })
-                  }
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono uppercase"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Coupon Code
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingFestivalOffer.couponCode}
+                    onChange={(e) =>
+                      setEditingFestivalOffer({
+                        ...editingFestivalOffer,
+                        couponCode: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono font-bold uppercase"
+                  />
+                </div>
                 <div>
                   <label className="block font-bold text-text mb-1">
                     Discount (%)
@@ -601,6 +695,8 @@ export default function AdminPlansPage() {
                   <input
                     type="number"
                     required
+                    min={1}
+                    max={100}
                     value={editingFestivalOffer.discountPercent}
                     onChange={(e) =>
                       setEditingFestivalOffer({
@@ -611,24 +707,23 @@ export default function AdminPlansPage() {
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block font-bold text-text mb-1">
-                    Bonus Orders
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={editingFestivalOffer.bonusOrders}
-                    onChange={(e) =>
-                      setEditingFestivalOffer({
-                        ...editingFestivalOffer,
-                        bonusOrders: Number(e.target.value),
-                      })
-                    }
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Bonus Orders Included
+                </label>
+                <input
+                  type="number"
+                  value={editingFestivalOffer.bonusOrders}
+                  onChange={(e) =>
+                    setEditingFestivalOffer({
+                      ...editingFestivalOffer,
+                      bonusOrders: Number(e.target.value),
+                    })
+                  }
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                />
               </div>
 
               <div>
@@ -666,7 +761,7 @@ export default function AdminPlansPage() {
         </div>
       )}
 
-      {/* ─── 5. Delete Festival Offer Modal ─── */}
+      {/* ─── 5. Delete Festival Offer Dialog ─── */}
       <AnimatePresence>
         {deletingFestivalOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
@@ -685,7 +780,9 @@ export default function AdminPlansPage() {
                     Delete Festival Offer?
                   </h3>
                   <p className="text-[12.5px] text-text-3 mt-1 leading-relaxed">
-                    Are you sure you want to remove <strong>{deletingFestivalOffer.festivalName}</strong> (Coupon: {deletingFestivalOffer.couponCode})?
+                    Are you sure you want to delete coupon code{" "}
+                    <strong>{deletingFestivalOffer.couponCode}</strong>? Stores
+                    won&apos;t be able to claim it anymore.
                   </p>
                 </div>
               </div>
@@ -713,15 +810,15 @@ export default function AdminPlansPage() {
         )}
       </AnimatePresence>
 
-      {/* ─── 6. Add Festival Offer Modal ─── */}
+      {/* ─── 6. Add Festival Coupon Modal ─── */}
       {addFestivalModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-xl space-y-4">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
               <div className="flex items-center gap-2">
                 <IconTag width={16} height={16} className="text-signal" />
                 <h3 className="text-[15.5px] font-bold text-text">
-                  Create Festival / Seasonal Offer
+                  Create Festival / Promo Offer
                 </h3>
               </div>
               <button
@@ -733,36 +830,38 @@ export default function AdminPlansPage() {
               </button>
             </div>
 
-            <form onSubmit={handleAddFestivalOffer} className="space-y-3.5 text-[13px]">
+            <form
+              onSubmit={handleAddFestivalOffer}
+              className="space-y-3.5 text-[13px]"
+            >
               <div>
                 <label className="block font-bold text-text mb-1">
-                  Festival Campaign Name
+                  Offer Name
                 </label>
                 <input
                   type="text"
                   required
                   value={festName}
                   onChange={(e) => setFestName(e.target.value)}
-                  placeholder="e.g. Eid-ul-Adha Super Saver / Puja Dhamaka"
+                  placeholder="e.g. Shab-e-Barat Special"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-text mb-1">
-                  Promo Coupon Code
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={festCode}
-                  onChange={(e) => setFestCode(e.target.value)}
-                  placeholder="e.g. EIDBLITZ25"
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono uppercase"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Coupon Code
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={festCode}
+                    onChange={(e) => setFestCode(e.target.value)}
+                    placeholder="e.g. BARAT2026"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono font-bold uppercase"
+                  />
+                </div>
                 <div>
                   <label className="block font-bold text-text mb-1">
                     Discount (%)
@@ -770,24 +869,26 @@ export default function AdminPlansPage() {
                   <input
                     type="number"
                     required
+                    min={1}
+                    max={100}
                     value={festDiscount}
                     onChange={(e) => setFestDiscount(Number(e.target.value))}
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block font-bold text-text mb-1">
-                    Bonus Orders
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={festBonus}
-                    onChange={(e) => setFestBonus(Number(e.target.value))}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Bonus Orders Included
+                </label>
+                <input
+                  type="number"
+                  value={festBonus}
+                  onChange={(e) => setFestBonus(Number(e.target.value))}
+                  placeholder="e.g. 500"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                />
               </div>
 
               <div>
@@ -821,10 +922,10 @@ export default function AdminPlansPage() {
         </div>
       )}
 
-      {/* ─── 7. Edit Plan Modal ─── */}
+      {/* ─── 7. Edit Plan Modal (With Monthly & Yearly Pricing) ─── */}
       {editingPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
               <h3 className="text-[15.5px] font-bold text-text">
                 Edit Tier: {editingPlan.name}
@@ -840,7 +941,9 @@ export default function AdminPlansPage() {
 
             <form onSubmit={handleSaveEdit} className="space-y-3.5 text-[13px]">
               <div>
-                <label className="block font-bold text-text mb-1">Plan Name</label>
+                <label className="block font-bold text-text mb-1">
+                  Plan Name
+                </label>
                 <input
                   type="text"
                   required
@@ -852,25 +955,62 @@ export default function AdminPlansPage() {
                 />
               </div>
 
+              {/* Monthly Price & Yearly Price */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
-                    Price in BDT (৳)
+                    Monthly Price (৳/mo)
                   </label>
                   <input
                     type="number"
                     required
                     value={editingPlan.priceBDT}
+                    onChange={(e) => {
+                      const newMonthly = Number(e.target.value);
+                      setEditingPlan({
+                        ...editingPlan,
+                        priceBDT: newMonthly,
+                      });
+                    }}
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-text">
+                      Yearly Price (৳/yr)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const autoYearly = editingPlan.priceBDT * 10;
+                        setEditingPlan({
+                          ...editingPlan,
+                          yearlyPriceBDT: autoYearly,
+                        });
+                      }}
+                      className="text-[10.5px] text-signal font-semibold hover:underline cursor-pointer"
+                      title="Set 2 months free (Monthly × 10)"
+                    >
+                      2 mo free
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    value={editingPlan.yearlyPriceBDT ?? editingPlan.priceBDT * 10}
                     onChange={(e) =>
                       setEditingPlan({
                         ...editingPlan,
-                        priceBDT: Number(e.target.value),
+                        yearlyPriceBDT: Number(e.target.value),
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
                     Order Quota / mo
@@ -888,10 +1028,32 @@ export default function AdminPlansPage() {
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Billing Period
+                  </label>
+                  <select
+                    value={editingPlan.billingPeriod || "both"}
+                    onChange={(e) =>
+                      setEditingPlan({
+                        ...editingPlan,
+                        billingPeriod: e.target.value as "both" | "monthly" | "yearly",
+                      })
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-semibold text-[12.5px]"
+                  >
+                    <option value="both">Both (Monthly &amp; Yearly)</option>
+                    <option value="monthly">Monthly Only</option>
+                    <option value="yearly">Yearly Only</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Tagline</label>
+                <label className="block font-bold text-text mb-1">
+                  Tagline
+                </label>
                 <input
                   type="text"
                   value={editingPlan.tagline}
@@ -903,7 +1065,9 @@ export default function AdminPlansPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Badge Tag</label>
+                <label className="block font-bold text-text mb-1">
+                  Badge Tag
+                </label>
                 <input
                   type="text"
                   value={editingPlan.badge || ""}
@@ -952,7 +1116,9 @@ export default function AdminPlansPage() {
                     Delete Pricing Tier?
                   </h3>
                   <p className="text-[12.5px] text-text-3 mt-1 leading-relaxed">
-                    Are you sure you want to remove <strong>{deletingPlan.name}</strong>? Existing stores will remain active until billing renewal.
+                    Are you sure you want to remove{" "}
+                    <strong>{deletingPlan.name}</strong>? Existing stores will
+                    remain active until billing renewal.
                   </p>
                 </div>
               </div>
@@ -980,7 +1146,7 @@ export default function AdminPlansPage() {
         )}
       </AnimatePresence>
 
-      {/* ─── 9. Create Custom Plan Modal ─── */}
+      {/* ─── 9. Create Custom Plan Modal (With Monthly & Yearly Options) ─── */}
       {createModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -997,10 +1163,15 @@ export default function AdminPlansPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreatePlan} className="space-y-3.5 text-[13px]">
+            <form
+              onSubmit={handleCreatePlan}
+              className="space-y-3.5 text-[13px]"
+            >
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Plan Name</label>
+                  <label className="block font-bold text-text mb-1">
+                    Plan Name
+                  </label>
                   <input
                     type="text"
                     required
@@ -1011,7 +1182,9 @@ export default function AdminPlansPage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-text mb-1">Bengali Name</label>
+                  <label className="block font-bold text-text mb-1">
+                    Bengali Name
+                  </label>
                   <input
                     type="text"
                     value={nameBn}
@@ -1023,7 +1196,9 @@ export default function AdminPlansPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Tagline</label>
+                <label className="block font-bold text-text mb-1">
+                  Tagline
+                </label>
                 <input
                   type="text"
                   value={tagline}
@@ -1033,19 +1208,52 @@ export default function AdminPlansPage() {
                 />
               </div>
 
+              {/* Monthly & Yearly Price Inputs */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Price BDT (৳)</label>
+                  <label className="block font-bold text-text mb-1">
+                    Monthly Price (৳/mo)
+                  </label>
                   <input
                     type="number"
                     required
                     value={priceBDT}
-                    onChange={(e) => setPriceBDT(Number(e.target.value))}
+                    onChange={(e) => {
+                      const m = Number(e.target.value);
+                      setPriceBDT(m);
+                      setYearlyPriceBDT(m * 10);
+                    }}
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+
                 <div>
-                  <label className="block font-bold text-text mb-1">Order Quota</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-text">
+                      Yearly Price (৳/yr)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setYearlyPriceBDT(priceBDT * 10)}
+                      className="text-[10.5px] text-signal font-semibold hover:underline cursor-pointer"
+                    >
+                      2 mo free
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    value={yearlyPriceBDT}
+                    onChange={(e) => setYearlyPriceBDT(Number(e.target.value))}
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Order Quota / mo
+                  </label>
                   <input
                     type="number"
                     required
@@ -1054,11 +1262,30 @@ export default function AdminPlansPage() {
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Billing Period
+                  </label>
+                  <select
+                    value={billingPeriod}
+                    onChange={(e) =>
+                      setBillingPeriod(e.target.value as "both" | "monthly" | "yearly")
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-semibold text-[12.5px]"
+                  >
+                    <option value="both">Both (Monthly &amp; Yearly)</option>
+                    <option value="monthly">Monthly Only</option>
+                    <option value="yearly">Yearly Only</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Catalog SKUs</label>
+                  <label className="block font-bold text-text mb-1">
+                    Catalog SKUs
+                  </label>
                   <input
                     type="number"
                     value={catalogLimit}
@@ -1066,24 +1293,31 @@ export default function AdminPlansPage() {
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
+
                 <div>
-                  <label className="block font-bold text-text mb-1">Couriers</label>
+                  <label className="block font-bold text-text mb-1">
+                    Courier Channels
+                  </label>
                   <input
                     type="number"
                     value={courierChannels}
-                    onChange={(e) => setCourierChannels(Number(e.target.value))}
+                    onChange={(e) =>
+                      setCourierChannels(Number(e.target.value))
+                    }
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Badge (Optional)</label>
+                <label className="block font-bold text-text mb-1">
+                  Badge Tag (Optional)
+                </label>
                 <input
                   type="text"
                   value={badge}
                   onChange={(e) => setBadge(e.target.value)}
-                  placeholder="e.g. Special Tier"
+                  placeholder="e.g. VIP Recommended"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
                 />
               </div>
@@ -1096,7 +1330,7 @@ export default function AdminPlansPage() {
                   rows={3}
                   value={featuresStr}
                   onChange={(e) => setFeaturesStr(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono text-[12px]"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none text-[12.5px]"
                 />
               </div>
 
@@ -1110,7 +1344,7 @@ export default function AdminPlansPage() {
                   Cancel
                 </Button>
                 <Button type="submit" variant="signal" size="sm">
-                  Publish Tier
+                  Publish Plan
                 </Button>
               </div>
             </form>
