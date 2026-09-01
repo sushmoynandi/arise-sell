@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   ADMIN_MERCHANTS,
+  INITIAL_ADMIN_PLANS,
   type AdminMerchant,
+  type AdminPlan,
   type MerchantStatus,
 } from "@/data/admin";
 import {
@@ -16,9 +18,19 @@ import {
   IconInstagram,
   IconGlobe,
 } from "@/components/ui/icons";
-import { formatTaka } from "@/lib/format";
+import { formatTaka, cx } from "@/lib/format";
+import {
+  subscribePlans,
+  getStoredPlans,
+  findMatchingPlan,
+} from "@/lib/plans-store";
 
 export default function AdminUsersPage() {
+  const plans = useSyncExternalStore(
+    subscribePlans,
+    getStoredPlans,
+    () => INITIAL_ADMIN_PLANS,
+  );
   const [merchants, setMerchants] = useState<AdminMerchant[]>(ADMIN_MERCHANTS);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -26,6 +38,29 @@ export default function AdminUsersPage() {
   const [selectedMerchant, setSelectedMerchant] =
     useState<AdminMerchant | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+
+  // Dynamic Plan Info Helper from Plan Builder
+  const getPlanInfo = (planKey: string) => {
+    const matched = findMatchingPlan(planKey, plans);
+    if (matched) {
+      return {
+        id: matched.id,
+        name: matched.name,
+        nameBn: matched.nameBn,
+        priceBDT: matched.priceBDT,
+        yearlyPriceBDT: matched.yearlyPriceBDT,
+        label: `${matched.name} (${matched.priceBDT > 0 ? `${formatTaka(matched.priceBDT)}/mo` : "Free"})`,
+      };
+    }
+    return {
+      id: planKey,
+      name: planKey.charAt(0).toUpperCase() + planKey.slice(1),
+      nameBn: planKey,
+      priceBDT: 0,
+      yearlyPriceBDT: 0,
+      label: planKey.toUpperCase(),
+    };
+  };
 
   // Filter logic
   const filtered = merchants.filter((m) => {
@@ -37,7 +72,10 @@ export default function AdminUsersPage() {
       m.city.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || m.status === statusFilter;
-    const matchesPlan = planFilter === "all" || m.plan === planFilter;
+    const matchesPlan =
+      planFilter === "all" ||
+      m.plan === planFilter ||
+      findMatchingPlan(m.plan, plans)?.id === planFilter;
 
     return matchesSearch && matchesStatus && matchesPlan;
   });
@@ -57,22 +95,15 @@ export default function AdminUsersPage() {
     setTimeout(() => setActionSuccessMsg(null), 3000);
   };
 
-  const handlePlanUpgrade = (
-    id: string,
-    newPlan: "growth" | "scale" | "enterprise",
-  ) => {
-    const planNames = {
-      growth: "Growth Plan (৳৫,৯৯৯/mo)",
-      scale: "Scale Plan (৳৯,৯৯৯/mo)",
-      enterprise: "Enterprise Tier (Custom)",
-    };
+  const handlePlanUpgrade = (id: string, targetPlan: AdminPlan) => {
+    const formattedName = `${targetPlan.name} Plan (${targetPlan.priceBDT > 0 ? `${formatTaka(targetPlan.priceBDT)}/mo` : "Free"})`;
     setMerchants((prev) =>
       prev.map((m) =>
         m.id === id
           ? {
               ...m,
-              plan: newPlan,
-              planName: planNames[newPlan],
+              plan: targetPlan.id.replace("plan-", ""),
+              planName: formattedName,
               status: "active",
             }
           : m,
@@ -83,14 +114,14 @@ export default function AdminUsersPage() {
         prev
           ? {
               ...prev,
-              plan: newPlan,
-              planName: planNames[newPlan],
+              plan: targetPlan.id.replace("plan-", ""),
+              planName: formattedName,
               status: "active",
             }
           : null,
       );
     }
-    setActionSuccessMsg(`Subscription upgraded to ${newPlan.toUpperCase()}`);
+    setActionSuccessMsg(`Subscription switched to ${targetPlan.name}`);
     setTimeout(() => setActionSuccessMsg(null), 3000);
   };
 
@@ -154,18 +185,25 @@ export default function AdminUsersPage() {
             </option>
           </select>
 
-          {/* Plan Filter */}
+          {/* Dynamic Plan Filter from Plan Builder */}
           <select
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
             className="rounded-xl border border-line bg-canvas px-3 py-2 text-[12.5px] font-medium text-text focus:border-signal focus:outline-none cursor-pointer"
           >
-            <option value="all">All Plans</option>
-            <option value="starter">Starter (৳২,৯৯৯)</option>
-            <option value="growth">Growth (৳৫,৯৯৯)</option>
-            <option value="scale">Scale (৳৯,৯৯৯)</option>
-            <option value="enterprise">Enterprise</option>
-            <option value="free_trial">Free Trial</option>
+            <option value="all">All Plans ({merchants.length})</option>
+            {plans.map((p) => {
+              const count = merchants.filter(
+                (m) => findMatchingPlan(m.plan, plans)?.id === p.id,
+              ).length;
+              return (
+                <option key={p.id} value={p.id}>
+                  {p.name}{" "}
+                  {p.priceBDT > 0 ? `(${formatTaka(p.priceBDT)}/mo)` : "(Free)"}{" "}
+                  {count > 0 ? `(${count})` : ""}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -227,7 +265,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="py-4 px-3 whitespace-nowrap">
                       <span className="inline-block rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-text">
-                        {m.plan.toUpperCase()}
+                        {getPlanInfo(m.plan).name}
                       </span>
                     </td>
                     <td className="py-4 px-3 whitespace-nowrap">
@@ -398,29 +436,39 @@ export default function AdminUsersPage() {
                     Current Plan
                   </h4>
                   <span className="font-semibold text-signal text-[12.5px]">
-                    {selectedMerchant.planName}
+                    {getPlanInfo(selectedMerchant.plan).name}{" "}
+                    {getPlanInfo(selectedMerchant.plan).priceBDT > 0
+                      ? `(${formatTaka(getPlanInfo(selectedMerchant.plan).priceBDT)}/mo)`
+                      : "(Free)"}
                   </span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handlePlanUpgrade(selectedMerchant.id, "growth")
-                    }
-                    className="rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11.5px] font-medium hover:border-signal transition-colors cursor-pointer"
-                  >
-                    Upgrade to Growth (৳৫,৯৯৯)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handlePlanUpgrade(selectedMerchant.id, "scale")
-                    }
-                    className="rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11.5px] font-medium hover:border-signal transition-colors cursor-pointer"
-                  >
-                    Upgrade to Scale (৳৯,৯৯৯)
-                  </button>
+                  {plans.map((p) => {
+                    const isCurrent =
+                      findMatchingPlan(selectedMerchant.plan, plans)?.id ===
+                      p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        disabled={isCurrent}
+                        onClick={() =>
+                          handlePlanUpgrade(selectedMerchant.id, p)
+                        }
+                        className={cx(
+                          "rounded-lg border px-2.5 py-1 text-[11.5px] font-medium transition-colors cursor-pointer",
+                          isCurrent
+                            ? "border-signal bg-signal/[0.08] text-signal font-bold cursor-default"
+                            : "border-line bg-surface-2 hover:border-signal text-text hover:bg-white",
+                        )}
+                      >
+                        {isCurrent
+                          ? `✓ Current: ${p.name}`
+                          : `Switch to ${p.name} (${p.priceBDT > 0 ? formatTaka(p.priceBDT) : "Free"})`}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -45,3 +45,21 @@ export function subscribePlans(callback: () => void): () => void {
     window.removeEventListener("storage", handler);
   };
 }
+
+export function findMatchingPlan(
+  planKey: string,
+  plans: AdminPlan[] = INITIAL_ADMIN_PLANS,
+): AdminPlan | undefined {
+  const cleanKey = planKey.toLowerCase().replace("plan-", "").replace(/[^a-z0-9]/g, "");
+  return plans.find((p) => {
+    const cleanId = p.id.toLowerCase().replace("plan-", "").replace(/[^a-z0-9]/g, "");
+    const cleanName = p.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (cleanId === cleanKey || cleanName === cleanKey) return true;
+    if (cleanKey === "scale" && cleanId === "vipscale") return true;
+    if (cleanKey === "starter" && cleanId === "growth") return true;
+    if (cleanKey === "freetrial" && cleanId === "free") return true;
+    if (cleanKey === "enterprise" && cleanId === "customenterprise") return true;
+    return false;
+  });
+}
+

@@ -3,9 +3,12 @@ export type PlanTier =
   | "starter"
   | "growth"
   | "scale"
+  | "business"
+  | "vip_scale"
   | "enterprise"
   | "free_trial"
-  | "eid_promo";
+  | "eid_promo"
+  | (string & {});
 
 export type AdminMerchant = {
   id: string;
