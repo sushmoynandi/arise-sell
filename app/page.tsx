@@ -14,6 +14,7 @@ import Testimonials from "@/components/marketing/Testimonials";
 import Trust from "@/components/marketing/Trust";
 import { FaqSection } from "@/components/marketing/Faq";
 import CtaBand from "@/components/marketing/CtaBand";
+import AIChatAssistant from "@/components/marketing/AIChatAssistant";
 import { FAQS } from "@/data/plans";
 
 export default function HomePage() {
@@ -23,6 +24,7 @@ export default function HomePage() {
       <main id="top">
         <Hero />
         <Features />
+        <AIChatAssistant />
         <Capabilities />
         <ReplyDecay />
         <Spotlights />

@@ -24,6 +24,7 @@ import {
   IconUsers,
 } from "@/components/ui/icons";
 import LanguageToggle from "@/components/marketing/LanguageToggle";
+import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
 
 type Notification = {
@@ -62,6 +63,26 @@ const INITIAL_NOTIFICATIONS: Notification[] = [
   },
 ];
 
+const CONSOLE_GROUP_LABELS: Record<string, string> = {
+  OPERATIONS: "অপারেশনস",
+  "GROWTH & AUTOMATION": "গ্রোথ ও অটোমেশন",
+  "AI SALES ENGINE": "এআই সেলস ইঞ্জিন",
+};
+
+const CONSOLE_ITEM_LABELS: Record<string, string> = {
+  Dashboard: "ড্যাশবোর্ড",
+  Inbox: "ইনবক্স",
+  Comments: "কমেন্টস",
+  Orders: "অর্ডারস",
+  "Leads & Pipeline": "লিডস ও পাইপলাইন",
+  Campaigns: "ক্যাম্পেইনস",
+  "Automation Tools": "অটোমেশন টুলস",
+  Integrations: "ইন্টিগ্রেশনস",
+  Products: "প্রোডাক্টস",
+  "Knowledge Base": "নলেজ বেস",
+  "AI Playground": "এআই প্লেগ্রাউন্ড",
+};
+
 function NavList({
   collapsed,
   onNavigate,
@@ -76,6 +97,11 @@ function NavList({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { lang, t } = useLang();
+  const navTextClass =
+    lang === "en"
+      ? "text-[12.5px] sm:text-[13px]"
+      : "text-[13px] sm:text-[13.5px]";
 
   return (
     <nav className="space-y-6">
@@ -88,11 +114,18 @@ function NavList({
               <button
                 type="button"
                 onClick={() => onToggleGroup(group.group)}
-                className="flex w-full items-center gap-2 px-2.5 pb-1.5 text-left select-none transition-colors hover:text-text"
+                className="flex w-full items-center gap-2 px-4 pb-1.5 text-left select-none transition-colors hover:text-text"
               >
                 <span className="size-2 rounded-full bg-signal ring-2 ring-signal/20 shrink-0" />
-                <p className="flex-1 text-[13px] sm:text-[13.5px] uppercase font-bold tracking-wide text-text">
-                  {group.group}
+                <p
+                  className={cx(
+                    "flex-1 uppercase font-bold tracking-wide text-text",
+                    lang === "en"
+                      ? "text-[12px] sm:text-[12.5px]"
+                      : "text-[12.5px] sm:text-[13px] font-[family-name:var(--font-hind)]",
+                  )}
+                >
+                  {t(group.group, CONSOLE_GROUP_LABELS[group.group])}
                 </p>
                 <IconChevronUp
                   width={12}
@@ -138,16 +171,21 @@ function NavList({
                           collapsed ? `${item.label} — ${item.hint}` : undefined
                         }
                         className={cx(
-                          "group relative flex items-center rounded-xl py-1.5 transition-all duration-100 cursor-pointer select-none text-[14px] sm:text-[14.5px]",
-                          collapsed ? "justify-center px-2" : "gap-2.5 px-2.5",
+                          "group relative flex items-center rounded-xl transition-all duration-100 cursor-pointer select-none",
+                          navTextClass,
+                          collapsed
+                            ? "mx-auto h-11 w-11 justify-center px-0 py-0"
+                            : "gap-2.5 px-3.5 py-2",
                           active
-                            ? "bg-signal/[0.08] text-signal font-bold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.75 before:rounded-full before:bg-signal"
+                            ? "bg-[#eaf5ef] text-signal font-bold shadow-[inset_0_0_0_1px_rgba(10,110,80,0.12)] ring-1 ring-signal/10"
                             : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
+                          lang === "bn" &&
+                            "font-[family-name:var(--font-hind)]",
                         )}
                       >
                         <Icon
-                          width={18.5}
-                          height={18.5}
+                          width={collapsed ? 18 : 18.5}
+                          height={collapsed ? 18 : 18.5}
                           className={cx(
                             "shrink-0 transition-transform duration-100 group-hover:scale-105",
                             active
@@ -157,8 +195,17 @@ function NavList({
                         />
                         {!collapsed && (
                           <>
-                            <span className="flex-1 truncate">
-                              {item.label}
+                            <span
+                              className={cx(
+                                "flex-1 truncate",
+                                lang === "bn" &&
+                                  "font-[family-name:var(--font-hind)]",
+                              )}
+                            >
+                              {t(
+                                item.label,
+                                CONSOLE_ITEM_LABELS[item.label] ?? item.label,
+                              )}
                             </span>
                             {"badge" in item && item.badge && (
                               <span
@@ -211,6 +258,27 @@ const SECTION_TITLES: Record<string, string> = {
   "/console/settings": "Settings",
 };
 
+const SECTION_TITLES_BN: Record<string, string> = {
+  "/console": "ড্যাশবোর্ড",
+  "/console/inbox": "ইনবক্স",
+  "/console/threads": "ইনবক্স",
+  "/console/comments": "কমেন্টস",
+  "/console/orders": "অর্ডারস",
+  "/console/fulfilment": "অর্ডারস",
+  "/console/pipeline": "লিডস ও পাইপলাইন",
+  "/console/campaigns": "ক্যাম্পেইনস",
+  "/console/reach": "ক্যাম্পেইনস",
+  "/console/automation": "অটোমেশন টুলস",
+  "/console/signals": "অটোমেশন টুলস",
+  "/console/products": "প্রোডাক্টস",
+  "/console/catalog": "প্রোডাক্টস",
+  "/console/brain": "নলেজ বেস",
+  "/console/playground": "এআই প্লেগ্রাউন্ড",
+  "/console/test-ai": "এআই প্লেগ্রাউন্ড",
+  "/console/integrations": "ইন্টিগ্রেশনস",
+  "/console/settings": "সেটিংস",
+};
+
 function getQuotaTone(pct: number) {
   if (pct >= 90) {
     return {
@@ -249,6 +317,7 @@ function getQuotaTone(pct: number) {
 function ConsoleShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { lang } = useLang();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -269,8 +338,12 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     pathname === "/console/comments" ||
     (pathname === "/console/reach" && searchParams.get("tab") === "comments");
   const currentSection = isComments
-    ? "Comments"
-    : SECTION_TITLES[pathname] || "Dashboard";
+    ? lang === "bn"
+      ? "কমেন্টস"
+      : "Comments"
+    : lang === "bn"
+      ? SECTION_TITLES_BN[pathname] || "ড্যাশবোর্ড"
+      : SECTION_TITLES[pathname] || "Dashboard";
 
   const markAllAsRead = () => {
     setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
@@ -288,8 +361,8 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
       {/* ---------------- sidebar (desktop) ---------------- */}
       <aside
         className={cx(
-          "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-line bg-surface/90 backdrop-blur-md transition-all duration-200 ease-in-out lg:flex",
-          collapsed ? "w-[68px]" : "w-[256px]",
+          "sticky top-0 z-40 hidden h-screen shrink-0 flex-col overflow-x-visible border-r border-line bg-surface/90 backdrop-blur-md transition-all duration-200 ease-in-out lg:flex",
+          collapsed ? "w-[78px]" : "w-[290px]",
         )}
       >
         {/* Brand Header with Working Collapse Toggle Button (Exact h-16 match with Main Header, with border-b line) */}
@@ -300,14 +373,29 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           )}
         >
           {!collapsed && (
-            <Link href="/" prefetch={true} className="inline-block ml-0.5">
+            <Link
+              href="/"
+              prefetch={true}
+              className="inline-block ml-0.5 translate-x-1 translate-y-0.5"
+            >
               <Wordmark />
             </Link>
           )}
 
           <button
             type="button"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={() => {
+              setCollapsed((prev) => {
+                const next = !prev;
+                if (next) {
+                  setStoreDropdownOpen(false);
+                  setProfileOpen(false);
+                  setNotifOpen(false);
+                  setTeamOpen(false);
+                }
+                return next;
+              });
+            }}
             className="text-text-3 hover:text-text p-1.5 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-label="Toggle sidebar"
@@ -335,8 +423,8 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
         {/* Inner Scrollable Sidebar Container */}
         <div
           className={cx(
-            "flex-1 overflow-y-auto pt-3 pb-3 space-y-3",
-            collapsed ? "px-2" : "px-3",
+            "flex-1 overflow-y-auto overflow-x-visible pt-3 pb-3 space-y-3",
+            collapsed ? "px-2.5" : "px-5",
           )}
         >
           {/* Business / Tenant Switcher with Interactive Dropdown */}
@@ -346,7 +434,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
               className={cx(
                 "flex w-full items-center rounded-xl p-1.5 text-left transition-all hover:bg-surface-2 cursor-pointer select-none group border border-line/50 hover:border-line bg-surface/30 shadow-2xs",
-                collapsed ? "justify-center" : "gap-2.5",
+                collapsed ? "justify-center" : "gap-2.5 px-3",
                 storeDropdownOpen ? "bg-surface-2 border-line" : "",
               )}
               title={
@@ -391,8 +479,10 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 />
                 <div
                   className={cx(
-                    "absolute left-0 top-full mt-1.5 z-50 rounded-xl border border-line bg-white/95 backdrop-blur-xl p-1.5 shadow-xl space-y-1 animate-in fade-in slide-in-from-top-1 duration-150",
-                    collapsed ? "w-60" : "w-full",
+                    "absolute z-[60] rounded-xl border border-line bg-white/95 backdrop-blur-xl p-1.5 shadow-[0_18px_40px_rgba(15,20,25,0.14)] space-y-1 animate-in fade-in slide-in-from-left-1 duration-150",
+                    collapsed
+                      ? "left-[calc(100%+10px)] top-0 w-64 origin-left"
+                      : "left-0 top-full mt-1.5 w-full",
                   )}
                 >
                   {/* Section Label */}
@@ -532,8 +622,10 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
                     className={cx(
-                      "absolute bottom-full mb-1.5 z-50 rounded-xl border border-signal/50 ring-2 ring-signal/35 bg-surface/98 backdrop-blur-xl p-2 shadow-[0_16px_50px_-4px_rgba(10,110,80,0.40),0_6px_22px_rgba(10,110,80,0.22)] space-y-2",
-                      collapsed ? "w-60 -left-2" : "w-full left-0 right-0",
+                      "absolute z-[70] rounded-xl border border-signal/50 ring-2 ring-signal/35 bg-surface/98 backdrop-blur-xl p-2 shadow-[0_16px_50px_-4px_rgba(10,110,80,0.40),0_6px_22px_rgba(10,110,80,0.22)] space-y-2",
+                      collapsed
+                        ? "left-[calc(100%+10px)] bottom-0 w-64 origin-left"
+                        : "bottom-full mb-1.5 left-0 right-0 w-full",
                     )}
                   >
                     {/* Account Summary Header */}
@@ -654,7 +746,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
       </aside>
 
       {/* ---------------- main ---------------- */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-0 flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line bg-canvas/85 px-4 backdrop-blur-xl lg:px-6">
           {/* Left: Mobile Nav Toggle + Prominent Section Title */}
           <div className="flex items-center gap-3 min-w-0">
@@ -666,7 +758,12 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               <IconMenu width={19} height={19} />
             </button>
 
-            <h1 className="text-[22px] sm:text-[24.5px] font-display font-bold text-text tracking-tight truncate select-none leading-none">
+            <h1
+              className={cx(
+                "text-[22px] sm:text-[24.5px] font-display font-bold text-text tracking-tight truncate select-none leading-none",
+                lang === "bn" && "font-[family-name:var(--font-hind)]",
+              )}
+            >
               {currentSection}
             </h1>
           </div>
@@ -749,10 +846,10 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               {teamOpen && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[50]"
                     onClick={() => setTeamOpen(false)}
                   />
-                  <div className="absolute left-1/2 -translate-x-[40%] top-full mt-2 z-50 w-72 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in">
+                  <div className="absolute left-1/2 -translate-x-[40%] top-full mt-2 z-[60] w-72 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in">
                     <div className="flex items-center justify-between px-1.5 pb-2 border-b border-line/60">
                       <div className="flex items-center gap-2">
                         <span className="size-2 rounded-full bg-signal animate-pulse" />
@@ -859,10 +956,10 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               {notifOpen && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[50]"
                     onClick={() => setNotifOpen(false)}
                   />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-80 sm:w-88 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in">
+                  <div className="absolute right-0 top-full mt-2 z-[60] w-80 sm:w-88 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in">
                     {/* Header */}
                     <div className="flex items-center justify-between px-1.5 pb-2 border-b border-line/60">
                       <div className="flex items-center gap-2">

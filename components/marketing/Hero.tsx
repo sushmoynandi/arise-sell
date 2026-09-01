@@ -42,19 +42,19 @@ export default function Hero() {
             </span>
             <span className="text-[13px] text-text-2">
               {t(
-                "You only pay for orders it actually closes",
+                "Only pay for orders you actually close",
                 "যত অর্ডার ক্লোজ হবে, শুধু ততটুকুরই খরচ",
               )}
             </span>
           </motion.div>
 
-          <h1 className="font-display text-[clamp(2.3rem,5vw,3.6rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-text">
+          <h1 className="font-display text-[clamp(2.3rem,5vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-text">
             <SplitWords
               text={t("Your shop keeps selling", "দোকান বন্ধ থাকলেও")}
             />
             <br />
             <SplitWords
-              text={t("after you close it.", "বিক্রি চলতে থাকে।")}
+              text={t("even when you’re offline.", "বিক্রি চলতে থাকে।")}
               delay={0.16}
             />
           </h1>
@@ -66,8 +66,8 @@ export default function Hero() {
             className="mt-4 font-(family-name:--font-hind) text-[19px] leading-relaxed text-signal"
           >
             {t(
-              "Instant replies, complete order taking, and courier booking — 100% on autopilot.",
-              "কাস্টমার মেসেজ করলেই উত্তর, অর্ডার, আর কুরিয়ার বুকিং — সব নিজে থেকেই।",
+              "AI replies, qualifies the buyer, captures the order and books the delivery — all inside the same chat.",
+              "এআই উত্তর দেয়, ক্রেতাকে কনফার্ম করে, অর্ডার নেয়, আর ডেলিভারি পর্যন্ত চ্যাটেই সাজিয়ে রাখে।",
             )}
           </motion.p>
 
@@ -78,8 +78,8 @@ export default function Hero() {
             className="mt-5 max-w-lg text-pretty text-[16.5px] leading-relaxed text-text-2"
           >
             {t(
-              "NextProduct answers your customers on WhatsApp, Messenger and Instagram in their own language, takes the complete order, books Steadfast or Pathao, and sends the invoice — while you sleep, eat, or serve someone standing in front of you.",
-              "NextProduct আপনার কাস্টমারকে হোয়াটসঅ্যাপ, মেসেঞ্জার আর ইনস্টাগ্রামে তাদের নিজের ভাষায় উত্তর দেয়, পুরো অর্ডার নেয়, স্টেডফাস্ট বা পাঠাও বুক করে, আর চালান পাঠিয়ে দেয় — আপনি যখন ঘুমাচ্ছেন, খাচ্ছেন, বা সামনের কাস্টমারকে দেখছেন।",
+              "NextProduct handles the conversation, matches the right product, validates the phone and address, confirms COD or payment, books Steadfast or Pathao, and returns the tracking info immediately — without you needing to monitor every message.",
+              "NextProduct কথোপকথন সামলায়, সঠিক পণ্য খুঁজে দেয়, ফোন ও ঠিকানা যাচাই করে, COD বা পেমেন্ট কনফার্ম করে, স্টেডফাস্ট বা পাঠাও বুক করে, আর ট্র্যাকিং তথ্য একই চ্যাটেই ফেরত পাঠায় — আপনাকে প্রতিটি মেসেজ ধরে রাখতে হয় না।",
             )}
           </motion.p>
 

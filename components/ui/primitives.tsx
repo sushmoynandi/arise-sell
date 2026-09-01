@@ -65,9 +65,9 @@ const BTN_VARIANT = {
 };
 
 const BTN_SIZE = {
-  sm: "h-8 px-3 text-[13px]",
-  md: "h-10 px-4 text-sm",
-  lg: "h-12 px-6 text-[15px]",
+  sm: "h-8 px-3 text-[12.5px]",
+  md: "h-10 px-4 text-[13.5px]",
+  lg: "h-12 px-6 text-[14.5px]",
 };
 
 export function Button({
@@ -124,7 +124,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.75 text-[11px] font-medium leading-none",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.75 text-[10.5px] font-semibold leading-none tracking-[0.02em]",
         TONE[tone],
         className,
       )}
@@ -210,7 +210,7 @@ export function PanelHead({
       )}
     >
       <div className="min-w-0">
-        <h3 className="font-display text-[15px] font-semibold tracking-tight text-text">
+        <h3 className="font-display text-[15px] font-semibold tracking-[-0.02em] text-text">
           {title}
         </h3>
         {sub && (

@@ -99,10 +99,37 @@ body {
   background: var(--canvas);
   color: var(--text);
   font-family: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
   font-feature-settings: "cv11", "ss01";
   /* `clip` (not `hidden`) contains decorative bleed without creating a scroll
      container — so `position: sticky` headers keep working. */
   overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-bricolage), var(--font-hind), ui-sans-serif, system-ui,
+    sans-serif;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+p,
+span,
+li,
+button,
+input,
+textarea,
+select,
+a {
+  font-family: inherit;
 }
 
 /* Bangla mode: Bricolage has no Bengali glyphs, so swap the display face too. */
@@ -113,9 +140,12 @@ html.lang-bn [class*="font-display"] {
 }
 html.lang-bn h1,
 html.lang-bn h2,
-html.lang-bn h3 {
+html.lang-bn h3,
+html.lang-bn h4,
+html.lang-bn h5,
+html.lang-bn h6 {
   letter-spacing: -0.01em;
-  line-height: 1.28;
+  line-height: 1.22;
 }
 
 ::selection {
