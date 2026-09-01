@@ -14,7 +14,7 @@ import {
   IconWhatsApp,
   IconMessenger,
   IconInstagram,
-  IconWidget,
+  IconGlobe,
 } from "@/components/ui/icons";
 import { formatTaka } from "@/lib/format";
 
@@ -231,7 +231,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="py-4 px-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 text-text-3">
+                      <div className="flex items-center gap-1 text-text-3">
                         {m.channels.includes("whatsapp") && (
                           <span title="WhatsApp" className="text-[#25D366]">
                             <IconWhatsApp width={15} height={15} />
@@ -249,7 +249,7 @@ export default function AdminUsersPage() {
                         )}
                         {m.channels.includes("web") && (
                           <span title="Web Widget" className="text-signal">
-                            <IconWidget width={15} height={15} />
+                            <IconGlobe width={15} height={15} />
                           </span>
                         )}
                       </div>
