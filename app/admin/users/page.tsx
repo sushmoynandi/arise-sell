@@ -176,13 +176,17 @@ export default function AdminUsersPage() {
           <table className="w-full text-left text-[13px]">
             <thead className="bg-surface-2/60 border-b border-line text-text-3 text-[11px] font-bold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 pl-5 pr-3">Store &amp; Merchant</th>
-                <th className="py-3.5 px-3">Location</th>
-                <th className="py-3.5 px-3">Plan / Tier</th>
-                <th className="py-3.5 px-3">Channels</th>
-                <th className="py-3.5 px-3">Monthly GMV</th>
-                <th className="py-3.5 px-3">AI Bot Rate</th>
-                <th className="py-3.5 pr-5 text-right">Status</th>
+                <th className="py-3.5 pl-5 pr-4 min-w-[280px] sm:min-w-[320px]">
+                  Store &amp; Merchant
+                </th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Location</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Plan / Tier</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Channels</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Monthly GMV</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">AI Bot Rate</th>
+                <th className="py-3.5 pr-5 text-right whitespace-nowrap">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -199,30 +203,30 @@ export default function AdminUsersPage() {
                     onClick={() => setSelectedMerchant(m)}
                     className="hover:bg-surface-2/40 transition-colors cursor-pointer group"
                   >
-                    <td className="py-4 pl-5 pr-3">
+                    <td className="py-4 pl-5 pr-4 min-w-[280px] sm:min-w-[320px]">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-signal/[0.08] text-signal font-bold text-sm group-hover:bg-signal group-hover:text-white transition-colors">
+                        <div className="grid size-9 place-items-center rounded-xl bg-signal/[0.08] text-signal font-bold text-sm group-hover:bg-signal group-hover:text-white transition-colors shrink-0">
                           {m.storeName.charAt(0)}
                         </div>
-                        <div>
-                          <p className="font-bold text-text group-hover:text-signal transition-colors">
+                        <div className="min-w-0">
+                          <p className="font-bold text-text group-hover:text-signal transition-colors truncate">
                             {m.storeName}
                           </p>
-                          <p className="text-[11.5px] text-text-3">
+                          <p className="text-[11.5px] text-text-3 truncate">
                             {m.ownerName} · {m.phone}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-3 text-text-2 font-medium">
+                    <td className="py-4 px-3 text-text-2 font-medium whitespace-nowrap">
                       {m.city}
                     </td>
-                    <td className="py-4 px-3">
+                    <td className="py-4 px-3 whitespace-nowrap">
                       <span className="inline-block rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-text">
                         {m.plan.toUpperCase()}
                       </span>
                     </td>
-                    <td className="py-4 px-3">
+                    <td className="py-4 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-text-3">
                         {m.channels.includes("whatsapp") && (
                           <span title="WhatsApp" className="text-[#25D366]">
@@ -246,15 +250,15 @@ export default function AdminUsersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-4 px-3 font-semibold text-text">
+                    <td className="py-4 px-3 font-semibold text-text whitespace-nowrap">
                       {formatTaka(m.monthlyGMV)}
                     </td>
-                    <td className="py-4 px-3">
+                    <td className="py-4 px-3 whitespace-nowrap">
                       <span className="font-semibold text-signal">
                         {m.aiResolutionRate}%
                       </span>
                     </td>
-                    <td className="py-4 pr-5 text-right">
+                    <td className="py-4 pr-5 text-right whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           m.status === "active"
