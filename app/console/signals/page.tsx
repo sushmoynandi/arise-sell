@@ -665,13 +665,13 @@ export default function AutomationToolsPage() {
                         {bdt(SPEND.monthUsedBdt)}
                       </span>
                       <span className="text-[12px] font-mono text-text-3">
-                        of {bdt(SPEND.monthBudgetBdt)}
+                        of {bdt(SPEND.monthCapBdt)}
                       </span>
                     </div>
                     <div className="mt-3">
                       <Meter
                         value={SPEND.monthUsedBdt}
-                        max={SPEND.monthBudgetBdt}
+                        max={SPEND.monthCapBdt}
                         tone="mint"
                         className="h-2"
                       />

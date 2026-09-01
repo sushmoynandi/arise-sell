@@ -88,13 +88,25 @@ function NavList({
           <ul className="space-y-1">
             {group.items.map((item) => {
               const Icon = NAV_ICON[item.icon as keyof typeof NAV_ICON];
-              const isTabComments = item.href.includes("tab=comments");
-              const currentTab = searchParams.get("tab");
-              const active = isTabComments
-                ? pathname === "/console/reach" && currentTab === "comments"
-                : item.href === "/console/reach"
-                  ? pathname === "/console/reach" && currentTab !== "comments"
-                  : pathname === item.href;
+              const active =
+                pathname === item.href ||
+                (item.href === "/console/inbox" &&
+                  pathname === "/console/threads") ||
+                (item.href === "/console/orders" &&
+                  pathname === "/console/fulfilment") ||
+                (item.href === "/console/campaigns" &&
+                  pathname === "/console/reach" &&
+                  !searchParams.get("tab")) ||
+                (item.href === "/console/comments" &&
+                  (pathname === "/console/comments" ||
+                    (pathname === "/console/reach" &&
+                      searchParams.get("tab") === "comments"))) ||
+                (item.href === "/console/automation" &&
+                  pathname === "/console/signals") ||
+                (item.href === "/console/products" &&
+                  pathname === "/console/catalog") ||
+                (item.href === "/console/playground" &&
+                  pathname === "/console/test-ai");
               return (
                 <li key={item.label}>
                   <Link
@@ -156,15 +168,23 @@ function NavList({
 
 const SECTION_TITLES: Record<string, string> = {
   "/console": "Dashboard",
+  "/console/inbox": "Inbox",
   "/console/threads": "Inbox",
+  "/console/comments": "Comments",
+  "/console/orders": "Orders",
   "/console/fulfilment": "Orders",
   "/console/pipeline": "Leads & Pipeline",
+  "/console/campaigns": "Campaigns",
   "/console/reach": "Campaigns",
+  "/console/automation": "Automation Tools",
   "/console/signals": "Automation Tools",
+  "/console/products": "Products",
   "/console/catalog": "Products",
   "/console/brain": "Knowledge Base",
+  "/console/playground": "AI Playground",
   "/console/test-ai": "AI Playground",
   "/console/integrations": "Integrations",
+  "/console/settings": "Settings",
 };
 
 function getQuotaTone(pct: number) {
@@ -219,7 +239,8 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
   const unreadCount = notifs.filter((n) => n.unread).length;
 
   const isComments =
-    pathname === "/console/reach" && searchParams.get("tab") === "comments";
+    pathname === "/console/comments" ||
+    (pathname === "/console/reach" && searchParams.get("tab") === "comments");
   const currentSection = isComments
     ? "Comments"
     : SECTION_TITLES[pathname] || "Dashboard";
@@ -535,7 +556,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                     {/* Menu Items (Clean Line List) */}
                     <div className="space-y-0.5 text-[12.5px] font-medium text-text-2">
                       <Link
-                        href="/console/signals"
+                        href="/console/settings?tab=billing"
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
@@ -547,7 +568,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                         <span>Billing &amp; Quota</span>
                       </Link>
                       <Link
-                        href="/console/integrations"
+                        href="/console/settings?tab=team"
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
@@ -559,7 +580,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                         <span>Team &amp; Roles</span>
                       </Link>
                       <Link
-                        href="/console/brain"
+                        href="/console/settings?tab=preferences"
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
@@ -632,7 +653,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
 
             {/* Top Navbar Dynamic Compact Quota Capsule */}
             <Link
-              href="/console/signals"
+              href="/console/settings?tab=billing"
               className={cx(
                 "hidden sm:flex items-center gap-1.5 rounded-xl border h-8 px-2.5 transition-all shadow-2xs group cursor-pointer select-none",
                 quotaTone.border,
@@ -881,7 +902,7 @@ export default function ConsoleShell({ children }: { children: ReactNode }) {
                     {/* Footer */}
                     <div className="pt-1.5 border-t border-line/60 text-center">
                       <Link
-                        href="/console/signals"
+                        href="/console/automation"
                         onClick={() => setNotifOpen(false)}
                         className="text-[11.5px] font-semibold text-text-2 hover:text-signal transition-colors"
                       >

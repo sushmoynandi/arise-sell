@@ -37,24 +37,24 @@ export const CONSOLE_NAV = [
         label: "Dashboard",
         href: "/console",
         icon: "pulse",
-        hint: "Daily activity & revenue",
+        hint: "Daily activity, revenue & operations",
       },
       {
         label: "Inbox",
-        href: "/console/threads",
+        href: "/console/inbox",
         icon: "threads",
-        hint: "Omnichannel conversations",
+        hint: "Omnichannel customer conversations",
         badge: "4",
       },
       {
         label: "Comments",
-        href: "/console/reach?tab=comments",
+        href: "/console/comments",
         icon: "comments",
         hint: "Post & ad comment auto-responder",
       },
       {
         label: "Orders",
-        href: "/console/fulfilment",
+        href: "/console/orders",
         icon: "truck",
         hint: "Courier bookings & COD status",
       },
@@ -71,14 +71,14 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: "Campaigns",
-        href: "/console/reach",
+        href: "/console/campaigns",
         icon: "megaphone",
         hint: "Targeted promos & broadcasts",
         badge: "BETA",
       },
       {
         label: "Automation Tools",
-        href: "/console/signals",
+        href: "/console/automation",
         icon: "zap",
         hint: "Ad signals, CAPI & auto-triggers",
       },
@@ -95,7 +95,7 @@ export const CONSOLE_NAV = [
     items: [
       {
         label: "Products",
-        href: "/console/catalog",
+        href: "/console/products",
         icon: "box",
         hint: "Products, stock & vision index",
       },
@@ -107,7 +107,7 @@ export const CONSOLE_NAV = [
       },
       {
         label: "AI Playground",
-        href: "/console/test-ai",
+        href: "/console/playground",
         icon: "bot",
         hint: "Live simulator & chat testing",
       },

@@ -4,7 +4,13 @@ import Image from "next/image";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import PageHeader from "@/components/console/PageHeader";
-import { Badge, Button, Meter, Panel, PanelHead } from "@/components/ui/primitives";
+import {
+  Badge,
+  Button,
+  Meter,
+  Panel,
+  PanelHead,
+} from "@/components/ui/primitives";
 import { IconCheck, IconEye, IconWarn } from "@/components/ui/icons";
 import { SPRING, Stagger, StaggerItem } from "@/components/motion";
 import { CATEGORIES, FEED_SYNCS, PRODUCTS } from "@/data/catalog";
@@ -12,16 +18,19 @@ import { bdt, cx } from "@/lib/format";
 
 export default function CatalogPage() {
   const [cat, setCat] = useState<string>("All");
-  const list = cat === "All" ? PRODUCTS : PRODUCTS.filter((p) => p.category === cat);
+  const list =
+    cat === "All" ? PRODUCTS : PRODUCTS.filter((p) => p.category === cat);
 
   const indexed = PRODUCTS.filter((p) => p.visionIndexed).length;
-  const oos = PRODUCTS.flatMap((p) => p.variants).filter((v) => v.stock === 0).length;
+  const oos = PRODUCTS.flatMap((p) => p.variants).filter(
+    (v) => v.stock === 0,
+  ).length;
 
   return (
     <>
       <PageHeader
-        title="Catalog"
-        sub="What the agent is allowed to sell — and the photo index that lets a screenshot find it."
+        title="Products & Catalog"
+        sub="Product inventory, variants, prices, and screenshot vision indexing for AI visual matching."
         actions={
           <>
             <Badge tone={indexed === PRODUCTS.length ? "mint" : "amber"} dot>
@@ -38,9 +47,21 @@ export default function CatalogPage() {
         {/* summary strip */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: "Live SKUs", value: PRODUCTS.flatMap((p) => p.variants).length, note: "across 6 products" },
-            { label: "Out of stock", value: oos, note: "hidden from the agent automatically" },
-            { label: "Sold this week", value: PRODUCTS.reduce((a, p) => a + p.soldThisWeek, 0), note: "units across all channels" },
+            {
+              label: "Live SKUs",
+              value: PRODUCTS.flatMap((p) => p.variants).length,
+              note: "across 6 products",
+            },
+            {
+              label: "Out of stock",
+              value: oos,
+              note: "hidden from the agent automatically",
+            },
+            {
+              label: "Sold this week",
+              value: PRODUCTS.reduce((a, p) => a + p.soldThisWeek, 0),
+              note: "units across all channels",
+            },
           ].map((s, i) => (
             <motion.div
               key={s.label}
@@ -50,7 +71,9 @@ export default function CatalogPage() {
               className="panel p-5"
             >
               <p className="text-[12.5px] text-text-3">{s.label}</p>
-              <p className="mt-1.5 font-display text-[26px] font-semibold tracking-tight">{s.value}</p>
+              <p className="mt-1.5 font-display text-[26px] font-semibold tracking-tight">
+                {s.value}
+              </p>
               <p className="mt-0.5 text-[11.5px] text-text-3">{s.note}</p>
             </motion.div>
           ))}
@@ -64,7 +87,7 @@ export default function CatalogPage() {
               onClick={() => setCat(c)}
               className={cx(
                 "relative rounded-lg px-3 py-1.5 text-[12.5px] transition-colors",
-                cat === c ? "text-text" : "text-text-3 hover:text-text-2"
+                cat === c ? "text-text" : "text-text-3 hover:text-text-2",
               )}
             >
               {cat === c && (
@@ -117,12 +140,16 @@ export default function CatalogPage() {
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="truncate text-[14px] font-medium text-text">{p.name}</h3>
+                        <h3 className="truncate text-[14px] font-medium text-text">
+                          {p.name}
+                        </h3>
                         <p className="truncate font-[family-name:var(--font-hind)] text-[12px] text-text-3">
                           {p.nameBn}
                         </p>
                       </div>
-                      <span className="shrink-0 font-mono text-[10px] text-text-3">{p.id}</span>
+                      <span className="shrink-0 font-mono text-[10px] text-text-3">
+                        {p.id}
+                      </span>
                     </div>
 
                     <div className="mt-3 flex items-baseline gap-2">
@@ -142,11 +169,17 @@ export default function CatalogPage() {
                           <span className="w-20 shrink-0 truncate font-mono text-[10.5px] text-text-3">
                             {v.sku}
                           </span>
-                          <span className="flex-1 truncate text-[11.5px] text-text-2">{v.label}</span>
+                          <span className="flex-1 truncate text-[11.5px] text-text-2">
+                            {v.label}
+                          </span>
                           <span
                             className={cx(
                               "shrink-0 font-mono text-[10.5px]",
-                              v.stock === 0 ? "text-coral" : v.stock < 8 ? "text-amber" : "text-text-3"
+                              v.stock === 0
+                                ? "text-coral"
+                                : v.stock < 8
+                                  ? "text-amber"
+                                  : "text-text-3",
                             )}
                           >
                             {v.stock === 0 ? "out" : `${v.stock} left`}
@@ -160,7 +193,12 @@ export default function CatalogPage() {
                         <span>Stock depth</span>
                         <span className="font-mono">{stock} units</span>
                       </div>
-                      <Meter value={stock} max={80} tone={stock < 20 ? "amber" : "signal"} className="mt-2" />
+                      <Meter
+                        value={stock}
+                        max={80}
+                        tone={stock < 20 ? "amber" : "signal"}
+                        className="mt-2"
+                      />
                     </div>
                   </div>
                 </Panel>
@@ -188,12 +226,18 @@ export default function CatalogPage() {
                 <span
                   className={cx(
                     "grid size-6 shrink-0 place-items-center rounded-full",
-                    s.ok ? "bg-mint/12 text-mint" : "bg-coral/12 text-coral"
+                    s.ok ? "bg-mint/12 text-mint" : "bg-coral/12 text-coral",
                   )}
                 >
-                  {s.ok ? <IconCheck width={12} height={12} /> : <IconWarn width={12} height={12} />}
+                  {s.ok ? (
+                    <IconCheck width={12} height={12} />
+                  ) : (
+                    <IconWarn width={12} height={12} />
+                  )}
                 </span>
-                <span className="w-32 shrink-0 font-mono text-[11.5px] text-text-2">{s.at}</span>
+                <span className="w-32 shrink-0 font-mono text-[11.5px] text-text-2">
+                  {s.at}
+                </span>
 
                 {s.ok ? (
                   <div className="flex flex-1 flex-wrap gap-x-5 gap-y-1 font-mono text-[11px] text-text-3">
