@@ -2,9 +2,23 @@
 
 import { motion } from "framer-motion";
 import PageHeader from "@/components/console/PageHeader";
-import { Badge, Button, ChannelChip, Meter, Panel, PanelHead, type Tone } from "@/components/ui/primitives";
+import {
+  Badge,
+  Button,
+  ChannelChip,
+  Meter,
+  Panel,
+  PanelHead,
+  type Tone,
+} from "@/components/ui/primitives";
 import { IconCheck, IconMegaphone } from "@/components/ui/icons";
-import { Counter, Reveal, SPRING, Stagger, StaggerItem } from "@/components/motion";
+import {
+  Counter,
+  Reveal,
+  SPRING,
+  Stagger,
+  StaggerItem,
+} from "@/components/motion";
 import { CAMPAIGNS, COMMENT_RULES } from "@/data/operations";
 import { PLAYBOOKS } from "@/data/brain";
 import { bdt, cx } from "@/lib/format";
@@ -23,11 +37,13 @@ export default function ReachPage() {
   return (
     <>
       <PageHeader
-        title="Reach"
-        sub="Broadcasts, comment automation and follow-up playbooks — the three ways you start a conversation instead of waiting for one."
+        title="Campaigns & Broadcasts"
+        sub="Targeted promotional broadcasts and automated follow-up playbooks to drive repeat orders."
         actions={
           <>
-            <Badge tone="signal">{bdt(revenue, { compact: true })} attributed</Badge>
+            <Badge tone="signal">
+              {bdt(revenue, { compact: true })} attributed
+            </Badge>
             <Button size="sm">
               <IconMegaphone width={14} height={14} />
               New campaign
@@ -40,7 +56,12 @@ export default function ReachPage() {
         {/* headline numbers */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: "Revenue from reach", value: revenue, prefix: "৳", compact: true },
+            {
+              label: "Revenue from reach",
+              value: revenue,
+              prefix: "৳",
+              compact: true,
+            },
             { label: "Orders from reach", value: orders },
             { label: "Reply rate", value: 34.2, suffix: "%", decimals: 1 },
           ].map((s, i) => (
@@ -58,7 +79,11 @@ export default function ReachPage() {
                     ৳<Counter to={16.2} decimals={1} />L
                   </>
                 ) : (
-                  <Counter to={s.value} suffix={s.suffix ?? ""} decimals={s.decimals ?? 0} />
+                  <Counter
+                    to={s.value}
+                    suffix={s.suffix ?? ""}
+                    decimals={s.decimals ?? 0}
+                  />
                 )}
               </p>
             </motion.div>
@@ -80,43 +105,66 @@ export default function ReachPage() {
                   <div className="grid grid-cols-1 gap-4 px-5 py-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-[14px] font-medium text-text">{c.name}</h3>
-                        <Badge tone={STATE[c.state]} dot={c.state === "running"}>
+                        <h3 className="text-[14px] font-medium text-text">
+                          {c.name}
+                        </h3>
+                        <Badge
+                          tone={STATE[c.state]}
+                          dot={c.state === "running"}
+                        >
                           {c.state}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-[12px] text-text-3">{c.segment}</p>
+                      <p className="mt-1 text-[12px] text-text-3">
+                        {c.segment}
+                      </p>
                       <div className="mt-2 flex items-center gap-3">
                         <ChannelChip channel={c.channel} />
-                        <span className="font-mono text-[10.5px] text-text-3">{c.window}</span>
+                        <span className="font-mono text-[10.5px] text-text-3">
+                          {c.window}
+                        </span>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[11px]">
                         <span className="text-text-3">Replied</span>
-                        <span className="font-mono text-text-2">{replyRate.toFixed(0)}%</span>
+                        <span className="font-mono text-text-2">
+                          {replyRate.toFixed(0)}%
+                        </span>
                       </div>
                       <Meter value={replyRate} max={60} className="mt-1.5" />
                       <p className="mt-1.5 font-mono text-[10px] text-text-3">
-                        {c.replied.toLocaleString()} of {c.delivered.toLocaleString()}
+                        {c.replied.toLocaleString()} of{" "}
+                        {c.delivered.toLocaleString()}
                       </p>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[11px]">
                         <span className="text-text-3">Reply → order</span>
-                        <span className="font-mono text-text-2">{orderRate.toFixed(0)}%</span>
+                        <span className="font-mono text-text-2">
+                          {orderRate.toFixed(0)}%
+                        </span>
                       </div>
-                      <Meter value={orderRate} max={50} tone="mint" className="mt-1.5" />
-                      <p className="mt-1.5 font-mono text-[10px] text-text-3">{c.orders} orders</p>
+                      <Meter
+                        value={orderRate}
+                        max={50}
+                        tone="mint"
+                        className="mt-1.5"
+                      />
+                      <p className="mt-1.5 font-mono text-[10px] text-text-3">
+                        {c.orders} orders
+                      </p>
                     </div>
 
                     <div className="text-right">
                       <p className="font-display text-[17px] font-semibold tracking-tight text-signal">
                         {bdt(c.revenue, { compact: true })}
                       </p>
-                      <p className="font-mono text-[10px] text-text-3">attributed</p>
+                      <p className="font-mono text-[10px] text-text-3">
+                        attributed
+                      </p>
                     </div>
                   </div>
                 </StaggerItem>
@@ -138,13 +186,17 @@ export default function ReachPage() {
                   <li key={r.id} className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-mono text-[11.5px] text-text-2">{r.trigger}</p>
-                        <p className="mt-1.5 text-[12.5px] text-text-3">{r.reply}</p>
+                        <p className="font-mono text-[11.5px] text-text-2">
+                          {r.trigger}
+                        </p>
+                        <p className="mt-1.5 text-[12.5px] text-text-3">
+                          {r.reply}
+                        </p>
                       </div>
                       <span
                         className={cx(
                           "mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors",
-                          r.live ? "bg-signal" : "bg-surface-3"
+                          r.live ? "bg-signal" : "bg-surface-3",
                         )}
                       >
                         <motion.span
@@ -152,7 +204,7 @@ export default function ReachPage() {
                           transition={SPRING}
                           className={cx(
                             "size-4 rounded-full bg-white",
-                            r.live ? "ml-auto" : ""
+                            r.live ? "ml-auto" : "",
                           )}
                         />
                       </span>
@@ -178,7 +230,9 @@ export default function ReachPage() {
                 {PLAYBOOKS.map((p) => (
                   <li key={p.id} className="px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
-                      <h4 className="text-[13.5px] font-medium text-text">{p.name}</h4>
+                      <h4 className="text-[13.5px] font-medium text-text">
+                        {p.name}
+                      </h4>
                       {p.live ? (
                         <Badge tone="mint" dot>
                           live
@@ -194,7 +248,12 @@ export default function ReachPage() {
                       <span className="text-text-2">Then</span> {p.then}
                     </p>
                     <div className="mt-2.5 flex items-center gap-2">
-                      <Meter value={(p.orders / p.runs) * 100} max={40} tone="mint" className="max-w-[120px]" />
+                      <Meter
+                        value={(p.orders / p.runs) * 100}
+                        max={40}
+                        tone="mint"
+                        className="max-w-[120px]"
+                      />
                       <span className="font-mono text-[10.5px] text-text-3">
                         {p.runs.toLocaleString()} runs · {p.orders} orders
                       </span>

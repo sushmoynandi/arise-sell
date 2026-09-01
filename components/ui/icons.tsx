@@ -16,32 +16,6 @@ const base = (p: P) => ({
   className: p.className,
 });
 
-export const IconArrow = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M5 12h14M13 6l6 6-6 6" />
-  </svg>
-);
-
-export const IconCheck = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
-export const IconCopy = (p: P) => (
-  <svg {...base(p)}>
-    <rect x="9" y="9" width="13" height="13" rx="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
-
-export const IconSearch = (p: P) => (
-  <svg {...base(p)}>
-    <circle cx="11" cy="11" r="7.5" />
-    <path d="m20.5 20.5-4.2-4.2" />
-  </svg>
-);
-
 export const IconPulse = (p: P) => (
   <svg {...base(p)}>
     <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
@@ -95,6 +69,44 @@ export const IconChart = (p: P) => (
   <svg {...base(p)}>
     <path d="M3 3v18h18" />
     <path d="m7 14 4-4 4 4 5-6" />
+  </svg>
+);
+
+export const IconChevronUp = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m18 15-6-6-6 6" />
+  </svg>
+);
+
+export const IconChevronsUpDown = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m7 15 5 5 5-5M7 9l5-5 5 5" />
+  </svg>
+);
+
+export const IconArrow = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+
+export const IconCheck = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
+
+export const IconCopy = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="13" height="13" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+export const IconSearch = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="11" cy="11" r="7.5" />
+    <path d="m20.5 20.5-4.2-4.2" />
   </svg>
 );
 
@@ -172,6 +184,41 @@ export const IconMail = (p: P) => (
   </svg>
 );
 
+export const IconBell = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
+export const IconCreditCard = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <line x1="2" y1="10" x2="22" y2="10" />
+  </svg>
+);
+
+export const IconUsers = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+
+export const IconSettings = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
+
+export const IconLogOut = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+  </svg>
+);
+
 export const IconLock = (p: P) => (
   <svg {...base(p)}>
     <rect x="4" y="11" width="16" height="10" rx="2" />
@@ -197,12 +244,6 @@ export const IconGoogle = (p: SVGProps<SVGSVGElement>) => (
       fill="#34A853"
       d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
     />
-  </svg>
-);
-
-export const IconBolt = (p: P) => (
-  <svg {...base(p)}>
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
   </svg>
 );
 
@@ -267,18 +308,59 @@ export const IconYouTube = (p: P) => (
 export const CHANNEL_ICON = {
   whatsapp: IconWhatsApp,
   messenger: IconMessenger,
+  facebook: IconFacebook,
   instagram: IconInstagram,
   web: IconWidget,
   telegram: IconGlobe,
+  all: IconGlobe,
 } as const;
 
+export const IconPlug = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 22v-5M9 8V2M15 8V2M6 8h12a2 2 0 0 1 2 2v2a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6v-2a2 2 0 0 1 2-2z" />
+  </svg>
+);
+
+export const IconBot = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="11" width="18" height="10" rx="2" />
+    <circle cx="12" cy="5" r="2" />
+    <path d="M12 7v4M8 16h.01M16 16h.01" />
+  </svg>
+);
+
+export const IconHome = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+export const IconComments = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    <path d="M8 10h.01M12 10h.01M16 10h.01" />
+  </svg>
+);
+
+export const IconZap = (p: P) => (
+  <svg {...base(p)}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
 export const NAV_ICON = {
+  home: IconHome,
   pulse: IconPulse,
   threads: IconThreads,
+  comments: IconComments,
   pipeline: IconPipeline,
   truck: IconTruck,
   box: IconBox,
   megaphone: IconMegaphone,
   brain: IconBrain,
   chart: IconChart,
+  plug: IconPlug,
+  bot: IconBot,
+  zap: IconZap,
 } as const;

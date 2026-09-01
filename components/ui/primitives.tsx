@@ -30,8 +30,8 @@ export function Wordmark({
         className={cx(
           "block p-0 m-0 object-contain transition-transform duration-200 hover:scale-[1.02]",
           compact
-            ? "h-7 w-auto"
-            : "h-[36px] sm:h-[38px] lg:h-[40px] w-auto max-w-[165px]",
+            ? "h-6.5 w-auto"
+            : "h-[32px] sm:h-[34px] w-auto max-w-[152px]",
         )}
         priority
       />

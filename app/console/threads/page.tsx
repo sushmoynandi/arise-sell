@@ -3,8 +3,21 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import PageHeader from "@/components/console/PageHeader";
-import { Avatar, Badge, Button, ChannelChip, Panel, type Tone } from "@/components/ui/primitives";
-import { CHANNEL_ICON, IconArrow, IconCheck, IconEye, IconShield } from "@/components/ui/icons";
+import {
+  Avatar,
+  Badge,
+  Button,
+  ChannelChip,
+  Panel,
+  type Tone,
+} from "@/components/ui/primitives";
+import {
+  CHANNEL_ICON,
+  IconArrow,
+  IconCheck,
+  IconEye,
+  IconShield,
+} from "@/components/ui/icons";
 import { SPRING, SPRING_SOFT } from "@/components/motion";
 import { THREADS } from "@/data/threads";
 import { bdt, cx } from "@/lib/format";
@@ -24,7 +37,8 @@ export default function ThreadsPage() {
 
   const list = THREADS.filter((t) => {
     if (filter === "AI handling") return t.status === "ai";
-    if (filter === "Needs a human") return t.status === "waiting" || t.status === "human";
+    if (filter === "Needs a human")
+      return t.status === "waiting" || t.status === "human";
     if (filter === "Resolved") return t.status === "resolved";
     return true;
   });
@@ -35,8 +49,8 @@ export default function ThreadsPage() {
   return (
     <>
       <PageHeader
-        title="Threads"
-        sub="Every channel in one queue. The agent works the top of it; you work the exceptions."
+        title="Live Inbox"
+        sub="Every channel in one unified queue. AI handles repetitive sales; you take over on exceptions."
         actions={
           <>
             <Badge tone="signal" dot>
@@ -59,7 +73,7 @@ export default function ThreadsPage() {
                 onClick={() => setFilter(f)}
                 className={cx(
                   "relative shrink-0 rounded-lg px-2.5 py-1.5 text-[12px] transition-colors",
-                  filter === f ? "text-text" : "text-text-3 hover:text-text-2"
+                  filter === f ? "text-text" : "text-text-3 hover:text-text-2",
                 )}
               >
                 {filter === f && (
@@ -83,7 +97,7 @@ export default function ThreadsPage() {
                   onClick={() => setActiveId(t.id)}
                   className={cx(
                     "relative flex w-full gap-3 border-b border-line-soft px-4 py-3.5 text-left transition-colors",
-                    on ? "bg-signal-wash" : "hover:bg-surface-2/70"
+                    on ? "bg-signal-wash" : "hover:bg-surface-2/70",
                   )}
                 >
                   {on && (
@@ -93,18 +107,28 @@ export default function ThreadsPage() {
                       className="absolute inset-y-0 left-0 w-[2px] bg-signal"
                     />
                   )}
-                  <Avatar name={t.customer} hue={t.channel === "whatsapp" ? 142 : 262} size={34} />
+                  <Avatar
+                    name={t.customer}
+                    hue={t.channel === "whatsapp" ? 142 : 262}
+                    size={34}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-[13.5px] font-medium text-text">
                         {t.customer}
                       </span>
-                      <span className="shrink-0 font-mono text-[10px] text-text-3">{t.lastAt}</span>
+                      <span className="shrink-0 font-mono text-[10px] text-text-3">
+                        {t.lastAt}
+                      </span>
                     </div>
-                    <p className="mt-0.5 truncate text-[12px] text-text-3">{t.intent}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-text-3">
+                      {t.intent}
+                    </p>
                     <div className="mt-2 flex items-center gap-2">
                       <ChannelChip channel={t.channel} />
-                      <Badge tone={STATUS[t.status].tone}>{STATUS[t.status].label}</Badge>
+                      <Badge tone={STATUS[t.status].tone}>
+                        {STATUS[t.status].label}
+                      </Badge>
                       {t.unread > 0 && (
                         <span className="ml-auto grid size-4 place-items-center rounded-full bg-signal font-mono text-[9.5px] font-semibold text-signal-ink">
                           {t.unread}
@@ -122,9 +146,15 @@ export default function ThreadsPage() {
         <div className="flex min-h-0 flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar name={active.customer} hue={active.channel === "whatsapp" ? 142 : 262} size={32} />
+              <Avatar
+                name={active.customer}
+                hue={active.channel === "whatsapp" ? 142 : 262}
+                size={32}
+              />
               <div className="min-w-0">
-                <p className="truncate text-[14px] font-medium text-text">{active.customer}</p>
+                <p className="truncate text-[14px] font-medium text-text">
+                  {active.customer}
+                </p>
                 <p className="flex items-center gap-1.5 font-mono text-[10.5px] text-text-3">
                   <ChannelIcon width={11} height={11} />
                   {active.handle} · {active.district}
@@ -157,10 +187,23 @@ export default function ThreadsPage() {
               {active.messages.map((m) => {
                 const mine = m.from !== "customer";
                 return (
-                  <div key={m.id} className={cx("flex", mine ? "justify-end" : "justify-start")}>
-                    <div className={cx("max-w-[75%]", mine && "items-end text-right")}>
+                  <div
+                    key={m.id}
+                    className={cx(
+                      "flex",
+                      mine ? "justify-end" : "justify-start",
+                    )}
+                  >
+                    <div
+                      className={cx(
+                        "max-w-[75%]",
+                        mine && "items-end text-right",
+                      )}
+                    >
                       {m.from === "human" && (
-                        <p className="mb-1 font-mono text-[10px] text-iris">IMRAN K. · HUMAN</p>
+                        <p className="mb-1 font-mono text-[10px] text-iris">
+                          IMRAN K. · HUMAN
+                        </p>
                       )}
                       {m.attachment && (
                         <div className="mb-2 overflow-hidden rounded-xl border border-line">
@@ -176,7 +219,8 @@ export default function ThreadsPage() {
                               {m.attachment.matchedSku}
                             </span>
                             <span className="font-mono text-[10px] text-text-2">
-                              {Math.round((m.attachment.confidence ?? 0) * 100)}%
+                              {Math.round((m.attachment.confidence ?? 0) * 100)}
+                              %
                             </span>
                           </div>
                         </div>
@@ -184,26 +228,42 @@ export default function ThreadsPage() {
                       <div
                         className={cx(
                           "rounded-2xl px-3.5 py-2.5 text-left text-[13.5px] leading-relaxed",
-                          m.from === "customer" && "rounded-tl-sm border border-line bg-surface text-text",
-                          m.from === "agent" && "rounded-tr-sm bg-signal text-signal-ink",
-                          m.from === "human" && "rounded-tr-sm bg-iris/15 text-text ring-1 ring-iris/30"
+                          m.from === "customer" &&
+                            "rounded-tl-sm border border-line bg-surface text-text",
+                          m.from === "agent" &&
+                            "rounded-tr-sm bg-signal text-signal-ink",
+                          m.from === "human" &&
+                            "rounded-tr-sm bg-iris/15 text-text ring-1 ring-iris/30",
                         )}
                       >
-                        <span className="font-[family-name:var(--font-hind)]">{m.body}</span>
+                        <span className="font-[family-name:var(--font-hind)]">
+                          {m.body}
+                        </span>
                       </div>
                       {m.gloss && (
-                        <p className="mt-1 text-[11px] italic text-text-3">“{m.gloss}”</p>
+                        <p className="mt-1 text-[11px] italic text-text-3">
+                          “{m.gloss}”
+                        </p>
                       )}
-                      <div className={cx("mt-1 flex items-center gap-2", mine && "justify-end")}>
-                        <span className="font-mono text-[10px] text-text-3">{m.at}</span>
+                      <div
+                        className={cx(
+                          "mt-1 flex items-center gap-2",
+                          mine && "justify-end",
+                        )}
+                      >
+                        <span className="font-mono text-[10px] text-text-3">
+                          {m.at}
+                        </span>
                         {m.action && (
                           <span
                             className={cx(
                               "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[9.5px]",
-                              m.action.tone === "mint" && "bg-mint/10 text-mint",
-                              m.action.tone === "amber" && "bg-amber/10 text-amber",
+                              m.action.tone === "mint" &&
+                                "bg-mint/10 text-mint",
+                              m.action.tone === "amber" &&
+                                "bg-amber/10 text-amber",
                               (!m.action.tone || m.action.tone === "signal") &&
-                                "bg-signal-wash text-signal"
+                                "bg-signal-wash text-signal",
                             )}
                           >
                             <IconCheck width={9} height={9} />
@@ -222,7 +282,9 @@ export default function ThreadsPage() {
             <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
               <input
                 placeholder={
-                  active.status === "ai" ? "AI is handling — type to take over…" : "Write a reply…"
+                  active.status === "ai"
+                    ? "AI is handling — type to take over…"
+                    : "Write a reply…"
                 }
                 className="min-w-0 flex-1 bg-transparent text-[13.5px] text-text placeholder:text-text-3 focus:outline-none"
               />
@@ -272,9 +334,15 @@ export default function ThreadsPage() {
                   .filter((m) => m.action)
                   .map((m) => (
                     <li key={m.id} className="flex items-start gap-2.5">
-                      <IconShield width={12} height={12} className="mt-0.5 shrink-0 text-signal" />
+                      <IconShield
+                        width={12}
+                        height={12}
+                        className="mt-0.5 shrink-0 text-signal"
+                      />
                       <div>
-                        <p className="text-[12px] leading-snug text-text-2">{m.action?.label}</p>
+                        <p className="text-[12px] leading-snug text-text-2">
+                          {m.action?.label}
+                        </p>
                         <p className="mt-0.5 font-mono text-[10px] text-text-3">
                           {m.action?.detail}
                         </p>
@@ -289,13 +357,25 @@ export default function ThreadsPage() {
                 Turn this into
               </p>
               <div className="mt-3 space-y-1.5">
-                <Button size="sm" variant="quiet" className="w-full justify-start">
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  className="w-full justify-start"
+                >
                   A catalog entry
                 </Button>
-                <Button size="sm" variant="quiet" className="w-full justify-start">
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  className="w-full justify-start"
+                >
                   A knowledge answer
                 </Button>
-                <Button size="sm" variant="quiet" className="w-full justify-start">
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  className="w-full justify-start"
+                >
                   An eval test case
                 </Button>
               </div>

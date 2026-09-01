@@ -32,15 +32,21 @@ function Card({
       transition={SPRING}
       className={cx(
         "panel edge-lift group cursor-grab p-3.5 active:cursor-grabbing",
-        card.proposal && "border-[color:var(--signal-line)]"
+        card.proposal && "border-[color:var(--signal-line)]",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[13px] font-medium leading-snug text-text">{card.customer}</p>
+        <p className="text-[13px] font-medium leading-snug text-text">
+          {card.customer}
+        </p>
         <span
           className={cx(
             "shrink-0 font-mono text-[10px]",
-            hot ? "text-signal" : card.confidence < 0.5 ? "text-coral" : "text-text-3"
+            hot
+              ? "text-signal"
+              : card.confidence < 0.5
+                ? "text-coral"
+                : "text-text-3",
           )}
         >
           {Math.round(card.confidence * 100)}%
@@ -70,7 +76,9 @@ function Card({
       <div className="mt-2.5 flex items-center justify-between border-t border-line-soft pt-2.5">
         <ChannelChip channel={card.channel} />
         {card.waitingOn && (
-          <span className="truncate text-[10.5px] text-amber">{card.waitingOn}</span>
+          <span className="truncate text-[10.5px] text-amber">
+            {card.waitingOn}
+          </span>
         )}
       </div>
 
@@ -88,7 +96,9 @@ function Card({
                 <IconSpark width={10} height={10} />
                 MOVE TO {card.proposal.to.toUpperCase()}
               </p>
-              <p className="mt-1.5 text-[11px] leading-snug text-text-2">{card.proposal.why}</p>
+              <p className="mt-1.5 text-[11px] leading-snug text-text-2">
+                {card.proposal.why}
+              </p>
               <div className="mt-2.5 flex gap-1.5">
                 <button
                   onClick={() => onConfirm(card.id)}
@@ -118,12 +128,16 @@ export default function PipelinePage() {
   const confirm = (id: string) =>
     setCards((prev) =>
       prev.map((c) =>
-        c.id === id && c.proposal ? { ...c, stage: c.proposal.to, proposal: undefined } : c
-      )
+        c.id === id && c.proposal
+          ? { ...c, stage: c.proposal.to, proposal: undefined }
+          : c,
+      ),
     );
 
   const reject = (id: string) =>
-    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, proposal: undefined } : c)));
+    setCards((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, proposal: undefined } : c)),
+    );
 
   const byStage = useMemo(() => {
     const m = new Map<Stage, PipelineCard[]>();
@@ -140,12 +154,16 @@ export default function PipelinePage() {
   return (
     <>
       <PageHeader
-        title="Pipeline"
-        sub="Intent moves left to right. The agent proposes each move; you confirm the ones that matter."
+        title="Leads & Pipeline"
+        sub="Customer purchase intent stages, automated follow-ups, and confirmed order conversions."
         actions={
           <>
             <Badge tone="signal">{bdt(open, { compact: true })} open</Badge>
-            {pending > 0 && <Badge tone="amber" dot>{pending} awaiting confirm</Badge>}
+            {pending > 0 && (
+              <Badge tone="amber" dot>
+                {pending} awaiting confirm
+              </Badge>
+            )}
           </>
         }
       />
@@ -172,7 +190,9 @@ export default function PipelinePage() {
                           {items.length}
                         </span>
                       </h2>
-                      <p className="mt-0.5 text-[10.5px] text-text-3">{stage.note}</p>
+                      <p className="mt-0.5 text-[10.5px] text-text-3">
+                        {stage.note}
+                      </p>
                     </div>
                     {total > 0 && (
                       <span className="shrink-0 font-mono text-[10.5px] text-text-3">
@@ -184,7 +204,12 @@ export default function PipelinePage() {
                   <div className="min-h-[120px] space-y-2.5">
                     <AnimatePresence mode="popLayout">
                       {items.map((c) => (
-                        <Card key={c.id} card={c} onConfirm={confirm} onReject={reject} />
+                        <Card
+                          key={c.id}
+                          card={c}
+                          onConfirm={confirm}
+                          onReject={reject}
+                        />
                       ))}
                     </AnimatePresence>
                     {items.length === 0 && (
@@ -194,7 +219,9 @@ export default function PipelinePage() {
                         transition={SPRING_POP}
                         className="rounded-xl border border-dashed border-line px-3 py-8 text-center"
                       >
-                        <p className="text-[11.5px] text-text-3">Nothing here</p>
+                        <p className="text-[11.5px] text-text-3">
+                          Nothing here
+                        </p>
                       </motion.div>
                     )}
                   </div>
@@ -213,7 +240,8 @@ export default function PipelinePage() {
             </p>
             <p className="mt-1.5 text-[13px] text-text-2">
               Listening → Confirmed sits at{" "}
-              <span className="font-medium text-signal">38.4%</span> this week, up from 31.2%.
+              <span className="font-medium text-signal">38.4%</span> this week,
+              up from 31.2%.
             </p>
           </div>
           <div className="h-8 w-px bg-line" />
@@ -222,8 +250,10 @@ export default function PipelinePage() {
               Biggest leak
             </p>
             <p className="mt-1.5 text-[13px] text-text-2">
-              <span className="font-medium text-coral">Details → Confirmed</span> — 22% never send an
-              address.
+              <span className="font-medium text-coral">
+                Details → Confirmed
+              </span>{" "}
+              — 22% never send an address.
             </p>
           </div>
           <Button size="sm" variant="outline" className="ml-auto">

@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import PageHeader from "@/components/console/PageHeader";
-import { Badge, Button, ChannelChip, Panel, PanelHead, type Tone } from "@/components/ui/primitives";
+import {
+  Badge,
+  Button,
+  ChannelChip,
+  Panel,
+  PanelHead,
+  type Tone,
+} from "@/components/ui/primitives";
 import { IconCheck, IconTruck, IconWarn } from "@/components/ui/icons";
 import { SPRING, SPRING_SOFT } from "@/components/motion";
 import { ORDERS } from "@/data/operations";
@@ -35,8 +42,8 @@ export default function FulfilmentPage() {
   return (
     <>
       <PageHeader
-        title="Fulfilment"
-        sub="Order, courier and invoice in one place — because they were never three separate jobs."
+        title="Orders & Delivery"
+        sub="Automated courier bookings, parcel status, and invoice generation in one unified screen."
         actions={
           <>
             <Badge tone="mint" dot>
@@ -53,7 +60,11 @@ export default function FulfilmentPage() {
           <PanelHead
             title="Orders"
             sub={`${ORDERS.length} in the last 72 hours`}
-            right={<Badge tone="neutral">COD {bdt(ORDERS.filter((x) => x.pay === "cod").length * 1)}</Badge>}
+            right={
+              <Badge tone="neutral">
+                COD {bdt(ORDERS.filter((x) => x.pay === "cod").length * 1)}
+              </Badge>
+            }
           />
           <div className="overflow-x-auto">
             <table className="w-full min-w-[620px] text-left">
@@ -69,7 +80,9 @@ export default function FulfilmentPage() {
               <tbody>
                 {ORDERS.map((row) => {
                   const rowTotal =
-                    row.lines.reduce((a, l) => a + l.qty * l.unit, 0) + row.delivery - row.discount;
+                    row.lines.reduce((a, l) => a + l.qty * l.unit, 0) +
+                    row.delivery -
+                    row.discount;
                   const on = row.id === activeId;
                   return (
                     <tr
@@ -77,19 +90,26 @@ export default function FulfilmentPage() {
                       onClick={() => setActiveId(row.id)}
                       className={cx(
                         "cursor-pointer border-b border-line-soft transition-colors",
-                        on ? "bg-surface-2" : "hover:bg-surface-2/50"
+                        on ? "bg-surface-2" : "hover:bg-surface-2/50",
                       )}
                     >
                       <td className="px-5 py-3.5">
-                        <span className="font-mono text-[12px] text-text">{row.ref}</span>
+                        <span className="font-mono text-[12px] text-text">
+                          {row.ref}
+                        </span>
                         <span className="mt-0.5 block font-mono text-[10px] text-text-3">
                           {row.placedAt}
                         </span>
                       </td>
                       <td className="px-3 py-3.5">
-                        <span className="block text-[13px] text-text">{row.customer}</span>
+                        <span className="block text-[13px] text-text">
+                          {row.customer}
+                        </span>
                         <span className="mt-0.5 block">
-                          <ChannelChip channel={row.channel} label={row.district} />
+                          <ChannelChip
+                            channel={row.channel}
+                            label={row.district}
+                          />
                         </span>
                       </td>
                       <td className="px-3 py-3.5">
@@ -115,7 +135,9 @@ export default function FulfilmentPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <Badge tone={STATE[row.state].tone}>{STATE[row.state].label}</Badge>
+                        <Badge tone={STATE[row.state].tone}>
+                          {STATE[row.state].label}
+                        </Badge>
                       </td>
                     </tr>
                   );
@@ -135,7 +157,7 @@ export default function FulfilmentPage() {
                   onClick={() => setTab(t)}
                   className={cx(
                     "relative flex-1 py-3 text-[13px] capitalize transition-colors",
-                    tab === t ? "text-text" : "text-text-3 hover:text-text-2"
+                    tab === t ? "text-text" : "text-text-3 hover:text-text-2",
                   )}
                 >
                   {t}
@@ -164,8 +186,12 @@ export default function FulfilmentPage() {
                   <h3 className="mt-1 font-display text-[19px] font-semibold tracking-tight">
                     {o.customer}
                   </h3>
-                  <p className="mt-1.5 text-[12.5px] leading-snug text-text-2">{o.address}</p>
-                  <p className="mt-1 font-mono text-[12px] text-text-2">{phone(o.phone)}</p>
+                  <p className="mt-1.5 text-[12.5px] leading-snug text-text-2">
+                    {o.address}
+                  </p>
+                  <p className="mt-1 font-mono text-[12px] text-text-2">
+                    {phone(o.phone)}
+                  </p>
 
                   {/* tracker */}
                   {o.state !== "returned" && o.state !== "awaiting_confirm" && (
@@ -174,17 +200,28 @@ export default function FulfilmentPage() {
                         {TRACK.map((s, i) => {
                           const done = i <= stepIdx;
                           return (
-                            <div key={s} className="flex flex-1 items-center last:flex-none">
+                            <div
+                              key={s}
+                              className="flex flex-1 items-center last:flex-none"
+                            >
                               <motion.span
                                 initial={false}
                                 animate={{
-                                  backgroundColor: done ? "var(--signal)" : "var(--surface-3)",
+                                  backgroundColor: done
+                                    ? "var(--signal)"
+                                    : "var(--surface-3)",
                                   scale: i === stepIdx ? 1.15 : 1,
                                 }}
                                 transition={SPRING}
                                 className="grid size-5 shrink-0 place-items-center rounded-full"
                               >
-                                {done && <IconCheck width={11} height={11} className="text-signal-ink" />}
+                                {done && (
+                                  <IconCheck
+                                    width={11}
+                                    height={11}
+                                    className="text-signal-ink"
+                                  />
+                                )}
                               </motion.span>
                               {i < TRACK.length - 1 && (
                                 <div className="h-px flex-1 overflow-hidden bg-surface-3">
@@ -229,7 +266,9 @@ export default function FulfilmentPage() {
                       <dl className="mt-3.5 space-y-1.5 border-t border-line pt-3 font-mono text-[11px]">
                         <div className="flex justify-between">
                           <dt className="text-text-3">Consignment</dt>
-                          <dd className="text-text-2">{o.courier.consignment}</dd>
+                          <dd className="text-text-2">
+                            {o.courier.consignment}
+                          </dd>
                         </div>
                         <div className="flex justify-between">
                           <dt className="text-text-3">ETA</dt>
@@ -238,7 +277,9 @@ export default function FulfilmentPage() {
                         {o.courier.note && (
                           <div className="flex justify-between gap-3">
                             <dt className="shrink-0 text-text-3">Note</dt>
-                            <dd className="truncate text-text-2">{o.courier.note}</dd>
+                            <dd className="truncate text-text-2">
+                              {o.courier.note}
+                            </dd>
                           </div>
                         )}
                       </dl>
@@ -250,8 +291,8 @@ export default function FulfilmentPage() {
                         Not booked yet
                       </p>
                       <p className="mt-1.5 text-[11.5px] leading-snug text-text-2">
-                        Confirm the order and we&apos;ll create the consignment on your own merchant
-                        account.
+                        Confirm the order and we&apos;ll create the consignment
+                        on your own merchant account.
                       </p>
                       <div className="mt-3 flex gap-1.5">
                         <Button size="sm" className="flex-1">
@@ -284,7 +325,9 @@ export default function FulfilmentPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-[13px] font-bold">চালান</p>
-                        <p className="font-mono text-[10px] text-black/55">{o.ref}</p>
+                        <p className="font-mono text-[10px] text-black/55">
+                          {o.ref}
+                        </p>
                       </div>
                     </div>
 
@@ -292,27 +335,38 @@ export default function FulfilmentPage() {
                       <p className="text-black/55">গ্রাহক</p>
                       <p className="font-medium">{o.customer}</p>
                       <p className="text-black/70">{o.address}</p>
-                      <p className="font-mono text-black/70">{phone(o.phone)}</p>
+                      <p className="font-mono text-black/70">
+                        {phone(o.phone)}
+                      </p>
                     </div>
 
                     <table className="mt-4 w-full text-[10.5px]">
                       <thead>
                         <tr className="border-y border-black/10 text-black/55">
                           <th className="py-1.5 text-left font-normal">পণ্য</th>
-                          <th className="py-1.5 text-center font-normal">পরিমাণ</th>
+                          <th className="py-1.5 text-center font-normal">
+                            পরিমাণ
+                          </th>
                           <th className="py-1.5 text-right font-normal">দর</th>
                           <th className="py-1.5 text-right font-normal">মোট</th>
                         </tr>
                       </thead>
                       <tbody>
                         {o.lines.map((l) => (
-                          <tr key={l.sku} className="border-b border-black/[0.06]">
+                          <tr
+                            key={l.sku}
+                            className="border-b border-black/[0.06]"
+                          >
                             <td className="py-2">
                               <span className="block">{l.name}</span>
-                              <span className="font-mono text-[9px] text-black/45">{l.sku}</span>
+                              <span className="font-mono text-[9px] text-black/45">
+                                {l.sku}
+                              </span>
                             </td>
                             <td className="py-2 text-center">{l.qty}</td>
-                            <td className="py-2 text-right">৳{l.unit.toLocaleString("en-IN")}</td>
+                            <td className="py-2 text-right">
+                              ৳{l.unit.toLocaleString("en-IN")}
+                            </td>
                             <td className="py-2 text-right font-medium">
                               ৳{(l.qty * l.unit).toLocaleString("en-IN")}
                             </td>
@@ -343,8 +397,8 @@ export default function FulfilmentPage() {
                     </dl>
 
                     <p className="mt-3 border-t border-black/10 pt-2.5 text-[9px] leading-relaxed text-black/45">
-                      পণ্য বুঝে নেওয়ার আগে অবশ্যই পার্সেল খুলে দেখুন। ৭ দিনের মধ্যে অব্যবহৃত পণ্য
-                      বিনিময়যোগ্য। ধন্যবাদ 🌾
+                      পণ্য বুঝে নেওয়ার আগে অবশ্যই পার্সেল খুলে দেখুন। ৭ দিনের
+                      মধ্যে অব্যবহৃত পণ্য বিনিময়যোগ্য। ধন্যবাদ 🌾
                     </p>
                   </div>
 
