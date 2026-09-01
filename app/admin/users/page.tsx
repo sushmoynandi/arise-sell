@@ -322,14 +322,14 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Detailed Merchant Slide-Over / Modal */}
+      {/* Detailed Merchant Centered Modal */}
       {selectedMerchant && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-sm animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setSelectedMerchant(null)}
         >
           <div
-            className="h-full w-full max-w-lg bg-white border-l border-line p-6 sm:p-8 flex flex-col shadow-2xl overflow-y-auto"
+            className="w-full max-w-xl max-h-[90vh] rounded-3xl bg-white border border-line p-6 sm:p-7 flex flex-col shadow-2xl overflow-y-auto animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Header */}
