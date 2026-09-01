@@ -1010,9 +1010,30 @@ export const LIVE_ACTIVITY_FEED = [
   },
   {
     id: "act-5",
+    type: "order" as const,
+    title: "Dhaka Wardrobe closed ৳৩,৬৫০ order",
+    time: "26 mins ago",
+    detail: "WhatsApp bot closed order, Pathao Express parcel auto-dispatched",
+  },
+  {
+    id: "act-6",
+    type: "signup" as const,
+    title: "Chittagong Organic connected WhatsApp",
+    time: "34 mins ago",
+    detail: "Catalog synced (84 organic items indexed for AI Vision search)",
+  },
+  {
+    id: "act-7",
+    type: "order" as const,
+    title: "Smart Watch BD closed ৳২,৯০০ order",
+    time: "41 mins ago",
+    detail: "bKash Tokenized checkout confirmed, Steadfast tracking generated",
+  },
+  {
+    id: "act-8",
     type: "system" as const,
     title: "Bangla NLU model weights synced",
-    time: "45 mins ago",
+    time: "55 mins ago",
     detail: "240 eval benchmark suites passed with 98.4% accuracy",
   },
 ];

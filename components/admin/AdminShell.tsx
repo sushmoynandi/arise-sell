@@ -134,8 +134,8 @@ const ADMIN_NAV: { group: string; items: AdminNavItem[] }[] = [
         label: "Merchants",
         href: "/admin/users",
         icon: NavIconMerchants,
-        hint: "148 registered stores",
-        badge: "148",
+        hint: "154 registered stores",
+        badge: "154",
       },
       {
         label: "Subscriptions",
@@ -220,6 +220,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [telemetryDropdownOpen, setTelemetryDropdownOpen] = useState(false);
 
   const currentNav = ADMIN_NAV.flatMap((g) => g.items).find(
     (i) => i.href === pathname,
@@ -340,8 +341,111 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
           {/* Right Header Status & Admin Avatar */}
           <div className="flex items-center gap-2.5">
-            {/* Live Telemetry HUD */}
-            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-1.5 shadow-2xs">
+            {/* Live Telemetry HUD Dropdown (in Top Navbar) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setTelemetryDropdownOpen(!telemetryDropdownOpen)}
+                className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-1.5 shadow-2xs hover:border-signal/40 transition-colors cursor-pointer select-none"
+              >
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-[11.5px] font-bold text-text hidden sm:inline">
+                  Infrastructure
+                </span>
+                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  99.98% SLA
+                </span>
+              </button>
+
+              {/* Infrastructure Telemetry Dropdown Card */}
+              {telemetryDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setTelemetryDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 z-50 w-72 sm:w-80 rounded-2xl border border-line bg-white p-3.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in space-y-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-line">
+                      <div className="flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-emerald-500" />
+                        <span className="text-[13px] font-bold text-text">
+                          Infrastructure Telemetry
+                        </span>
+                      </div>
+                      <Link
+                        href="/admin/system"
+                        prefetch={true}
+                        onClick={() => setTelemetryDropdownOpen(false)}
+                        className="text-[11px] text-signal font-semibold hover:underline"
+                      >
+                        System API →
+                      </Link>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {[
+                        {
+                          name: "Meta WhatsApp Cloud API",
+                          category: "Messaging Gateway",
+                          latency: "142ms",
+                        },
+                        {
+                          name: "Meta Messenger Graph API",
+                          category: "Messaging Gateway",
+                          latency: "168ms",
+                        },
+                        {
+                          name: "AI Intent Engine (Bangla NLU)",
+                          category: "Core Inference",
+                          latency: "1.12s",
+                        },
+                        {
+                          name: "Product Vision Matcher (VectorDB)",
+                          category: "Catalog Intelligence",
+                          latency: "280ms",
+                        },
+                        {
+                          name: "Steadfast Courier Bridge",
+                          category: "Logistics Router",
+                          latency: "95ms",
+                        },
+                        {
+                          name: "bKash Tokenized Gateway",
+                          category: "Payment Rails",
+                          latency: "210ms",
+                        },
+                      ].map((srv) => (
+                        <div
+                          key={srv.name}
+                          className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30 border border-line/60 text-[11.5px]"
+                        >
+                          <div>
+                            <span className="text-text font-medium block truncate max-w-[170px]">
+                              {srv.name}
+                            </span>
+                            <span className="text-[9.5px] text-text-3 font-mono">
+                              {srv.category}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-[10.5px] text-text-2 font-medium">
+                              {srv.latency}
+                            </span>
+                            <span className="size-1.5 rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Live Metric HUD Pills */}
+            <div className="hidden md:flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-1.5 shadow-2xs">
               <Link
                 href="/admin/ai-gateway"
                 prefetch={true}
@@ -363,7 +467,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <Link
                 href="/admin/analytics"
                 prefetch={true}
-                className="hidden md:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                className="hidden lg:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
               >
                 <div className="text-left">
                   <p className="font-semibold text-text text-[11px] leading-tight">
@@ -375,12 +479,12 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 </div>
               </Link>
 
-              <span className="hidden md:block h-4 w-px bg-line" />
+              <span className="hidden lg:block h-4 w-px bg-line" />
 
               <Link
                 href="/admin/couriers"
                 prefetch={true}
-                className="hidden lg:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                className="hidden xl:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
               >
                 <div className="text-left">
                   <p className="font-semibold text-text text-[11px] leading-tight">
@@ -388,23 +492,6 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                   </p>
                   <p className="text-[9.5px] text-text-3 font-medium leading-none">
                     Steadfast + Pathao
-                  </p>
-                </div>
-              </Link>
-
-              <span className="hidden lg:block h-4 w-px bg-line" />
-
-              <Link
-                href="/admin/subscriptions"
-                prefetch={true}
-                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-              >
-                <div className="text-left">
-                  <p className="font-bold text-text text-[11px] leading-tight">
-                    MRR ৳৬.৮৪L
-                  </p>
-                  <p className="text-[9.5px] text-signal font-medium leading-none">
-                    +18.2% MoM
                   </p>
                 </div>
               </Link>
