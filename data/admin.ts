@@ -340,6 +340,15 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
   },
 ];
 
+export const SUPPORT_INBOX_STORAGE_KEY = "nextproduct-support-inbox";
+
+export type SupportMessage = {
+  id: string;
+  from: "merchant" | "admin";
+  body: string;
+  at: string;
+};
+
 export type SupportTicket = {
   id: string;
   ticketNo: string;
@@ -355,6 +364,8 @@ export type SupportTicket = {
     issueDescription: string;
     suggestedFix: string;
   };
+  messages?: SupportMessage[];
+  attachments?: { name: string; size: number }[];
   createdAt: string;
   resolvedAt?: string;
   adminNotes?: string;
@@ -379,6 +390,20 @@ export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [
       suggestedFix:
         "Set strict prompt rule: Jamdani Saree max discount is 10% code: EID10.",
     },
+    messages: [
+      {
+        id: "t-1-m-1",
+        from: "merchant",
+        body: "The bot is promising 20% off on Jamdani. Please check this urgently.",
+        at: "15 mins ago",
+      },
+      {
+        id: "t-1-m-2",
+        from: "admin",
+        body: "Thanks for reporting this. We are checking the catalog rule now.",
+        at: "12 mins ago",
+      },
+    ],
     createdAt: "15 mins ago",
   },
   {
@@ -414,6 +439,58 @@ export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [
     resolvedAt: "Yesterday at 6:40 PM",
     adminNotes:
       "Sent official PDF receipt with TxID BKH91827364 to merchant email.",
+  },
+  {
+    id: "t-4",
+    ticketNo: "TCK-4818",
+    merchantName: "Bengal Botanica",
+    merchantEmail: "hello@bengalbotanica.bd",
+    subject: "Instagram comments are not reaching the shared inbox",
+    category: "integration",
+    priority: "medium",
+    status: "in_progress",
+    createdAt: "Today, 10:12 AM",
+    messages: [
+      {
+        id: "t-4-m-1",
+        from: "merchant",
+        body: "Our Instagram product comments stopped appearing in the Reach inbox this morning.",
+        at: "Today, 10:12 AM",
+      },
+      {
+        id: "t-4-m-2",
+        from: "admin",
+        body: "We found a paused webhook subscription and are reconnecting the page now.",
+        at: "Today, 10:18 AM",
+      },
+    ],
+  },
+  {
+    id: "t-5",
+    ticketNo: "TCK-4817",
+    merchantName: "Taant House",
+    merchantEmail: "ops@taanthouse.com.bd",
+    subject: "AI confirmed an out-of-stock Nakshi cushion",
+    category: "ai_correction",
+    priority: "high",
+    status: "open",
+    createdAt: "Today, 9:45 AM",
+    reportedChatSnippet: {
+      customerMsg: "এই নকশি কুশনটা কি এখন অর্ডার করা যাবে?",
+      aiResponse: "জি, আপনার জন্য নকশি কুশনটি অর্ডারে যোগ করে দিচ্ছি।",
+      issueDescription:
+        "The SKU was marked out of stock in the catalog, but the agent confirmed it anyway.",
+      suggestedFix:
+        "Never confirm an order when available stock is zero; offer the next available variant instead.",
+    },
+    messages: [
+      {
+        id: "t-5-m-1",
+        from: "merchant",
+        body: "This is a serious stock mismatch. The bot confirmed a product that has zero inventory.",
+        at: "Today, 9:45 AM",
+      },
+    ],
   },
 ];
 

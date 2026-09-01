@@ -1,9 +1,28 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconClose, IconSend } from "@/components/ui/icons";
+import { SUPPORT_INBOX_STORAGE_KEY, type SupportTicket } from "@/data/admin";
+import { TENANT } from "@/data/tenant";
 import { cx } from "@/lib/format";
+
+const SERIOUS_ISSUE_PATTERN =
+  /urgent|serious|critical|blocked|down|not working|cannot|can't|failed|lost|security|hack|জরুরি|কাজ করছে না|গুরুতর|বন্ধ/;
+
+const getTicketCategory = (body: string): SupportTicket["category"] => {
+  if (/bill|quota|pricing|plan|payment|invoice|পেমেন্ট|বিল/.test(body))
+    return "billing";
+  if (
+    /delivery|courier|pathao|steadfast|ship|tracking|ডেলিভারি|কুরিয়ার/.test(
+      body,
+    )
+  )
+    return "courier_sync";
+  if (/catalog|product|variant|size|stock|image|সাইজ|স্টক|পণ্য/.test(body))
+    return "ai_correction";
+  return "integration";
+};
 
 function RobotHologram() {
   return (
@@ -20,26 +39,130 @@ function RobotHologram() {
   );
 }
 
-export default function FloatingSupportAssistant() {
+export default function FloatingSupportAssistant({
+  consoleMode = false,
+}: {
+  consoleMode?: boolean;
+}) {
+  const assistantTitle = consoleMode ? "Support" : "Help";
+  const assistantStatus = consoleMode
+    ? "Admin team available"
+    : "Answers instantly";
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       from: "agent",
-      text: "Hi! I can help with billing, COD, delivery, catalog updates, or order issues.",
+      text: consoleMode
+        ? "Hi! I can answer quick questions or connect you directly with the admin team for a problem."
+        : "Hi! I can help with billing, COD, delivery, catalog updates, or order issues.",
     },
   ]);
   const [typing, setTyping] = useState(false);
+  const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<
     { name: string; size: number }[]
   >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const ticketSequence = useRef(0);
+  const seenAdminMessageIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (!consoleMode) return;
+
+    const syncAdminReplies = () => {
+      const stored = window.localStorage.getItem(SUPPORT_INBOX_STORAGE_KEY);
+      if (!stored) return;
+
+      try {
+        const tickets = JSON.parse(stored) as SupportTicket[];
+        const ticket = activeTicketId
+          ? tickets.find((item) => item.id === activeTicketId)
+          : tickets[0];
+        const replies =
+          ticket?.messages?.filter((message) => message.from === "admin") ?? [];
+        const newReplies = replies.filter(
+          (message) => !seenAdminMessageIds.current.has(message.id),
+        );
+        if (!newReplies.length) return;
+
+        newReplies.forEach((message) =>
+          seenAdminMessageIds.current.add(message.id),
+        );
+        setMessages((prev) => [
+          ...prev,
+          ...newReplies.map((message) => ({
+            from: "agent" as const,
+            text: `Admin team: ${message.body}`,
+          })),
+        ]);
+      } catch {
+        window.localStorage.removeItem(SUPPORT_INBOX_STORAGE_KEY);
+      }
+    };
+
+    syncAdminReplies();
+    window.addEventListener("support-ticket-created", syncAdminReplies);
+    window.addEventListener("storage", syncAdminReplies);
+    return () => {
+      window.removeEventListener("support-ticket-created", syncAdminReplies);
+      window.removeEventListener("storage", syncAdminReplies);
+    };
+  }, [activeTicketId, consoleMode]);
+
+  const sendAdminTicket = (body: string) => {
+    const stored = window.localStorage.getItem(SUPPORT_INBOX_STORAGE_KEY);
+    const tickets = stored ? (JSON.parse(stored) as SupportTicket[]) : [];
+    const latestStoredSequence = tickets.reduce((latest, ticket) => {
+      const match = ticket.id.match(/^console-(\d+)$/);
+      return Math.max(latest, match ? Number(match[1]) : 0);
+    }, 0);
+    ticketSequence.current =
+      Math.max(ticketSequence.current, latestStoredSequence) + 1;
+    const ticketKey = String(ticketSequence.current).padStart(4, "0");
+    const serious = SERIOUS_ISSUE_PATTERN.test(body.toLowerCase());
+    const ticketNo = `TCK-${ticketKey}`;
+    const ticket: SupportTicket = {
+      id: `console-${ticketKey}`,
+      ticketNo,
+      merchantName: TENANT.name,
+      merchantEmail: "support@nokshi-co.demo",
+      subject: `${serious ? "[SERIOUS] " : ""}${body.length > 52 ? `${body.slice(0, 52)}…` : body}`,
+      category: getTicketCategory(body.toLowerCase()),
+      priority: serious ? "high" : "medium",
+      status: "open",
+      createdAt: "Just now",
+      attachments: uploadedFiles.length ? uploadedFiles : undefined,
+      messages: [
+        {
+          id: `console-${ticketKey}-m-1`,
+          from: "merchant",
+          body,
+          at: "Just now",
+        },
+      ],
+    };
+
+    window.localStorage.setItem(
+      SUPPORT_INBOX_STORAGE_KEY,
+      JSON.stringify([ticket, ...tickets]),
+    );
+    window.dispatchEvent(new Event("support-ticket-created"));
+    setActiveTicketId(ticket.id);
+    setMessages((prev) => [
+      ...prev,
+      { from: "user", text: body },
+      {
+        from: "agent",
+        text: serious
+          ? `Serious issue escalated as high priority. Your support ticket is ${ticketNo}.`
+          : `Your support ticket ${ticketNo} is with the admin team now. They can reply from the Support desk.`,
+      },
+    ]);
+  };
 
   const handleReply = (prompt: string) => {
     const trimmed = prompt.trim();
     if (!trimmed) return;
-
-    setMessages((prev) => [...prev, { from: "user", text: trimmed }]);
-    setTyping(true);
 
     const lowercase = trimmed.toLowerCase();
     const isBilling = /bill|quota|pricing|plan|payment|invoice/.test(lowercase);
@@ -51,6 +174,18 @@ export default function FloatingSupportAssistant() {
       lowercase,
     );
     const isTeam = /team|role|access|permission|account/.test(lowercase);
+    const needsAdmin =
+      consoleMode &&
+      (SERIOUS_ISSUE_PATTERN.test(lowercase) ||
+        !(isBilling || isDelivery || isCod || isCatalog || isTeam));
+
+    if (needsAdmin) {
+      sendAdminTicket(trimmed);
+      return;
+    }
+
+    setMessages((prev) => [...prev, { from: "user", text: trimmed }]);
+    setTyping(true);
 
     const reply = isBilling
       ? "Your plan quota updates in real time. For usage and renewal questions, open Billing & Quota from the profile menu and I’ll summarize the current limits."
@@ -107,10 +242,10 @@ export default function FloatingSupportAssistant() {
                 <RobotHologram />
                 <div>
                   <p className="text-[14px] font-display font-bold tracking-[-0.02em] text-text">
-                    AI Support
+                    {assistantTitle}
                   </p>
                   <p className="text-[10px] font-medium text-text-3">
-                    Online now
+                    {assistantStatus}
                   </p>
                 </div>
               </div>
@@ -220,7 +355,11 @@ export default function FloatingSupportAssistant() {
 
                   <input
                     type="text"
-                    placeholder="Ask about order, COD, delivery, invoice…"
+                    placeholder={
+                      consoleMode
+                        ? "Ask support about order, COD, delivery, invoice…"
+                        : "Ask about order, COD, delivery, invoice…"
+                    }
                     className="h-8 flex-1 border-0 bg-transparent px-1 text-[12px] text-text placeholder:text-text-3 focus:outline-none"
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
@@ -265,7 +404,7 @@ export default function FloatingSupportAssistant() {
             <span className="robot-eye size-1.5 rounded-full bg-signal" />
           </span>
         </span>
-        AI Help
+        {consoleMode ? "Support" : "Help"}
       </button>
     </div>
   );

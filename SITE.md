@@ -209,6 +209,32 @@ npm run build      # production build
   robot shown in the support panel header.
 - **Updated the floating robot face.** It now uses the circular face style with a gentle float
   and blink animation, matching the support assistant’s main visual.
+- **Connected the console Support assistant to the admin desk.** The assistant answers known
+  questions first; unresolved or serious console problems automatically create a ticket in
+  `/admin/support`, where admins can read, reply, resolve, and track the conversation.
+- **Separated public and console support behavior.** Home visitors continue to receive AI-only
+  answers. Console users get Support routing to the human admin team when AI cannot solve an
+  issue; every escalation receives a normal ticket reference, while serious reports receive
+  high priority.
+- **Made the assistants visibly distinct.** Public visitors receive AI-only help, while console
+  users get the direct admin support route.
+- **Simplified support naming across the product.** Public visitors now see “Help,” console
+  users see “Support,” and the admin area is titled “Support Desk.”
+- **Expanded the Support Desk demo inbox.** Added an in-progress Instagram integration ticket
+  and a high-priority out-of-stock AI correction ticket with a serious-issue token.
+- **Simplified support ticket handling.** Each console escalation receives a normal `TCK-XXXX`
+  reference, while category and priority are assigned from the reported message.
+- **Added status controls inside Support Desk Inspect.** Admins can move a ticket between Open,
+  In progress, and Resolved; replying automatically moves an open ticket to In progress.
+- **Clarified ticket context in Inspect.** The original customer and AI exchange is shown as a
+  conversation snapshot, while the technical cause is shown separately as an incident diagnosis.
+- **Fixed the Support Desk resolve action.** In-progress tickets now show a working “Resolve
+  Ticket” button, while only resolved tickets show the completed state.
+- **Fixed replies for tickets without history.** Every ticket now shows a reply composer in
+  Inspect, with a clear empty-state message when no conversation has started yet.
+- **Audited the support workflow end to end.** The Support Desk now includes all ticket states,
+  lets admins correct category and priority, avoids ticket ID collisions across reloads, and
+  keeps uploaded file details attached to console escalations.
 
 - **Rebuilt the marketing site as a business site, not a developer site.** The previous version
   read as a tool for engineers: mono type throughout, HMAC/eval/spec language on the landing

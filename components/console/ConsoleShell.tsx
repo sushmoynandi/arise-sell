@@ -314,21 +314,6 @@ function getQuotaTone(pct: number) {
   };
 }
 
-function RobotHologram() {
-  return (
-    <div className="relative grid size-12 place-items-center">
-      <span className="absolute inset-0 rounded-full bg-signal/10 blur-md animate-pulse" />
-      <div className="robot-holo relative grid size-10 place-items-center rounded-[18px] border border-signal/30 bg-white/55 shadow-[0_16px_30px_rgba(10,110,80,0.14)] backdrop-blur-sm">
-        <div className="absolute inset-[6px] rounded-[14px] border border-signal/15 bg-gradient-to-b from-white to-signal/5" />
-        <div className="relative flex items-center gap-2">
-          <span className="robot-eye block h-2.5 w-2.5 rounded-full bg-signal shadow-[0_0_10px_rgba(10,110,80,0.5)]" />
-          <span className="robot-eye block h-2.5 w-2.5 rounded-full bg-signal shadow-[0_0_10px_rgba(10,110,80,0.5)]" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ConsoleShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();

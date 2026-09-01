@@ -16,7 +16,7 @@ export default function ConsoleLayout({
   return (
     <>
       <ConsoleShell>{children}</ConsoleShell>
-      <FloatingSupportAssistant />
+      <FloatingSupportAssistant consoleMode />
     </>
   );
 }

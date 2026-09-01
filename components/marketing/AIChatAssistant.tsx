@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { SPRING, SPRING_SOFT } from "@/components/motion";
+import { SPRING_SOFT } from "@/components/motion";
 import { IconCheck, IconSpark, IconWhatsApp } from "@/components/ui/icons";
 
 const starterMessages = [
@@ -83,7 +83,7 @@ export default function AIChatAssistant() {
           </h2>
 
           <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-text-2">
-            Merchants don't need another bot. They need an always-on sales
+            Merchants don&apos;t need another bot. They need an always-on sales
             teammate that reads the customer, matches the product, confirms the
             order, and pushes the delivery through the same chat.
           </p>
