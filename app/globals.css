@@ -148,6 +148,43 @@ html.lang-bn h6 {
   line-height: 1.22;
 }
 
+.robot-holo {
+  animation: floatHologram 4s ease-in-out infinite;
+}
+
+.robot-eye {
+  animation: blinkRobot 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.robot-eye:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+@keyframes floatHologram {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02);
+  }
+}
+
+@keyframes blinkRobot {
+  0%,
+  42%,
+  46%,
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  44% {
+    transform: scaleY(0.12);
+    opacity: 0.9;
+  }
+}
+
 ::selection {
   background: rgba(10, 110, 80, 0.16);
   color: var(--text);

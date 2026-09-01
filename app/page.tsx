@@ -15,6 +15,7 @@ import Trust from "@/components/marketing/Trust";
 import { FaqSection } from "@/components/marketing/Faq";
 import CtaBand from "@/components/marketing/CtaBand";
 import AIChatAssistant from "@/components/marketing/AIChatAssistant";
+import FloatingSupportAssistant from "@/components/marketing/FloatingSupportAssistant";
 import { FAQS } from "@/data/plans";
 
 export default function HomePage() {
@@ -39,6 +40,7 @@ export default function HomePage() {
         <CtaBand />
       </main>
       <SiteFooter />
+      <FloatingSupportAssistant />
     </>
   );
 }

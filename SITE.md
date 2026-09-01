@@ -26,36 +26,37 @@ That framing drives three decisions you'll see everywhere in the code:
 
 ### Marketing
 
-| Route | Purpose |
-|---|---|
-| `/` | Landing (business marketing). Hero → 8 feature cards → reply-time decay curve → 3 spotlight blocks with live demos → 3-step setup → testimonials → pricing preview → FAQ accordion → closing CTA. |
-| `/platform` | Channels in depth, the five-stage lifecycle, the eight console surfaces, trust section. |
-| `/pricing` | Three plans + enterprise, a billing-model comparison table, FAQ accordion. |
-| `/docs` | Developer contract v2 — catalog feed, order webhook, HMAC signature verification, fetcher limits. |
-| `/story` | Positioning, four product beliefs, timeline, contact. |
+| Route       | Purpose                                                                                                                                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`         | Landing (business marketing). Hero → 8 feature cards → reply-time decay curve → 3 spotlight blocks with live demos → 3-step setup → testimonials → pricing preview → FAQ accordion → closing CTA. |
+| `/platform` | Channels in depth, the five-stage lifecycle, the eight console surfaces, trust section.                                                                                                           |
+| `/pricing`  | Three plans + enterprise, a billing-model comparison table, FAQ accordion.                                                                                                                        |
+| `/docs`     | Developer contract v2 — catalog feed, order webhook, HMAC signature verification, fetcher limits.                                                                                                 |
+| `/story`    | Positioning, four product beliefs, timeline, contact.                                                                                                                                             |
 
 ### Console (the logged-in product, on mock data)
 
-| Route | What it owns |
-|---|---|
-| `/console` | **Pulse** — KPIs, revenue chart, live event stream, "waiting on a human", AI spend ceiling, channel mix. |
-| `/console/threads` | **Threads** — unified inbox, Bangla/Banglish transcripts with English glosses, photo-match chips, guardrail trace, human takeover. |
-| `/console/pipeline` | **Pipeline** — six-stage kanban. The agent proposes a stage move; a human confirms or rejects it (cards animate between columns). |
-| `/console/fulfilment` | **Fulfilment** — orders, courier tracker and the Bangla চালান invoice in one screen. |
-| `/console/catalog` | **Catalog** — products, variants, vision-index state, and the feed-sync history log. |
-| `/console/reach` | **Reach** — campaigns, comment automation rules, follow-up playbooks. |
-| `/console/brain` | **Brain** — persona, guardrails, knowledge, and the eval harness with held-back failures. |
-| `/console/signals` | **Signals** — server-side conversion events, ROAS, AI spend breakdown, pipeline health. |
+| Route                 | What it owns                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `/console`            | **Pulse** — KPIs, revenue chart, live event stream, "waiting on a human", AI spend ceiling, channel mix.                           |
+| `/console/threads`    | **Threads** — unified inbox, Bangla/Banglish transcripts with English glosses, photo-match chips, guardrail trace, human takeover. |
+| `/console/pipeline`   | **Pipeline** — six-stage kanban. The agent proposes a stage move; a human confirms or rejects it (cards animate between columns).  |
+| `/console/fulfilment` | **Fulfilment** — orders, courier tracker and the Bangla চালান invoice in one screen.                                               |
+| `/console/catalog`    | **Catalog** — products, variants, vision-index state, and the feed-sync history log.                                               |
+| `/console/reach`      | **Reach** — campaigns, comment automation rules, follow-up playbooks.                                                              |
+| `/console/brain`      | **Brain** — persona, guardrails, knowledge, and the eval harness with held-back failures.                                          |
+| `/console/signals`    | **Signals** — server-side conversion events, ROAS, AI spend breakdown, pipeline health.                                            |
 
 ### Mock API (no database — in-memory only)
 
-| Route | Behaviour |
-|---|---|
-| `GET /api/feed` | Cursor-paginated catalog feed matching the v2 contract on `/docs`. |
-| `GET /api/orders` | Lists received orders. |
+| Route              | Behaviour                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/feed`    | Cursor-paginated catalog feed matching the v2 contract on `/docs`.                                                             |
+| `GET /api/orders`  | Lists received orders.                                                                                                         |
 | `POST /api/orders` | Requires `Idempotency-Key`; validates the BD phone rule `01[3-9]\d{8}`; rejects empty orders; replays return the original ref. |
 
 ### Legacy redirects
+
 `/features → /platform`, `/about → /story`, `/showcase → /platform`, `/dashboard → /console`.
 
 ---
@@ -66,15 +67,15 @@ Defined in `app/globals.css`. **Light commerce-admin** — white cards on a soft
 one jade accent. Chosen over a dark theme because merchants read product photos, invoices and
 courier slips all day, and light renders those honestly.
 
-| Token | Value | Use |
-|---|---|---|
-| `--canvas` | `#f7f8f9` | page + app field |
-| `--surface` / `--surface-2` / `--surface-3` | `#ffffff` / `#f1f3f5` / `#e4e7eb` | cards & sidebar / fills & hover / inputs & tracks |
-| `--line` / `--line-soft` | `#e2e5e9` / `#edeff2` | hairlines, row dividers |
-| `--text` / `--text-2` / `--text-3` | `#0f1419` / `#4a5561` / `#626b76` | primary / secondary / tertiary |
-| `--signal` | `#0a6e50` | **the** accent — CTAs, active state, positive data |
-| `--signal-ink` | `#ffffff` | text on the accent |
-| `--mint` `--amber` `--coral` `--iris` `--azure` | status + chart series | never a second brand colour |
+| Token                                           | Value                             | Use                                                |
+| ----------------------------------------------- | --------------------------------- | -------------------------------------------------- |
+| `--canvas`                                      | `#f7f8f9`                         | page + app field                                   |
+| `--surface` / `--surface-2` / `--surface-3`     | `#ffffff` / `#f1f3f5` / `#e4e7eb` | cards & sidebar / fills & hover / inputs & tracks  |
+| `--line` / `--line-soft`                        | `#e2e5e9` / `#edeff2`             | hairlines, row dividers                            |
+| `--text` / `--text-2` / `--text-3`              | `#0f1419` / `#4a5561` / `#626b76` | primary / secondary / tertiary                     |
+| `--signal`                                      | `#0a6e50`                         | **the** accent — CTAs, active state, positive data |
+| `--signal-ink`                                  | `#ffffff`                         | text on the accent                                 |
+| `--mint` `--amber` `--coral` `--iris` `--azure` | status + chart series             | never a second brand colour                        |
 
 **Accessibility:** every page passes WCAG AA at 1440px and 380px, verified by a scripted
 contrast audit that measures rendered text against its actual rendered background. Status
@@ -93,17 +94,17 @@ All motion is disabled under `prefers-reduced-motion`.
 
 `components/motion/index.tsx` — one spring vocabulary so nothing feels borrowed.
 
-| Export | Use |
-|---|---|
-| `SPRING` / `SPRING_SOFT` / `SPRING_POP` | the three house springs |
-| `Reveal` | scroll-triggered entrance (fade + rise + deblur) |
-| `Stagger` / `StaggerItem` | parent/child choreography |
-| `Magnetic` | cursor-attracted buttons |
-| `Tilt` | subtle 3D card response |
-| `Counter` | easeOutExpo number roll, fires on view |
-| `SplitWords` | per-word headline entrance |
-| `Marquee` | seamless infinite rail |
-| `ScrollProgress` | thin signal-coloured progress bar |
+| Export                                  | Use                                              |
+| --------------------------------------- | ------------------------------------------------ |
+| `SPRING` / `SPRING_SOFT` / `SPRING_POP` | the three house springs                          |
+| `Reveal`                                | scroll-triggered entrance (fade + rise + deblur) |
+| `Stagger` / `StaggerItem`               | parent/child choreography                        |
+| `Magnetic`                              | cursor-attracted buttons                         |
+| `Tilt`                                  | subtle 3D card response                          |
+| `Counter`                               | easeOutExpo number roll, fires on view           |
+| `SplitWords`                            | per-word headline entrance                       |
+| `Marquee`                               | seamless infinite rail                           |
+| `ScrollProgress`                        | thin signal-coloured progress bar                |
 
 ---
 
@@ -141,15 +142,15 @@ components/
 
 All in `data/`. The tenant is **Nokshi & Co.**, a fictional Dhaka handloom and home brand.
 
-| File | Contents |
-|---|---|
-| `types.ts` | shared domain types |
-| `tenant.ts` | merchant profile, team, channels, social-proof merchant names |
-| `catalog.ts` | 6 products with variants + `FEED_SYNCS` history (one deliberate failure) |
-| `threads.ts` | 4 conversations (Banglish, Bangla, bulk handoff, resolved return) + `HERO_SCRIPT` |
+| File            | Contents                                                                           |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `types.ts`      | shared domain types                                                                |
+| `tenant.ts`     | merchant profile, team, channels, social-proof merchant names                      |
+| `catalog.ts`    | 6 products with variants + `FEED_SYNCS` history (one deliberate failure)           |
+| `threads.ts`    | 4 conversations (Banglish, Bangla, bulk handoff, resolved return) + `HERO_SCRIPT`  |
 | `operations.ts` | pipeline cards, orders, campaigns, comment rules, CAPI events, series, KPIs, spend |
-| `brain.ts` | persona, guardrails, knowledge, eval suite, playbooks |
-| `plans.ts` | three plans, enterprise, overage, FAQs |
+| `brain.ts`      | persona, guardrails, knowledge, eval suite, playbooks                              |
+| `plans.ts`      | three plans, enterprise, overage, FAQs                                             |
 
 Order refs use the `NP-` prefix; idempotency keys use `np_ord_`.
 
@@ -157,15 +158,15 @@ Order refs use the `NP-` prefix; idempotency keys use `np_ord_`.
 
 ## 7. How to customise
 
-| Want to change | Edit |
-|---|---|
-| Product name, tagline, nav | `lib/brand.ts` |
-| Console navigation / IA | `CONSOLE_NAV` in `lib/brand.ts` |
-| Colours, fonts, animations | `app/globals.css` |
-| Prices and plan features | `data/plans.ts` |
-| Demo merchant and products | `data/tenant.ts`, `data/catalog.ts` |
-| Demo conversations | `data/threads.ts` (`HERO_SCRIPT` drives the landing-page simulation) |
-| Currency / phone formatting | `lib/format.ts` |
+| Want to change              | Edit                                                                 |
+| --------------------------- | -------------------------------------------------------------------- |
+| Product name, tagline, nav  | `lib/brand.ts`                                                       |
+| Console navigation / IA     | `CONSOLE_NAV` in `lib/brand.ts`                                      |
+| Colours, fonts, animations  | `app/globals.css`                                                    |
+| Prices and plan features    | `data/plans.ts`                                                      |
+| Demo merchant and products  | `data/tenant.ts`, `data/catalog.ts`                                  |
+| Demo conversations          | `data/threads.ts` (`HERO_SCRIPT` drives the landing-page simulation) |
+| Currency / phone formatting | `lib/format.ts`                                                      |
 
 ---
 
@@ -188,6 +189,26 @@ npm run build      # production build
 - Product photos are hosted on Unsplash; `next.config.ts` allowlists that host.
 
 ## 10. Recent changes
+
+- **Refined the floating AI Support panel.** The conversation area is now shorter and grows
+  more comfortably, while message bubbles, quick questions, the attachment button, and the
+  message box use tighter text and spacing so the panel stays compact and easy to scan.
+- **Added a little more breathing room to the support conversation.** The panel is slightly
+  taller now while keeping its compact message and input styling.
+- **Shortened the AI Support header.** The robot mark and top spacing are slightly smaller so
+  the header takes up less room while remaining easy to recognize.
+- **Restored more presence to the robot mark.** The icon is now slightly larger inside the
+  compact header so it remains a clear focal point.
+- **Simplified the support message composer.** The attachment control, message field, and send
+  action now sit on one row; the attachment label and Ask text were replaced with compact icons.
+- **Made the composer more minimal.** Visible borders were removed from the message area, and
+  the send action now uses a paper-plane icon for a cleaner, familiar interaction.
+- **Slightly increased the support panel height.** The conversation has a little more room for
+  messages while retaining the minimal composer design.
+- **Added a robot face to the floating AI Help button.** The trigger now visually matches the
+  robot shown in the support panel header.
+- **Updated the floating robot face.** It now uses the circular face style with a gentle float
+  and blink animation, matching the support assistant’s main visual.
 
 - **Rebuilt the marketing site as a business site, not a developer site.** The previous version
   read as a tool for engineers: mono type throughout, HMAC/eval/spec language on the landing

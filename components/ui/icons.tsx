@@ -90,6 +90,13 @@ export const IconArrow = (p: P) => (
   </svg>
 );
 
+export const IconSend = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m22 2-7 20-4-9-9-4L22 2Z" />
+    <path d="M22 2 11 13" />
+  </svg>
+);
+
 export const IconCheck = (p: P) => (
   <svg {...base(p)}>
     <path d="M20 6 9 17l-5-5" />

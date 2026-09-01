@@ -314,6 +314,21 @@ function getQuotaTone(pct: number) {
   };
 }
 
+function RobotHologram() {
+  return (
+    <div className="relative grid size-12 place-items-center">
+      <span className="absolute inset-0 rounded-full bg-signal/10 blur-md animate-pulse" />
+      <div className="robot-holo relative grid size-10 place-items-center rounded-[18px] border border-signal/30 bg-white/55 shadow-[0_16px_30px_rgba(10,110,80,0.14)] backdrop-blur-sm">
+        <div className="absolute inset-[6px] rounded-[14px] border border-signal/15 bg-gradient-to-b from-white to-signal/5" />
+        <div className="relative flex items-center gap-2">
+          <span className="robot-eye block h-2.5 w-2.5 rounded-full bg-signal shadow-[0_0_10px_rgba(10,110,80,0.5)]" />
+          <span className="robot-eye block h-2.5 w-2.5 rounded-full bg-signal shadow-[0_0_10px_rgba(10,110,80,0.5)]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ConsoleShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -479,57 +494,79 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 />
                 <div
                   className={cx(
-                    "absolute z-[60] rounded-xl border border-line bg-white/95 backdrop-blur-xl p-1.5 shadow-[0_18px_40px_rgba(15,20,25,0.14)] space-y-1 animate-in fade-in slide-in-from-left-1 duration-150",
+                    "absolute z-[70] rounded-[18px] border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-[0_18px_40px_rgba(15,20,25,0.12)] animate-in fade-in slide-in-from-left-1 duration-150",
                     collapsed
-                      ? "left-[calc(100%+10px)] top-0 w-64 origin-left"
+                      ? "left-[calc(100%+12px)] top-0 w-[290px] origin-left"
                       : "left-0 top-full mt-1.5 w-full",
                   )}
                 >
-                  {/* Section Label */}
-                  <div className="flex items-center justify-between px-2 py-1 select-none">
-                    <p className="font-mono text-[10px] uppercase font-bold tracking-wider text-text-3">
+                  <div className="flex items-center justify-between px-1 pb-2 select-none">
+                    <p className="text-[11px] font-display font-black uppercase tracking-[0.18em] text-text-3">
                       Workspaces
                     </p>
-                    <span className="font-mono text-[9.5px] text-text-3 font-semibold">
+                    <span className="text-[11px] font-medium text-text-3">
                       1 Active
                     </span>
                   </div>
 
-                  {/* Active Workspace Card (Single Clean Entry) */}
-                  <div className="flex items-center justify-between rounded-lg p-2 bg-signal/[0.08] border border-signal/20 select-none">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="grid size-6.5 shrink-0 place-items-center rounded-md font-display text-[11.5px] font-bold text-signal bg-signal/15">
+                  <div className="rounded-[14px] border border-line bg-surface-2/80 p-2.5 shadow-[inset_0_0_0_1px_rgba(15,20,25,0.02)]">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal/12 text-[18px] font-display font-bold text-signal">
                         N
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-bold text-text truncate leading-tight">
+                        <p className="truncate text-[18px] font-display font-bold tracking-[-0.03em] text-text leading-tight">
                           {TENANT.name}
                         </p>
-                        <p className="text-[11px] text-text-3 font-mono truncate mt-0.5">
+                        <p className="mt-0.5 truncate text-[11.5px] font-mono text-text-3">
                           {TENANT.pages} Connected Channels
                         </p>
                       </div>
+                      <span className="shrink-0 rounded-lg border border-signal/20 bg-signal/10 px-1.5 py-1 text-[9.5px] font-mono font-bold text-signal">
+                        {TENANT.plan}
+                      </span>
                     </div>
-                    <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-signal shrink-0">
-                      {TENANT.plan}
-                    </span>
                   </div>
 
-                  {/* Actions Footer */}
-                  <div className="pt-1 border-t border-line/60 space-y-0.5 text-[13px]">
+                  <div className="mt-3 space-y-1.5 border-t border-line/60 pt-2.5 text-[15px] font-medium text-text-2">
                     <Link
                       href="/pricing"
                       onClick={() => setStoreDropdownOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 font-semibold text-signal hover:bg-signal/10 transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 font-semibold text-signal hover:bg-signal/8 transition-colors cursor-pointer"
                     >
-                      <span>⚡ Upgrade to Business Tier</span>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-amber-700"
+                      >
+                        <path d="M13 2 5 13h6l-1 9 8-11h-6l1-9Z" />
+                      </svg>
+                      <span>Upgrade to Business Tier</span>
                     </Link>
                     <button
                       type="button"
                       onClick={() => setStoreDropdownOpen(false)}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-text-2 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-text-2 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                     >
-                      <span>+ Connect Another Store</span>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        className="text-text-3"
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                      <span>Connect Another Store</span>
                     </button>
                   </div>
                 </div>
