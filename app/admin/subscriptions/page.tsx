@@ -2075,11 +2075,12 @@ export default function AdminSubscriptionsPage() {
                       <div className="space-y-0.5">
                         <Image
                           src="/logo.png"
-                          alt="NextProduct AI"
+                          alt="AriseSell"
                           width={135}
                           height={36}
                           className="h-6.5 w-auto object-contain mb-1"
                           priority
+                          unoptimized
                         />
                         <h2 className="font-bold text-[14px] text-text">
                           NextProduct AI Ltd.
