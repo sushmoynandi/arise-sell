@@ -1,0 +1,115 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nextproduct-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - web
+      - frontend
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nextproduct-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-nextproduct_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nextproduct-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_pass_2026}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secure_pass_2026}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextproduct-backend
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-nextproduct_db}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-np_prod_super_secret_jwt_key_2026}
+      - META_APP_ID=${META_APP_ID}
+      - META_APP_SECRET=${META_APP_SECRET}
+      - STEADFAST_API_KEY=${STEADFAST_API_KEY}
+      - PATHAO_CLIENT_ID=${PATHAO_CLIENT_ID}
+      - BKASH_APP_KEY=${BKASH_APP_KEY}
+      - SSLCOMMERZ_STORE_ID=${SSLCOMMERZ_STORE_ID}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextproduct-celery-worker
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-nextproduct_db}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A app.workers.celery_app.celery_app worker -l INFO -c 8 -Q default,webhooks,ai_inference,campaigns,maintenance,notifications
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextproduct-celery-beat
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-nextproduct_db}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
+    depends_on:
+      - redis
+    command: celery -A app.workers.celery_app.celery_app beat -l INFO
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: Dockerfile.frontend
+    container_name: nextproduct-frontend
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://web:8000/api/v1
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
+  redisdata:

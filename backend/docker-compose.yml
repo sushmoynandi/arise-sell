@@ -1,0 +1,94 @@
+services:
+  # ─── PostgreSQL 16 with pgvector extension ───
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nextproduct-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nextproduct
+      POSTGRES_PASSWORD: nextproduct
+      POSTGRES_DB: nextproduct
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextproduct"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis 7 (Cache, Sessions, Celery Broker) ───
+  redis:
+    image: redis:7-alpine
+    container_name: nextproduct-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── FastAPI Application Server ───
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextproduct-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ─── Celery Worker (Background Tasks) ───
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextproduct-celery-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.workers.celery_app worker -l info -c 4 -Q default,webhooks,ai_inference,campaigns,maintenance,notifications
+
+  # ─── Celery Beat (Scheduled Tasks) ───
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextproduct-celery-beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: celery -A app.workers.celery_app beat -l info --schedule /tmp/celerybeat-schedule
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

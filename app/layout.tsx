@@ -8,6 +8,7 @@ import {
 import "./globals.css";
 import { AgentationProvider } from "@/components/AgentationProvider";
 import { LanguageProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth-context";
 import { BRAND } from "@/lib/brand";
 
 const bricolage = Bricolage_Grotesque({
@@ -77,7 +78,9 @@ export default function RootLayout({
         className="bg-canvas text-text antialiased"
         suppressHydrationWarning
       >
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </LanguageProvider>
         <AgentationProvider />
       </body>
     </html>
