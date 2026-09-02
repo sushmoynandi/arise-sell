@@ -1159,7 +1159,7 @@ export default function AdminSubscriptionsPage() {
           <div class="invoice-box">
             <div class="header">
               <div>
-                <img src="/logo.png" alt="NextProduct AI" style="height: 26px; width: auto; object-fit: contain; margin-bottom: 3px;" />
+                <img src="/logo.png" alt="AriseSell" style="height: 34px; width: auto; object-fit: contain; margin-bottom: 3px;" />
                 <div class="company-name">NextProduct AI Ltd.</div>
                 <div class="company-details">
                   <div>House 42, Road 11, Banani, Dhaka-1213</div>
@@ -2077,8 +2077,8 @@ export default function AdminSubscriptionsPage() {
                           src="/logo.png"
                           alt="AriseSell"
                           width={135}
-                          height={36}
-                          className="h-6.5 w-auto object-contain mb-1"
+                          height={45}
+                          className="h-[34px] w-auto object-contain mb-1"
                           priority
                           unoptimized
                         />

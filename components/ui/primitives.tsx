@@ -25,11 +25,11 @@ export function Wordmark({
       <Image
         src="/logo.png"
         alt="AriseSell"
-        width={180}
-        height={60}
+        width={220}
+        height={73}
         className={cx(
           "block p-0 m-0 object-contain transition-transform duration-200 hover:scale-[1.02]",
-          compact ? "h-[26px] w-auto" : "h-8 sm:h-[34px] w-auto max-w-38",
+          compact ? "h-8 w-auto" : "h-10 sm:h-11 md:h-12 w-auto",
         )}
         priority
         unoptimized
