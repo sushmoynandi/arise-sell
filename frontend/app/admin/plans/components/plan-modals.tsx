@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { IconClose, IconTrash, IconWarn } from "@/components/ui/icons";
 import { Button } from "@/components/ui/primitives";
+import { cx } from "@/lib/format";
 import { AdminPlan, PlanBillingPeriod } from "../types";
 
 interface PlanModalsProps {
@@ -274,13 +275,49 @@ export function PlanModals({
               <h3 className="text-[16px] font-bold text-text">
                 Edit Tier: {localEdit.name}
               </h3>
-              <button
-                type="button"
-                onClick={onCloseEdit}
-                className="text-text-3 hover:text-text text-sm cursor-pointer p-1"
-              >
-                <IconClose width={14} height={14} />
-              </button>
+              <div className="flex items-center gap-3">
+                <label
+                  className="inline-flex items-center gap-2 cursor-pointer select-none"
+                  title="Toggle visibility on public homepage"
+                >
+                  <span className="text-[12px] font-medium text-text-2">
+                    Show on Home
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(localEdit.showOnHome)}
+                    onClick={() =>
+                      setLocalEdit({
+                        ...localEdit,
+                        showOnHome: !localEdit.showOnHome,
+                      })
+                    }
+                    className={cx(
+                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                      localEdit.showOnHome ? "bg-signal" : "bg-surface-3",
+                    )}
+                  >
+                    <span
+                      className={cx(
+                        "pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
+                        localEdit.showOnHome ? "translate-x-4" : "translate-x-0",
+                      )}
+                    />
+                  </button>
+                </label>
+
+                <div className="h-4 w-px bg-line" />
+
+                <button
+                  type="button"
+                  onClick={onCloseEdit}
+                  className="text-text-3 hover:text-text text-sm cursor-pointer p-1 rounded-md hover:bg-surface-2 transition-colors"
+                  title="Close"
+                >
+                  <IconClose width={14} height={14} />
+                </button>
+              </div>
             </div>
 
             <form
@@ -500,25 +537,6 @@ export function PlanModals({
                   placeholder="e.g. 200 Messages / month (Comment + Inbox)&#10;WhatsApp & Messenger integration"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none text-[12.5px]"
                 />
-              </div>
-
-              <div className="pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(localEdit.showOnHome)}
-                    onChange={(e) =>
-                      setLocalEdit({
-                        ...localEdit,
-                        showOnHome: e.target.checked,
-                      })
-                    }
-                    className="rounded border-line text-signal focus:ring-signal size-4 cursor-pointer"
-                  />
-                  <span className="text-[13px] text-text font-medium">
-                    Show on Public Homepage (সর্বোচ্চ ৪টি হোমপেজে প্রদর্শিত হবে)
-                  </span>
-                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
