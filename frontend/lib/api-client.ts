@@ -334,6 +334,8 @@ class ApiClient {
         success: boolean;
         provider?:
           | "google"
+          | "agentrouter"
+          | "openrouter"
           | "openai"
           | "anthropic"
           | "deepseek"

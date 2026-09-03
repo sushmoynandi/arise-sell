@@ -49,7 +49,15 @@ export const ADMIN_KPI = {
 
 export type AiProviderKey = {
   id: string;
-  provider: "google" | "openai" | "anthropic" | "deepseek" | "groq" | "custom";
+  provider:
+    | "google"
+    | "agentrouter"
+    | "openrouter"
+    | "openai"
+    | "anthropic"
+    | "deepseek"
+    | "groq"
+    | "custom";
   providerName: string;
   model: string;
   keyMasked: string;

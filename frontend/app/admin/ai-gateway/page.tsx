@@ -26,11 +26,66 @@ import { cx } from "@/lib/format";
 
 const PROVIDER_LOGOS: Record<string, string> = {
   google: "/providers/gemini.svg",
+  agentrouter: "/providers/custom.svg",
+  openrouter: "/providers/custom.svg",
   openai: "/providers/openai.svg",
   anthropic: "/providers/claude.svg",
   deepseek: "/providers/deepseek.svg",
   groq: "/providers/groq.svg",
   custom: "/providers/custom.svg",
+};
+
+const PROVIDER_DEFAULT_MODELS: Record<string, string[]> = {
+  agentrouter: [
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "deepseek-chat",
+    "deepseek-reasoner",
+    "gemini-2.5-flash",
+    "llama-3.3-70b-versatile",
+  ],
+  google: [
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
+  ],
+  openrouter: [
+    "anthropic/claude-3.5-sonnet",
+    "openai/gpt-4o-mini",
+    "openai/gpt-4o",
+    "deepseek/deepseek-chat",
+    "deepseek/deepseek-r1",
+    "google/gemini-2.5-flash",
+    "meta-llama/llama-3.3-70b-instruct",
+  ],
+  openai: [
+    "gpt-4o-mini",
+    "gpt-4o",
+    "o1-mini",
+    "gpt-4-turbo",
+    "gpt-3.5-turbo",
+  ],
+  anthropic: [
+    "claude-3-5-haiku-20241022",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-opus-20240229",
+  ],
+  deepseek: [
+    "deepseek-chat",
+    "deepseek-reasoner",
+  ],
+  groq: [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768",
+  ],
+  custom: [
+    "custom-model",
+  ],
 };
 
 export default function AdminAiGatewayPage() {
@@ -66,12 +121,12 @@ export default function AdminAiGatewayPage() {
     failoverDetails?: string;
   } | null>(null);
 
-  // Form state
+  // Form state - initially empty until API key or selection is made
   const [newProvider, setNewProvider] =
-    useState<AiProviderKey["provider"]>("google");
-  const [newModel, setNewModel] = useState("gemini-3.5-flash-lite");
+    useState<AiProviderKey["provider"] | "">("");
+  const [newModel, setNewModel] = useState("");
   const [newKey, setNewKey] = useState("");
-  const [newRole, setNewRole] = useState<AiProviderKey["role"]>("standby");
+  const [newRole, setNewRole] = useState<AiProviderKey["role"]>("primary");
 
   // Modal API Key Test State
   const [modalTesting, setModalTesting] = useState(false);
@@ -98,11 +153,13 @@ export default function AdminAiGatewayPage() {
       const res = await api.admin.detectAiKey(key);
       if (res && res.success && res.provider) {
         setNewProvider(res.provider);
-        if (res.models && res.models.length > 0) {
-          setAvailableModels(res.models);
-          setNewModel(res.default_model || res.models[0]);
-          setCustomModelMode(false);
-        }
+        const models =
+          res.models && res.models.length > 0
+            ? res.models
+            : PROVIDER_DEFAULT_MODELS[res.provider] || [];
+        setAvailableModels(models);
+        setNewModel(res.default_model || models[0] || "");
+        setCustomModelMode(false);
         setModalTestResult({
           success: true,
           latency: res.latency_ms || 120,
@@ -129,6 +186,9 @@ export default function AdminAiGatewayPage() {
 
   const openAddModal = () => {
     setNewKey("");
+    setNewProvider("");
+    setNewModel("");
+    setNewRole(keys.length === 0 ? "primary" : "fallback_1");
     setModalTestResult(null);
     setAvailableModels([]);
     setCustomModelMode(false);
@@ -198,13 +258,16 @@ export default function AdminAiGatewayPage() {
       return;
     }
 
+    const p = newProvider || "agentrouter";
+    const m = newModel || (PROVIDER_DEFAULT_MODELS[p]?.[0] ?? "default-model");
+
     setModalTesting(true);
     setModalTestResult(null);
 
     try {
       const res = await api.admin.testAiKey({
-        provider: newProvider,
-        model: newModel,
+        provider: p,
+        model: m,
         api_key: newKey.trim(),
       });
       setModalTestResult(res);
@@ -344,17 +407,27 @@ export default function AdminAiGatewayPage() {
   // Add Key Form Submit
   const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newKey.trim()) return;
+    if (!newKey.trim()) {
+      alert("Please enter a secret API key.");
+      return;
+    }
+
+    const p = newProvider || "agentrouter";
+    const m =
+      newModel.trim() ||
+      (PROVIDER_DEFAULT_MODELS[p]?.[0] ?? "default-model");
 
     try {
       await api.admin.addAiKey({
-        provider: newProvider,
-        model: newModel,
+        provider: p,
+        model: m,
         api_key: newKey.trim(),
         role: newRole,
       });
 
       setNewKey("");
+      setNewProvider("");
+      setNewModel("");
       setModalTestResult(null);
       setAddModalOpen(false);
       await fetchKeys();
@@ -1250,149 +1323,206 @@ export default function AdminAiGatewayPage() {
                 )}
               </div>
 
-              {/* 2. AI Provider Selection */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-bold text-text">
-                    AI Provider
-                  </label>
-                  {availableModels.length > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-signal/15 text-signal font-bold flex items-center gap-1">
-                      <IconCheck width={10} height={10} />
-                      Auto-Identified
-                    </span>
-                  )}
-                </div>
-                <select
-                  value={newProvider}
-                  onChange={(e) => {
-                    const p = e.target.value as AiProviderKey["provider"];
-                    setNewProvider(p);
-                    setModalTestResult(null);
-                    setAvailableModels([]);
-                    setCustomModelMode(false);
-                    if (p === "google") setNewModel("gemini-3.5-flash-lite");
-                    else if (p === "openai") setNewModel("gpt-4o-mini");
-                    else if (p === "anthropic")
-                      setNewModel("claude-3-5-haiku-20241022");
-                    else if (p === "deepseek") setNewModel("deepseek-chat");
-                    else if (p === "groq")
-                      setNewModel("llama-3.3-70b-versatile");
-                    else setNewModel("custom-model");
-                  }}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none"
-                >
-                  <option value="google">Google Gemini (Recommended)</option>
-                  <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-                  <option value="anthropic">
-                    Anthropic Claude (Haiku / Sonnet)
-                  </option>
-                  <option value="deepseek">DeepSeek (V3 / R1)</option>
-                  <option value="groq">Groq Cloud (Fast LLaMA)</option>
-                  <option value="custom">Custom LLM Endpoint</option>
-                </select>
-              </div>
-
-              {/* 3. Model Identifier: Interactive Dropdown or Custom Text */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-bold text-text">
-                    Model Identifier
-                  </label>
-                  {availableModels.length > 0 && (
+              {/* 2. Revealed when API Key is provided OR user selects provider */}
+              {!newKey.trim() && !newProvider ? (
+                <div className="rounded-xl border border-dashed border-line p-5 text-center bg-surface-2/30 space-y-2 my-2">
+                  <div className="size-9 rounded-full bg-surface border border-line grid place-items-center mx-auto text-text-3">
+                    <IconKey width={16} height={16} />
+                  </div>
+                  <p className="font-semibold text-text text-[12.5px]">
+                    API Key দিন অথবা প্রোভাইডার নির্বাচন করুন
+                  </p>
+                  <p className="text-text-3 text-[11px] max-w-xs mx-auto leading-relaxed">
+                    API Key পেস্ট করার সাথে সাথে সিস্টেম স্বয়ংক্রিয়ভাবে প্রোভাইডার
+                    (AgentRouter, Google, OpenAI ইত্যাদি) ও সকল এভেইলেবল মডেল লোড করবে।
+                  </p>
+                  <div className="pt-1">
                     <button
                       type="button"
-                      onClick={() => setCustomModelMode((prev) => !prev)}
-                      className="text-[11px] text-text-3 hover:text-signal cursor-pointer"
+                      onClick={() => {
+                        setNewProvider("agentrouter");
+                        const m = PROVIDER_DEFAULT_MODELS.agentrouter;
+                        setAvailableModels(m);
+                        setNewModel(m[0]);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11.5px] text-signal font-semibold hover:underline cursor-pointer"
                     >
-                      {customModelMode
-                        ? "← Choose from auto-detected list"
-                        : "+ Type custom model"}
+                      + ম্যানুয়ালি প্রোভাইডার সিলেক্ট করুন
                     </button>
-                  )}
+                  </div>
                 </div>
-
-                {availableModels.length > 0 && !customModelMode ? (
-                  <select
-                    value={newModel}
-                    onChange={(e) => setNewModel(e.target.value)}
-                    className="w-full rounded-xl border border-signal/50 bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[12px] ring-2 ring-signal/10"
-                  >
-                    {availableModels.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
+              ) : (
+                <div className="space-y-3.5 pt-1 border-t border-line/60">
+                  {/* AI Provider Selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-bold text-text">
+                        AI Provider
+                      </label>
+                      {availableModels.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-signal/15 text-signal font-bold flex items-center gap-1">
+                          <IconCheck width={10} height={10} />
+                          Auto-Identified
+                        </span>
+                      )}
+                    </div>
+                    <select
+                      value={newProvider}
+                      onChange={(e) => {
+                        const p = e.target.value as AiProviderKey["provider"] | "";
+                        setNewProvider(p);
+                        setModalTestResult(null);
+                        setCustomModelMode(false);
+                        if (p) {
+                          const defModels =
+                            PROVIDER_DEFAULT_MODELS[p] || ["default-model"];
+                          setAvailableModels(defModels);
+                          setNewModel(defModels[0]);
+                        } else {
+                          setAvailableModels([]);
+                          setNewModel("");
+                        }
+                      }}
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-medium"
+                    >
+                      <option value="" disabled>
+                        Select AI Provider...
                       </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    required
-                    value={newModel}
-                    onChange={(e) => setNewModel(e.target.value)}
-                    placeholder="e.g. gemini-3.5-flash-lite, gpt-4o-mini"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[12px]"
-                  />
-                )}
-                {availableModels.length > 0 && !customModelMode && (
-                  <p className="mt-1 text-[10.5px] text-text-3">
-                    Showing {availableModels.length} models fetched directly
-                    from your provider account.
-                  </p>
-                )}
-              </div>
+                      <option value="agentrouter">
+                        AgentRouter (Multi-LLM Gateway)
+                      </option>
+                      <option value="google">
+                        Google Gemini (Recommended)
+                      </option>
+                      <option value="openrouter">OpenRouter</option>
+                      <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+                      <option value="anthropic">
+                        Anthropic Claude (Haiku / Sonnet)
+                      </option>
+                      <option value="deepseek">DeepSeek (V3 / R1)</option>
+                      <option value="groq">Groq Cloud (Fast LLaMA)</option>
+                      <option value="custom">Custom LLM Endpoint</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block font-bold text-text mb-1">
-                  Failover Priority Role
-                </label>
-                <select
-                  value={newRole}
-                  onChange={(e) =>
-                    setNewRole(e.target.value as AiProviderKey["role"])
-                  }
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none"
-                >
-                  <option value="primary">
-                    Primary (Handles initial requests)
-                  </option>
-                  <option value="fallback_1">
-                    Fallback 1 (1st backup on 429)
-                  </option>
-                  <option value="fallback_2">Fallback 2 (2nd backup)</option>
-                  <option value="standby">Standby (Cold backup)</option>
-                </select>
-              </div>
+                  {/* Model Identifier: Interactive Dropdown or Custom Text */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-bold text-text">
+                        Model Identifier
+                      </label>
+                      {(availableModels.length > 0 ||
+                        (newProvider && PROVIDER_DEFAULT_MODELS[newProvider])) && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomModelMode((prev) => !prev)}
+                          className="text-[11px] text-text-3 hover:text-signal cursor-pointer"
+                        >
+                          {customModelMode
+                            ? "← Choose from model list"
+                            : "+ Type custom model"}
+                        </button>
+                      )}
+                    </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-line">
-                <button
-                  type="button"
-                  onClick={handleModalTest}
-                  disabled={modalTesting}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2/60 px-3 py-2 text-[12px] font-semibold text-text hover:border-signal hover:text-signal transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <IconPulse
-                    width={12}
-                    height={12}
-                    className={modalTesting ? "animate-spin text-signal" : ""}
-                  />
-                  <span>{modalTesting ? "Testing..." : "Test Connection"}</span>
-                </button>
+                    {!customModelMode &&
+                    (availableModels.length > 0 ||
+                      (newProvider &&
+                        PROVIDER_DEFAULT_MODELS[newProvider])) ? (
+                      <select
+                        value={newModel}
+                        onChange={(e) => setNewModel(e.target.value)}
+                        className="w-full rounded-xl border border-signal/50 bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[12px] ring-2 ring-signal/10"
+                      >
+                        {(availableModels.length > 0
+                          ? availableModels
+                          : newProvider
+                            ? PROVIDER_DEFAULT_MODELS[newProvider]
+                            : []
+                        ).map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        required
+                        value={newModel}
+                        onChange={(e) => setNewModel(e.target.value)}
+                        placeholder="e.g. claude-3-5-sonnet-20241022, gemini-3.5-flash-lite, gpt-4o"
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[12px]"
+                      />
+                    )}
+                    {!customModelMode && (
+                      <p className="mt-1 text-[10.5px] text-text-3">
+                        {availableModels.length > 0
+                          ? `Showing ${availableModels.length} models fetched for this provider.`
+                          : newProvider
+                            ? `Default verified models available for ${newProvider.toUpperCase()}.`
+                            : ""}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAddModalOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" variant="signal" size="sm">
-                    Save &amp; Activate
-                  </Button>
+                  {/* Failover Priority Role */}
+                  <div>
+                    <label className="block font-bold text-text mb-1">
+                      Failover Priority Role
+                    </label>
+                    <select
+                      value={newRole}
+                      onChange={(e) =>
+                        setNewRole(e.target.value as AiProviderKey["role"])
+                      }
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none"
+                    >
+                      <option value="primary">
+                        Primary (Handles initial requests)
+                      </option>
+                      <option value="fallback_1">
+                        Fallback 1 (1st backup on 429)
+                      </option>
+                      <option value="fallback_2">Fallback 2 (2nd backup)</option>
+                      <option value="standby">Standby (Cold backup)</option>
+                    </select>
+                  </div>
+
+                  {/* Actions: Test Connection & Save */}
+                  <div className="flex items-center justify-between pt-3 border-t border-line">
+                    <button
+                      type="button"
+                      onClick={handleModalTest}
+                      disabled={modalTesting}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2/60 px-3 py-2 text-[12px] font-semibold text-text hover:border-signal hover:text-signal transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <IconPulse
+                        width={12}
+                        height={12}
+                        className={modalTesting ? "animate-spin text-signal" : ""}
+                      />
+                      <span>
+                        {modalTesting ? "Testing..." : "Test Connection"}
+                      </span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAddModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" variant="signal" size="sm">
+                        Save &amp; Activate
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </form>
           </div>
         </div>
