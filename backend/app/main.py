@@ -93,6 +93,15 @@ app.include_router(merchants_router, prefix="/api/v1")
 app.include_router(billing_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 
+
+@app.get("/api/v1/plans", tags=["Subscription Plans"])
+async def list_public_plans():
+    """Public endpoint to fetch commercial plans for homepage and pricing preview."""
+    from app.services.plans_service import get_stored_plans
+    plans = await get_stored_plans()
+    return [p for p in plans if p.get("status") == "active"]
+
+
 # Mount Super Admin Routers
 app.include_router(admin_auth_router, prefix="/api/v1")
 app.include_router(admin_dashboard_router, prefix="/api/v1")

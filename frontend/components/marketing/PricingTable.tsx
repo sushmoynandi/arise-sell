@@ -1,21 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Badge, Button, Panel } from "@/components/ui/primitives";
-import { IconCheck, IconClose } from "@/components/ui/icons";
+import { IconCheck, IconTag } from "@/components/ui/icons";
 import {
   Magnetic,
   SPRING,
   Stagger,
   StaggerItem,
 } from "@/components/motion";
-import { ENTERPRISE, OVERAGE, PLANS } from "@/data/plans";
+import { ENTERPRISE, OVERAGE } from "@/data/plans";
 import { cx } from "@/lib/format";
+
+interface BackendPlan {
+  id: string;
+  name: string;
+  nameBn?: string;
+  tagline?: string;
+  priceBDT: number;
+  yearlyPriceBDT?: number;
+  yearlyDiscountPercent?: number;
+  billingPeriod?: string;
+  messageLimit: number;
+  catalogLimit?: number;
+  courierChannels?: number;
+  features: string[];
+  badge?: string | null;
+  popular?: boolean;
+  status?: string;
+}
 
 export default function PricingTable() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const isYearly = billingCycle === "yearly";
+
+  const [plans, setPlans] = useState<BackendPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadPlans() {
+      try {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const res = await fetch(`${apiUrl}/plans`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data)) {
+            setPlans(data.filter((p: BackendPlan) => p.status === "active"));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load plans in PricingTable:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadPlans();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <>
@@ -56,147 +102,175 @@ export default function PricingTable() {
               />
             )}
             <span>Annual billing</span>
-            <span className="rounded-full bg-signal/[0.12] px-2 py-0.5 text-[11px] font-bold text-signal font-mono">
-              Save 17%
-            </span>
           </button>
         </div>
       </div>
 
-      <Stagger
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        amount={0.05}
-      >
-        {PLANS.map((p) => {
-          const isFree = p.price === 0;
-          const displayedPrice = isFree
-            ? 0
-            : isYearly
-              ? Math.round(p.yearlyPrice / 12)
-              : p.price;
-          const yearlyTotal = p.yearlyPrice;
-          const savings = p.price * 12 - yearlyTotal;
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((n) => (
+            <div
+              key={n}
+              className="h-96 rounded-2xl border border-line bg-white p-6 animate-pulse flex flex-col justify-between shadow-2xs"
+            >
+              <div className="space-y-4">
+                <div className="h-6 w-28 bg-surface-2 rounded-md" />
+                <div className="h-10 w-36 bg-surface-2 rounded-md" />
+                <div className="h-4 w-full bg-surface-2 rounded-md" />
+              </div>
+              <div className="h-11 w-full bg-surface-2 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      ) : plans.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center space-y-3 shadow-2xs max-w-xl mx-auto my-8">
+          <div className="size-12 rounded-2xl bg-signal/10 text-signal grid place-items-center mx-auto mb-2">
+            <IconTag width={22} height={22} />
+          </div>
+          <h3 className="font-bold text-text text-base">
+            No Subscription Plans Available
+          </h3>
+          <p className="text-text-3 text-sm max-w-sm mx-auto">
+            Plans are being configured by the administrator. Please check back shortly.
+          </p>
+        </div>
+      ) : (
+        <Stagger
+          className={cx(
+            "grid grid-cols-1 gap-4",
+            plans.length === 1 && "max-w-md mx-auto",
+            plans.length === 2 && "sm:grid-cols-2 max-w-3xl mx-auto",
+            plans.length === 3 && "sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto",
+            plans.length >= 4 && "sm:grid-cols-2 lg:grid-cols-4"
+          )}
+          amount={0.05}
+        >
+          {plans.map((p) => {
+            const isFree = p.priceBDT === 0;
+            const yearlyPrice =
+              p.yearlyPriceBDT && p.yearlyPriceBDT > 0
+                ? p.yearlyPriceBDT
+                : p.priceBDT * 10;
+            const displayedPrice = isFree
+              ? 0
+              : isYearly
+                ? Math.round(yearlyPrice / 12)
+                : p.priceBDT;
+            const savings = p.priceBDT * 12 - yearlyPrice;
+            const isFeatured = Boolean(
+              p.popular ||
+                p.badge?.toLowerCase().includes("popular") ||
+                p.badge?.toLowerCase().includes("best") ||
+                p.badge?.toLowerCase().includes("vip"),
+            );
 
-          return (
-            <StaggerItem key={p.id}>
-              <Panel
-                className={cx(
-                  "relative flex h-full flex-col justify-between p-6",
-                  p.featured && "border-(--signal-line) ring-1 ring-signal/20",
-                )}
-              >
-                {p.featured && (
-                  <>
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute -inset-px -z-10 rounded-[14px] opacity-40 blur-xl"
-                      style={{
-                        background:
-                          "radial-gradient(60% 50% at 50% 0%, rgba(10,110,80,0.16), transparent)",
-                      }}
-                    />
+            return (
+              <StaggerItem key={p.id}>
+                <Panel
+                  className={cx(
+                    "relative flex h-full flex-col justify-between p-6",
+                    isFeatured && "border-(--signal-line) ring-1 ring-signal/20",
+                  )}
+                >
+                  {p.badge && (
                     <Badge tone="signal" className="absolute -top-2.5 left-6">
-                      Most shops start here
+                      {p.badge}
                     </Badge>
-                  </>
-                )}
+                  )}
 
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="font-display text-[21px] font-semibold tracking-tight text-text">
-                      {p.name}
-                    </h3>
-                    <span className="font-(family-name:--font-hind) text-[14px] text-text-3">
-                      {p.nameBn}
-                    </span>
-                  </div>
-                  <p className="mt-2 min-h-10 text-[13px] leading-snug text-text-3">
-                    {p.blurb}
-                  </p>
-
-                  <div className="mt-5 border-y border-line/60 py-3 space-y-1">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-display text-[38px] font-bold leading-none tracking-tight text-text font-(family-name:--font-bricolage)">
-                        ৳{displayedPrice.toLocaleString("en-IN")}
-                      </span>
-                      <span className="text-[13px] text-text-3 font-mono">
-                        {isFree ? "free forever" : "/ month"}
-                      </span>
-                    </div>
-
-                    {isYearly && !isFree && (
-                      <div className="flex items-center justify-between text-[11.5px] font-mono pt-0.5">
-                        <span className="text-text-3">
-                          Billed ৳{yearlyTotal.toLocaleString("en-IN")}/yr
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="font-display text-[21px] font-semibold tracking-tight text-text">
+                        {p.name}
+                      </h3>
+                      {p.nameBn && p.nameBn !== p.name && (
+                        <span className="font-(family-name:--font-hind) text-[14px] text-text-3">
+                          {p.nameBn}
                         </span>
-                        <span className="text-signal font-bold bg-signal/[0.08] px-1.5 py-0.2 rounded border border-signal/20">
-                          Save ৳{savings.toLocaleString("en-IN")}
+                      )}
+                    </div>
+                    {p.tagline && (
+                      <p className="mt-2 min-h-10 text-[13px] leading-snug text-text-3">
+                        {p.tagline}
+                      </p>
+                    )}
+
+                    <div className="mt-5 border-y border-line/60 py-3 space-y-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="font-display text-[38px] font-bold leading-none tracking-tight text-text font-(family-name:--font-bricolage)">
+                          ৳{displayedPrice.toLocaleString("en-IN")}
+                        </span>
+                        <span className="text-[13px] text-text-3 font-mono">
+                          {isFree ? "free forever" : "/ month"}
                         </span>
                       </div>
+
+                      {isYearly && !isFree && (
+                        <div className="flex items-center justify-between text-[11.5px] font-mono pt-0.5">
+                          <span className="text-text-3">
+                            Billed ৳{yearlyPrice.toLocaleString("en-IN")}/yr
+                          </span>
+                          {savings > 0 && (
+                            <span className="text-signal font-bold bg-signal/[0.08] px-1.5 py-0.2 rounded border border-signal/20">
+                              Save ৳{savings.toLocaleString("en-IN")}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 rounded-lg border border-line bg-surface-2/60 px-3.5 py-2.5">
+                      <p className="font-display text-[16px] font-semibold tracking-tight text-signal">
+                        {p.messageLimit.toLocaleString()} Messages / month
+                      </p>
+                      <p className="mt-0.5 text-[11.5px] text-text-3">
+                        included every month (Comment + Inbox)
+                      </p>
+                    </div>
+
+                    <div className="mt-6">
+                      <Magnetic strength={0.15} className="w-full">
+                        <Button
+                          href="/console"
+                          variant={isFeatured ? "signal" : "outline"}
+                          size="lg"
+                          className="w-full font-semibold shadow-2xs cursor-pointer"
+                        >
+                          Get Started
+                        </Button>
+                      </Magnetic>
+                    </div>
+
+                    {p.features && p.features.length > 0 && (
+                      <ul className="mt-7 space-y-2.5">
+                        {p.features.map((f, i) => (
+                          <motion.li
+                            key={i}
+                            initial={{ opacity: 0, x: -8 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ ...SPRING, delay: i * 0.03 }}
+                            className="flex items-start gap-2.5"
+                          >
+                            <IconCheck
+                              width={13}
+                              height={13}
+                              className="mt-0.5 shrink-0 text-signal"
+                            />
+                            <span className="text-[13px] leading-snug text-text-2">
+                              {f}
+                            </span>
+                          </motion.li>
+                        ))}
+                      </ul>
                     )}
                   </div>
-
-                  <div className="mt-4 rounded-lg border border-line bg-surface-2/60 px-3.5 py-2.5">
-                    <p className="font-display text-[16px] font-semibold tracking-tight text-signal">
-                      {p.orders.toLocaleString()} closed orders
-                    </p>
-                    <p className="mt-0.5 text-[11.5px] text-text-3">
-                      included every month
-                    </p>
-                  </div>
-
-                  <div className="mt-6">
-                    <Magnetic strength={0.15} className="w-full">
-                      <Button
-                        href="/console"
-                        variant={p.featured ? "signal" : "outline"}
-                        size="lg"
-                        className="w-full font-semibold shadow-2xs cursor-pointer"
-                      >
-                        {p.cta}
-                      </Button>
-                    </Magnetic>
-                  </div>
-
-                  <ul className="mt-7 space-y-2.5">
-                    {p.features.map((f, i) => (
-                      <motion.li
-                        key={f}
-                        initial={{ opacity: 0, x: -8 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ ...SPRING, delay: i * 0.03 }}
-                        className="flex items-start gap-2.5"
-                      >
-                        <IconCheck
-                          width={13}
-                          height={13}
-                          className="mt-0.5 shrink-0 text-signal"
-                        />
-                        <span className="text-[13px] leading-snug text-text-2">
-                          {f}
-                        </span>
-                      </motion.li>
-                    ))}
-                    {p.absent.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 opacity-45">
-                        <IconClose
-                          width={13}
-                          height={13}
-                          className="mt-0.5 shrink-0 text-text-3"
-                        />
-                        <span className="text-[13px] leading-snug text-text-3 line-through">
-                          {f}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Panel>
-            </StaggerItem>
-          );
-        })}
-      </Stagger>
+                </Panel>
+              </StaggerItem>
+            );
+          })}
+        </Stagger>
+      )}
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <Panel className="flex flex-wrap items-center gap-x-8 gap-y-4 p-6">

@@ -1,13 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { PLANS, OVERAGE, OVERAGE_BN } from "@/data/plans";
 import { Button, Panel } from "@/components/ui/primitives";
-import { IconCheck } from "@/components/ui/icons";
+import { IconCheck, IconTag } from "@/components/ui/icons";
 import { Reveal, Stagger, StaggerItem, SPRING } from "@/components/motion";
 import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
+
+interface BackendPlan {
+  id: string;
+  name: string;
+  nameBn?: string;
+  tagline?: string;
+  priceBDT: number;
+  yearlyPriceBDT?: number;
+  yearlyDiscountPercent?: number;
+  billingPeriod?: string;
+  messageLimit: number;
+  catalogLimit?: number;
+  courierChannels?: number;
+  features: string[];
+  badge?: string | null;
+  popular?: boolean;
+  status?: string;
+}
 
 export default function PricingPreview() {
   const { t } = useLang();
@@ -15,6 +32,36 @@ export default function PricingPreview() {
     "monthly",
   );
   const isYearly = billingCycle === "yearly";
+
+  const [plans, setPlans] = useState<BackendPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadPlans() {
+      try {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const res = await fetch(`${apiUrl}/plans`, {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && Array.isArray(data)) {
+            setPlans(data.filter((p: BackendPlan) => p.status === "active"));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch public plans:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadPlans();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <section
@@ -30,14 +77,14 @@ export default function PricingPreview() {
             </p>
             <h2 className="mt-3 text-balance font-display text-[clamp(1.9rem,3.6vw,2.7rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
               {t(
-                "You pay for orders, not conversations.",
-                "টাকা দেবেন অর্ডারের জন্য, কথার জন্য নয়।",
+                "Commercial Plans for High-Growth Brands",
+                "আপনার ব্যবসার জন্য উপযোগী সেরা প্ল্যান",
               )}
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[16px] leading-relaxed text-text-2">
               {t(
-                "If a hundred people ask about price and nobody buys, that costs you nothing. We only earn when you do.",
-                "একশো জন দাম জিজ্ঞেস করে কেউ না কিনলে আপনার এক টাকাও খরচ নেই। আপনি আয় করলেই কেবল আমরা আয় করি।",
+                "Simple, transparent pricing tailored for social commerce and high-volume messaging automation.",
+                "সোশ্যাল কমার্স এবং অটোমেটেড মেসেজিং সুবিধার জন্য সবচেয়ে স্বচ্ছ ও সাশ্রয়ী প্ল্যানসমূহ।",
               )}
             </p>
 
@@ -67,7 +114,7 @@ export default function PricingPreview() {
                   <span>{t("Monthly billing", "মাসিক বিলিং")}</span>
                 </button>
 
-                {/* Yearly Button with Claude-like Discount Chip */}
+                {/* Yearly Button */}
                 <button
                   type="button"
                   onClick={() => setBillingCycle("yearly")}
@@ -88,9 +135,6 @@ export default function PricingPreview() {
                     />
                   )}
                   <span>{t("Annual billing", "বাৎসরিক বিলিং")}</span>
-                  <span className="rounded-full bg-signal/[0.12] px-2 py-0.5 text-[11px] font-bold text-signal font-mono">
-                    {t("Save 17%", "১৭% ছাড় · ২ মাস ফ্রি")}
-                  </span>
                 </button>
               </div>
             </div>
@@ -98,135 +142,182 @@ export default function PricingPreview() {
         </Reveal>
 
         {/* ─── Pricing Cards Grid ─── */}
-        <Stagger className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((p) => {
-            const features = t(p.features, p.featuresBn);
-            const isFree = p.price === 0;
+        {loading ? (
+          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className="h-96 rounded-2xl border border-line bg-white p-6 animate-pulse flex flex-col justify-between shadow-2xs"
+              >
+                <div className="space-y-4">
+                  <div className="h-6 w-28 bg-surface-2 rounded-md" />
+                  <div className="h-10 w-36 bg-surface-2 rounded-md" />
+                  <div className="h-4 w-full bg-surface-2 rounded-md" />
+                  <div className="h-4 w-2/3 bg-surface-2 rounded-md" />
+                </div>
+                <div className="h-11 w-full bg-surface-2 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="mt-12 rounded-2xl border border-dashed border-line bg-white p-12 text-center space-y-3 shadow-2xs max-w-xl mx-auto">
+            <div className="size-12 rounded-2xl bg-signal/10 text-signal grid place-items-center mx-auto mb-2">
+              <IconTag width={22} height={22} />
+            </div>
+            <h3 className="font-bold text-text text-base">
+              {t("No Plans Available", "কোনো সাবস্ক্রিপশন প্ল্যান পাওয়া যায়নি")}
+            </h3>
+            <p className="text-text-3 text-sm max-w-sm mx-auto">
+              {t(
+                "Subscription plans are being updated by the administrator. Please check back shortly.",
+                "অ্যাডমিনিস্ট্রেটর দ্বারা প্ল্যানগুলো আপডেট করা হচ্ছে। অনুগ্রহ করে কিছু সময় পর পুনরায় দেখুন।",
+              )}
+            </p>
+          </div>
+        ) : (
+          <Stagger
+            className={cx(
+              "mt-12 grid grid-cols-1 gap-5",
+              plans.length === 1 && "max-w-md mx-auto",
+              plans.length === 2 && "sm:grid-cols-2 max-w-3xl mx-auto",
+              plans.length === 3 &&
+                "sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto",
+              plans.length >= 4 && "sm:grid-cols-2 lg:grid-cols-4",
+            )}
+          >
+            {plans.map((p) => {
+              const isFree = p.priceBDT === 0;
+              const yearlyPrice =
+                p.yearlyPriceBDT && p.yearlyPriceBDT > 0
+                  ? p.yearlyPriceBDT
+                  : p.priceBDT * 10;
+              const displayedMonthly = isFree
+                ? 0
+                : isYearly
+                  ? Math.round(yearlyPrice / 12)
+                  : p.priceBDT;
+              const savings = p.priceBDT * 12 - yearlyPrice;
+              const isFeatured = Boolean(
+                p.popular ||
+                  p.badge?.toLowerCase().includes("popular") ||
+                  p.badge?.toLowerCase().includes("best") ||
+                  p.badge?.toLowerCase().includes("vip"),
+              );
 
-            // Yearly price calculation
-            const displayedPrice = isFree
-              ? 0
-              : isYearly
-                ? Math.round(p.yearlyPrice / 12)
-                : p.price;
+              return (
+                <StaggerItem key={p.id}>
+                  <motion.div
+                    whileHover={{ y: -5 }}
+                    transition={SPRING}
+                    className={cx(
+                      "relative flex h-full flex-col justify-between rounded-2xl border bg-white p-6 transition-shadow",
+                      isFeatured
+                        ? "border-(--signal-line) shadow-[0_2px_8px_rgba(10,110,80,0.08),0_18px_40px_-20px_rgba(10,110,80,0.35)] ring-1 ring-signal/20"
+                        : "border-line shadow-[0_1px_2px_rgba(15,20,25,0.04)] hover:border-line-2",
+                    )}
+                  >
+                    {p.badge && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-signal px-3.5 py-0.5 text-[11.5px] font-bold text-white shadow-[0_4px_12px_-4px_rgba(10,110,80,0.6)]">
+                        {p.badge}
+                      </span>
+                    )}
 
-            const yearlyTotal = p.yearlyPrice;
-            const savings = p.price * 12 - yearlyTotal;
-
-            return (
-              <StaggerItem key={p.id}>
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={SPRING}
-                  className={cx(
-                    "relative flex h-full flex-col justify-between rounded-2xl border bg-white p-6 transition-shadow",
-                    p.featured
-                      ? "border-(--signal-line) shadow-[0_2px_8px_rgba(10,110,80,0.08),0_18px_40px_-20px_rgba(10,110,80,0.35)] ring-1 ring-signal/20"
-                      : "border-line shadow-[0_1px_2px_rgba(15,20,25,0.04)] hover:border-line-2",
-                  )}
-                >
-                  {p.featured && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-signal px-3.5 py-0.5 text-[11.5px] font-bold text-white shadow-[0_4px_12px_-4px_rgba(10,110,80,0.6)]">
-                      {t("Most Popular", "সবচেয়ে জনপ্রিয়")}
-                    </span>
-                  )}
-
-                  <div>
-                    {/* Title */}
-                    <div className="flex items-baseline gap-2">
-                      <h3 className="font-display text-[20px] font-semibold tracking-tight text-text">
-                        {t(p.name, p.nameBn)}
-                      </h3>
-                      {t(
-                        <span className="font-(family-name:--font-hind) text-[13.5px] text-text-3">
-                          {p.nameBn}
-                        </span>,
-                        null,
-                      )}
-                    </div>
-
-                    {/* Price Header */}
-                    <div className="mt-4 border-y border-line/60 py-3.5 space-y-1">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-display text-[38px] font-bold leading-none tracking-tight text-text font-(family-name:--font-bricolage)">
-                          {isFree
-                            ? "৳০"
-                            : `৳${displayedPrice.toLocaleString("en-IN")}`}
-                        </span>
-                        <span className="text-[13px] text-text-3 font-mono">
-                          {isFree
-                            ? t("free forever", "চিরকাল ফ্রি")
-                            : t("/ month", "/ মাস")}
-                        </span>
+                    <div>
+                      {/* Title */}
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="font-display text-[20px] font-semibold tracking-tight text-text">
+                          {p.name}
+                        </h3>
+                        {p.nameBn && p.nameBn !== p.name && (
+                          <span className="font-(family-name:--font-hind) text-[13.5px] text-text-3">
+                            {p.nameBn}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Yearly breakdown info */}
-                      {isYearly && !isFree && (
-                        <div className="flex items-center justify-between text-[11.5px] font-mono pt-0.5">
-                          <span className="text-text-3">
-                            {t(
-                              `Billed ৳${yearlyTotal.toLocaleString("en-IN")}/yr`,
-                              `বাৎসরিক ৳${yearlyTotal.toLocaleString("en-IN")}`,
-                            )}
+                      {/* Price Header */}
+                      <div className="mt-4 border-y border-line/60 py-3.5 space-y-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="font-display text-[38px] font-bold leading-none tracking-tight text-text font-(family-name:--font-bricolage)">
+                            {isFree
+                              ? "৳০"
+                              : `৳${displayedMonthly.toLocaleString("en-IN")}`}
                           </span>
-                          <span className="text-signal font-bold bg-signal/[0.08] px-1.5 py-0.2 rounded border border-signal/20">
-                            {t(
-                              `Save ৳${savings.toLocaleString("en-IN")}`,
-                              `সাশ্রয় ৳${savings.toLocaleString("en-IN")}`,
-                            )}
+                          <span className="text-[13px] text-text-3 font-mono">
+                            {isFree
+                              ? t("free forever", "চিরকাল ফ্রি")
+                              : t("/ month", "/ মাস")}
                           </span>
                         </div>
+
+                        {/* Yearly breakdown info */}
+                        {isYearly && !isFree && (
+                          <div className="flex items-center justify-between text-[11.5px] font-mono pt-0.5">
+                            <span className="text-text-3">
+                              {t(
+                                `Billed ৳${yearlyPrice.toLocaleString("en-IN")}/yr`,
+                                `বাৎসরিক ৳${yearlyPrice.toLocaleString("en-IN")}`,
+                              )}
+                            </span>
+                            {savings > 0 && (
+                              <span className="text-signal font-bold bg-signal/[0.08] px-1.5 py-0.2 rounded border border-signal/20">
+                                {t(
+                                  `Save ৳${savings.toLocaleString("en-IN")}`,
+                                  `সাশ্রয় ৳${savings.toLocaleString("en-IN")}`,
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <p className="pt-1 text-[13.5px] font-semibold text-signal">
+                          {t(
+                            `${p.messageLimit.toLocaleString()} Messages / month`,
+                            `মাসিক ${p.messageLimit.toLocaleString()} মেসেজ`,
+                          )}
+                        </p>
+                      </div>
+
+                      {p.tagline && (
+                        <p className="mt-3 min-h-10 text-[13.5px] leading-snug text-text-3">
+                          {p.tagline}
+                        </p>
                       )}
 
-                      <p className="pt-1 text-[13.5px] font-semibold text-signal">
-                        {t(
-                          `${p.orders.toLocaleString()} orders included`,
-                          `${p.orders.toLocaleString()} অর্ডার অন্তর্ভুক্ত`,
-                        )}
-                      </p>
+                      <div className="mt-5">
+                        <Button
+                          href="/console"
+                          size="lg"
+                          variant={isFeatured ? "signal" : "outline"}
+                          className="w-full font-semibold shadow-2xs cursor-pointer"
+                        >
+                          {t("Get Started", "শুরু করুন")}
+                        </Button>
+                      </div>
+
+                      {p.features && p.features.length > 0 && (
+                        <ul className="mt-6 space-y-2.5 border-t border-line/60 pt-5">
+                          {p.features.map((f: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2.5">
+                              <IconCheck
+                                width={13}
+                                height={13}
+                                className="mt-0.5 shrink-0 text-signal"
+                              />
+                              <span className="text-[13.5px] leading-snug text-text-2">
+                                {f}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-
-                    <p className="mt-3 min-h-10 text-[13.5px] leading-snug text-text-3">
-                      {t(p.blurb, p.blurbBn)}
-                    </p>
-
-                    <div className="mt-5">
-                      <Button
-                        href="/console"
-                        size="lg"
-                        variant={p.featured ? "signal" : "outline"}
-                        className="w-full font-semibold shadow-2xs cursor-pointer"
-                      >
-                        {t(p.cta, p.ctaBn)}
-                      </Button>
-                    </div>
-
-                    <ul className="mt-6 space-y-2.5 border-t border-line/60 pt-5">
-                      {features.slice(0, 5).map((f: string) => (
-                        <li key={f} className="flex items-start gap-2.5">
-                          <IconCheck
-                            width={13}
-                            height={13}
-                            className="mt-0.5 shrink-0 text-signal"
-                          />
-                          <span className="text-[13.5px] leading-snug text-text-2">
-                            {f}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </motion.div>
-              </StaggerItem>
-            );
-          })}
-        </Stagger>
-
-        <Reveal delay={0.15}>
-          <p className="mt-8 text-center text-[13.5px] text-text-3">
-            {t(OVERAGE, OVERAGE_BN)}
-          </p>
-        </Reveal>
+                  </motion.div>
+                </StaggerItem>
+              );
+            })}
+          </Stagger>
+        )}
 
         {/* Pricing Model Comparison Table */}
         <div className="mt-16 border-t border-line pt-14">
