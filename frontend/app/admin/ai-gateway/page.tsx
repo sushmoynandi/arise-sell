@@ -318,17 +318,17 @@ export default function AdminAiGatewayPage() {
   };
 
   const primary = keys.find((k) => k.role === "primary");
-  const totalCostBDT = keys.reduce((acc, k) => acc + k.costBDT, 0);
-  const totalCostUSD = keys.reduce((acc, k) => acc + k.costUSD, 0);
-  const totalRequests = keys.reduce((acc, k) => acc + k.requests24h, 0);
-  const totalTokens = keys.reduce((acc, k) => acc + k.tokensConsumed, 0);
+  const totalCostBDT = keys.reduce((acc, k) => acc + (k.costBDT || 0), 0);
+  const totalCostUSD = keys.reduce((acc, k) => acc + (k.costUSD || 0), 0);
+  const totalRequests = keys.reduce((acc, k) => acc + (k.requests24h || 0), 0);
+  const totalTokens = keys.reduce((acc, k) => acc + (k.tokensConsumed || 0), 0);
 
   const filteredKeys = keys.filter((k) => {
-    return (
-      k.providerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      k.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      k.keyMasked.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const q = (searchQuery || "").toLowerCase();
+    const pName = (k.providerName || k.provider || "").toLowerCase();
+    const model = (k.model || "").toLowerCase();
+    const keyM = (k.keyMasked || "").toLowerCase();
+    return pName.includes(q) || model.includes(q) || keyM.includes(q);
   });
 
   return (
@@ -383,7 +383,7 @@ export default function AdminAiGatewayPage() {
                 src={
                   PROVIDER_LOGOS[primary.provider] || "/providers/custom.svg"
                 }
-                alt={primary.providerName}
+                alt={primary.providerName || "Primary Provider"}
                 width={20}
                 height={20}
                 className="size-5 shrink-0"
@@ -391,10 +391,10 @@ export default function AdminAiGatewayPage() {
             )}
             <div className="min-w-0">
               <p className="text-[14px] font-bold text-text truncate">
-                {primary ? primary.providerName : "None"}
+                {primary ? (primary.providerName || primary.provider) : "None"}
               </p>
               <p className="text-[11px] text-text-3 font-mono">
-                {primary?.model} · {primary?.latencyMs}ms
+                {primary ? `${primary.model} · ${primary.latencyMs || 0}ms` : "No primary key active"}
               </p>
             </div>
           </div>
@@ -517,59 +517,64 @@ export default function AdminAiGatewayPage() {
 
         {/* Priority Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {keys.map((k, idx) => {
-            const isPrimary = k.role === "primary";
-            const isLimited = k.status === "rate_limited";
-            return (
-              <div
-                key={k.id}
-                className={cx(
-                  "rounded-lg border p-3.5 space-y-2.5 flex flex-col justify-between transition-all",
-                  isLimited
-                    ? "border-rose-400 bg-rose-50/60"
-                    : isPrimary
-                      ? "border-signal/60 bg-signal/[0.05] ring-1 ring-signal/20 shadow-2xs"
-                      : "border-line bg-surface-2/30",
-                )}
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cx(
-                        "text-[9.5px] font-bold font-mono px-1.5 py-0.5 rounded flex items-center gap-1",
-                        isPrimary
-                          ? "bg-signal text-white"
-                          : "bg-surface-2 text-text-3 border border-line",
-                      )}
-                    >
-                      {isPrimary && <IconSpark width={10} height={10} />}
-                      {isPrimary ? "1. PRIMARY" : `FALLBACK ${idx}`}
-                    </span>
-                    <span className="text-[11px] font-mono font-bold text-text-2">
-                      {k.latencyMs}ms
-                    </span>
-                  </div>
+          {keys.length === 0 ? (
+            <div className="col-span-full py-8 text-center text-text-3 font-mono text-[12px] bg-surface-2/20 rounded-lg border border-line/60">
+              No active routes configured. Click &quot;Add Provider Key&quot; above to configure your first LLM route.
+            </div>
+          ) : (
+            keys.map((k, idx) => {
+              const isPrimary = k.role === "primary";
+              const isLimited = k.status === "rate_limited";
+              return (
+                <div
+                  key={k.id}
+                  className={cx(
+                    "rounded-lg border p-3.5 space-y-2.5 flex flex-col justify-between transition-all",
+                    isLimited
+                      ? "border-rose-400 bg-rose-50/60"
+                      : isPrimary
+                        ? "border-signal/60 bg-signal/[0.05] ring-1 ring-signal/20 shadow-2xs"
+                        : "border-line bg-surface-2/30",
+                  )}
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cx(
+                          "text-[9.5px] font-bold font-mono px-1.5 py-0.5 rounded flex items-center gap-1",
+                          isPrimary
+                            ? "bg-signal text-white"
+                            : "bg-surface-2 text-text-3 border border-line",
+                        )}
+                      >
+                        {isPrimary && <IconSpark width={10} height={10} />}
+                        {isPrimary ? "1. PRIMARY" : `FALLBACK ${idx}`}
+                      </span>
+                      <span className="text-[11px] font-mono font-bold text-text-2">
+                        {k.latencyMs || 0}ms
+                      </span>
+                    </div>
 
-                  <div className="flex items-center gap-2 mt-2.5">
-                    <Image
-                      src={
-                        PROVIDER_LOGOS[k.provider] || "/providers/custom.svg"
-                      }
-                      alt={k.providerName}
-                      width={18}
-                      height={18}
-                      className="size-4.5 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <p className="font-bold text-[13px] text-text truncate">
-                        {k.providerName}
-                      </p>
-                      <p className="text-[11px] text-text-3 font-mono truncate">
-                        {k.model}
-                      </p>
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <Image
+                        src={
+                          PROVIDER_LOGOS[k.provider] || "/providers/custom.svg"
+                        }
+                        alt={k.providerName || k.provider || "Provider"}
+                        width={18}
+                        height={18}
+                        className="size-4.5 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-[13px] text-text truncate">
+                          {k.providerName || k.provider}
+                        </p>
+                        <p className="text-[11px] text-text-3 font-mono truncate">
+                          {k.model}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
                 <div className="pt-2 border-t border-line/60 flex items-center justify-between text-[11px]">
                   <span
@@ -611,7 +616,8 @@ export default function AdminAiGatewayPage() {
                 </div>
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </div>
 
@@ -835,8 +841,8 @@ export default function AdminAiGatewayPage() {
                       <div className="inline-flex items-center gap-1 font-mono text-[11.5px] text-text-2 bg-surface-2/60 px-2 py-0.5 rounded border border-line/60">
                         <span>
                           {isRevealed
-                            ? `${k.keyMasked.replace("...", "_KEY_")}`
-                            : k.keyMasked}
+                            ? `${(k.keyMasked || "").replace("...", "_KEY_")}`
+                            : k.keyMasked || "••••••••••••"}
                         </span>
                         <button
                           type="button"
@@ -874,23 +880,23 @@ export default function AdminAiGatewayPage() {
                       <span
                         className={cx(
                           "font-bold inline-flex items-center gap-1",
-                          k.latencyMs < 450
+                          (k.latencyMs || 0) < 450
                             ? "text-signal"
-                            : k.latencyMs < 750
+                            : (k.latencyMs || 0) < 750
                               ? "text-amber-600"
                               : "text-rose-600",
                         )}
                       >
                         <span className="size-1.5 rounded-full bg-current" />
-                        {k.latencyMs}ms
+                        {k.latencyMs || 0}ms
                       </span>
                     </td>
 
                     {/* Spend */}
                     <td className="py-3 px-3 font-mono text-text">
-                      ৳{k.costBDT.toLocaleString()}{" "}
+                      ৳{(k.costBDT || 0).toLocaleString()}{" "}
                       <span className="text-[10px] text-text-3">
-                        (${k.costUSD.toFixed(1)})
+                        (${Number(k.costUSD || 0).toFixed(1)})
                       </span>
                     </td>
 
@@ -1051,7 +1057,6 @@ export default function AdminAiGatewayPage() {
                     const p = e.target.value as AiProviderKey["provider"];
                     setNewProvider(p);
                     setModalTestResult(null);
-                    if (p === "google") setNewModel("gemini-2.0-flash");
                     if (p === "google") setNewModel("gemini-3.6-flash");
                     else if (p === "openai") setNewModel("gpt-4o-mini");
                     else if (p === "anthropic")
