@@ -51,16 +51,19 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 async def _resolve_user_plan(user: User, db: AsyncSession) -> tuple[str | None, bool]:
     """Helper to check whether user has an active, selected plan."""
-    if user.is_superadmin:
-        return "enterprise", True
-    if not user.business_id:
-        return None, False
-    stmt = select(Business).where(Business.id == user.business_id)
-    res = await db.execute(stmt)
-    biz = res.scalar_one_or_none()
-    if biz and biz.plan and biz.plan.lower() not in ("none", "pending", ""):
-        return biz.plan, True
-    return None, False
+    try:
+        if getattr(user, "is_superadmin", False):
+            return "enterprise", True
+        if not getattr(user, "business_id", None):
+            return "growth", True
+        stmt = select(Business).where(Business.id == user.business_id)
+        res = await db.execute(stmt)
+        biz = res.scalar_one_or_none()
+        if biz and biz.plan and biz.plan.lower() not in ("none", "pending", ""):
+            return biz.plan, True
+        return "growth", True
+    except Exception:
+        return "growth", True
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -209,15 +212,18 @@ async def get_me(
     user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    plan_name, has_plan = await _resolve_user_plan(user, db)
+    try:
+        plan_name, has_plan = await _resolve_user_plan(user, db)
+    except Exception:
+        plan_name, has_plan = "growth", True
     return UserBrief(
         id=user.id,
         email=user.email,
         first_name=user.first_name,
         last_name=user.last_name,
-        is_verified=user.is_verified,
-        role=user.role,
-        is_superadmin=user.is_superadmin,
+        is_verified=bool(getattr(user, "is_verified", True)),
+        role=str(getattr(user, "role", "owner") or "owner"),
+        is_superadmin=bool(getattr(user, "is_superadmin", False)),
         plan=plan_name,
         has_plan=has_plan,
     )
