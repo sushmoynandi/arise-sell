@@ -40,8 +40,8 @@ export function FestivalModals({
   // Form State for new Festival Offer
   const [festName, setFestName] = useState("");
   const [festCode, setFestCode] = useState("");
-  const [festDiscount, setFestDiscount] = useState(10);
-  const [festBonus, setFestBonus] = useState(0);
+  const [festDiscount, setFestDiscount] = useState("");
+  const [festBonus, setFestBonus] = useState("");
   const [festValidity, setFestValidity] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,13 +63,14 @@ export function FestivalModals({
       await onCreateOffer({
         festivalName: festName,
         couponCode: festCode.toUpperCase().replace(/\s+/g, ""),
-        discountPercent: Number(festDiscount),
-        bonusMessages: Number(festBonus),
+        discountPercent: Number(festDiscount) || 10,
+        bonusMessages: Number(festBonus) || 0,
         validity: festValidity || "Limited Time Offer",
       });
       setFestName("");
       setFestCode("");
-      setFestBonus(0);
+      setFestDiscount("");
+      setFestBonus("");
       setFestValidity("");
       onCloseAdd();
     } finally {
@@ -340,11 +341,11 @@ export function FestivalModals({
                   </label>
                   <input
                     type="number"
-                    required
                     min={1}
                     max={100}
                     value={festDiscount}
-                    onChange={(e) => setFestDiscount(Number(e.target.value))}
+                    onChange={(e) => setFestDiscount(e.target.value)}
+                    placeholder="e.g. 20"
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>
@@ -357,8 +358,8 @@ export function FestivalModals({
                 <input
                   type="number"
                   value={festBonus}
-                  onChange={(e) => setFestBonus(Number(e.target.value))}
-                  placeholder="e.g. 500 (extra message credits)"
+                  onChange={(e) => setFestBonus(e.target.value)}
+                  placeholder="e.g. 500"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                 />
               </div>
