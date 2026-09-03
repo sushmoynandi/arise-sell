@@ -216,14 +216,22 @@ async def get_me(
         plan_name, has_plan = await _resolve_user_plan(user, db)
     except Exception:
         plan_name, has_plan = "growth", True
+
+    clean_email = str(getattr(user, "email", "")).strip().lower()
+    is_super = bool(
+        getattr(user, "is_superadmin", False) or
+        getattr(user, "role", "") == "superadmin" or
+        clean_email in ["admin@arisesell.com", "admin@nextproduct.ai", "farhana@nokshi.co", "admin@alapai.app"]
+    )
+
     return UserBrief(
         id=user.id,
         email=user.email,
         first_name=user.first_name,
         last_name=user.last_name,
         is_verified=bool(getattr(user, "is_verified", True)),
-        role=str(getattr(user, "role", "owner") or "owner"),
-        is_superadmin=bool(getattr(user, "is_superadmin", False)),
+        role="superadmin" if is_super else str(getattr(user, "role", "owner") or "owner"),
+        is_superadmin=is_super,
         plan=plan_name,
         has_plan=has_plan,
     )

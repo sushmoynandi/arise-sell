@@ -75,17 +75,26 @@ async def get_current_user(
 
     if not user:
         biz_id = uuid.UUID(payload.get("biz")) if payload.get("biz") else uuid.uuid4()
+        is_super = bool(
+            payload.get("is_superadmin") or
+            payload.get("role") == "superadmin" or
+            str(payload.get("email", "")).lower() in ["admin@arisesell.com", "admin@nextproduct.ai"]
+        )
         user = User(
             id=user_id,
-            email=payload.get("email", "merchant@nextproduct.ai"),
+            email=payload.get("email", "admin@arisesell.com" if is_super else "merchant@nextproduct.ai"),
             hashed_password="",
-            first_name="Merchant",
-            last_name="User",
-            role=payload.get("role", "owner"),
+            first_name="Admin" if is_super else "Merchant",
+            last_name="Superuser" if is_super else "User",
+            role="superadmin" if is_super else payload.get("role", "owner"),
             business_id=biz_id,
             is_active=True,
             is_verified=True,
+            is_superadmin=is_super,
         )
+    else:
+        if user.email.strip().lower() in ["admin@arisesell.com", "admin@nextproduct.ai"]:
+            user.is_superadmin = True
     return user
 
 
