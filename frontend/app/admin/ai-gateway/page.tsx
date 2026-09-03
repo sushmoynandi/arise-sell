@@ -71,7 +71,7 @@ export default function AdminAiGatewayPage() {
   // Form state
   const [newProvider, setNewProvider] =
     useState<AiProviderKey["provider"]>("google");
-  const [newModel, setNewModel] = useState("gemini-3.6-flash");
+  const [newModel, setNewModel] = useState("gemini-3.5-flash-lite");
   const [newKey, setNewKey] = useState("");
   const [newRole, setNewRole] = useState<AiProviderKey["role"]>("standby");
 
@@ -1056,7 +1056,7 @@ export default function AdminAiGatewayPage() {
                     const p = e.target.value as AiProviderKey["provider"];
                     setNewProvider(p);
                     setModalTestResult(null);
-                    if (p === "google") setNewModel("gemini-3.6-flash");
+                    if (p === "google") setNewModel("gemini-3.5-flash-lite");
                     else if (p === "openai") setNewModel("gpt-4o-mini");
                     else if (p === "anthropic")
                       setNewModel("claude-3-5-haiku-20241022");
