@@ -114,9 +114,11 @@ class ApiClient {
     register: (body: {
       email: string;
       password: string;
-      password2: string;
-      first_name: string;
-      last_name: string;
+      password2?: string;
+      first_name?: string;
+      last_name?: string;
+      full_name?: string;
+      store_name?: string;
     }) =>
       this.request<{
         access: string;

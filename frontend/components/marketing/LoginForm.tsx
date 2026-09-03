@@ -14,13 +14,14 @@ import {
   IconCheck,
   IconClose,
   IconShield,
-  IconBolt,
 } from "@/components/ui/icons";
 import { useLang } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LoginForm() {
   const router = useRouter();
   const { t } = useLang();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +37,7 @@ export default function LoginForm() {
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -51,41 +52,46 @@ export default function LoginForm() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      if (rememberMe) {
-        localStorage.setItem("np_remember_7d", "true");
-        localStorage.setItem(
-          "np_session_expiry",
-          String(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        );
+    try {
+      const res = await login(email.trim(), password);
+      if (res.success) {
+        if (rememberMe) {
+          localStorage.setItem("np_remember_7d", "true");
+        }
+        router.push("/console");
+      } else {
+        const errorMsg =
+          res.error === "Invalid email or password"
+            ? t(
+                "Invalid email address or password. Please verify and try again.",
+                "ভুল ইমেইল অথবা পাসওয়ার্ড দেওয়া হয়েছে। অনুগ্রহ করে যাচাই করুন।",
+              )
+            : res.error ||
+              t(
+                "Sign in failed. Please check your credentials.",
+                "লগইন ব্যর্থ হয়েছে। অনুগ্রহ করে তথ্য যাচাই করুন।",
+              );
+        setError(errorMsg);
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
+    } finally {
       setLoading(false);
-      router.push("/console");
-    }, 900);
+    }
   };
 
   const handleGoogleLogin = () => {
     setGoogleLoading(true);
     setTimeout(() => {
-      if (rememberMe) {
-        localStorage.setItem("np_remember_7d", "true");
-        localStorage.setItem(
-          "np_session_expiry",
-          String(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        );
-      }
       setGoogleLoading(false);
-      router.push("/console");
-    }, 1000);
-  };
-
-  const handleDemoLogin = () => {
-    setEmail("demo@nokshi.com.bd");
-    setPassword("••••••••••••");
-    setLoading(true);
-    setTimeout(() => {
-      router.push("/console");
-    }, 700);
+      setError(
+        t(
+          "Google OAuth is currently in verification mode. Please sign in with email.",
+          "গুগল অথেন্টিকেশন বর্তমানে যাচাইকরণে রয়েছে। অনুগ্রহ করে ইমেইল দিয়ে লগইন করুন।",
+        ),
+      );
+    }, 600);
   };
 
   const handleForgotSubmit = (e: React.FormEvent) => {
@@ -273,19 +279,7 @@ export default function LoginForm() {
           </button>
         </form>
 
-        {/* Demo Fast Access Pill */}
-        <div className="mt-3.5 flex items-center justify-center">
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            className="inline-flex items-center gap-1.5 rounded-full border border-signal/15 bg-signal/[0.04] px-3 py-1 text-[12px] font-medium text-signal transition-colors hover:bg-signal/[0.08] cursor-pointer"
-          >
-            <IconBolt width={12} height={12} />
-            <span>
-              {t("1-Click Demo Access", "১-ক্লিক ডেমো অ্যাকাউন্ট দিয়ে দেখুন")}
-            </span>
-          </button>
-        </div>
+
 
         {/* Sign up link */}
         <div className="mt-4 text-center text-[12.5px] text-text-3">

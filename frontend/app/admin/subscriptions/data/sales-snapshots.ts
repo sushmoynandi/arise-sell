@@ -76,3 +76,4 @@ export function getMerchantDetails(merchantName: string): AdminMerchant {
     lastActive: "Active today",
   };
 }
+

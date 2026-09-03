@@ -9,14 +9,16 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 class RegisterRequest(BaseModel):
     """New user registration payload."""
     email: EmailStr
-    password: str = Field(..., min_length=8, description="Minimum 8 characters")
-    password2: str = Field(..., description="Must match password")
-    first_name: str
-    last_name: str
+    password: str = Field(..., min_length=6, description="Minimum 6 characters")
+    password2: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    full_name: str | None = None
+    store_name: str | None = None
 
     @model_validator(mode="after")
     def check_passwords_match(self) -> RegisterRequest:
-        if self.password != self.password2:
+        if self.password2 is not None and self.password != self.password2:
             raise ValueError("Passwords do not match")
         return self
 
@@ -33,7 +35,9 @@ class UserBrief(BaseModel):
     email: str
     first_name: str
     last_name: str
-    is_verified: bool
+    is_verified: bool = True
+    role: str = "owner"
+    is_superadmin: bool = False
 
     model_config = {"from_attributes": True}
 

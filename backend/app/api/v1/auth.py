@@ -18,26 +18,42 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    stmt = select(User).where(User.email == req.email)
+    clean_email = req.email.strip().lower()
+    stmt = select(User).where(User.email == clean_email)
     res = await db.execute(stmt)
     if res.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="This email is already registered. Please sign in.")
 
-    # Create business tenant
+    # Determine first and last name
+    first_name = req.first_name
+    last_name = req.last_name
+    if not first_name and req.full_name:
+        parts = req.full_name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
+    first_name = (first_name or "Merchant").strip()
+    last_name = (last_name or "").strip()
+
+    # Determine store name
+    store_name = (req.store_name or f"{first_name}'s Store").strip()
+    store_slug = f"store-{uuid.uuid4().hex[:6]}"
+
+    # Create business tenant with default commercial "Free" plan
     biz = Business(
-        name=f"{req.first_name}'s Store",
-        slug=f"store-{uuid.uuid4().hex[:6]}",
-        plan="growth",
+        name=store_name,
+        slug=store_slug,
+        plan="Free",
     )
     db.add(biz)
     await db.flush()
 
     user = User(
         business_id=biz.id,
-        email=req.email,
+        email=clean_email,
         hashed_password=hash_password(req.password),
-        first_name=req.first_name,
-        last_name=req.last_name,
+        first_name=first_name,
+        last_name=last_name,
         role="owner",
         is_active=True,
         is_verified=True,
@@ -58,35 +74,24 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
             first_name=user.first_name,
             last_name=user.last_name,
             is_verified=user.is_verified,
+            role=user.role,
+            is_superadmin=user.is_superadmin,
         ),
     )
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
-    stmt = select(User).where(User.email == req.email)
+    clean_email = req.email.strip().lower()
+    stmt = select(User).where(User.email == clean_email)
     res = await db.execute(stmt)
     user = res.scalar_one_or_none()
 
     if not user or not verify_password(req.password, user.hashed_password):
-        # Demo fallback for frictionless local testing
-        if req.email in ["demo@nokshi.com.bd", "farhana@nokshi.co"]:
-            user_id = uuid.uuid4()
-            biz_id = uuid.uuid4()
-            access = create_access_token({"sub": str(user_id), "business_id": str(biz_id), "role": "owner"})
-            refresh = create_refresh_token({"sub": str(user_id)})
-            return TokenResponse(
-                access=access,
-                refresh=refresh,
-                user=UserBrief(
-                    id=user_id,
-                    email=req.email,
-                    first_name="Farhana",
-                    last_name="Rahman",
-                    is_verified=True,
-                ),
-            )
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is deactivated. Please contact support.")
 
     access = create_access_token({"sub": str(user.id), "business_id": str(user.business_id), "role": user.role})
     refresh = create_refresh_token({"sub": str(user.id)})
@@ -100,6 +105,8 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
             first_name=user.first_name,
             last_name=user.last_name,
             is_verified=user.is_verified,
+            role=user.role,
+            is_superadmin=user.is_superadmin,
         ),
     )
 
@@ -117,4 +124,12 @@ async def refresh_token(req: RefreshRequest):
 
 @router.get("/me", response_model=UserBrief)
 async def get_me(user: User = Depends(get_current_active_user)):
-    return user
+    return UserBrief(
+        id=user.id,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        is_verified=user.is_verified,
+        role=user.role,
+        is_superadmin=user.is_superadmin,
+    )

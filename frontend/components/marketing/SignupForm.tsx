@@ -16,10 +16,15 @@ import {
 import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
 
+import { useAuth } from "@/lib/auth-context";
+
 export default function SignupForm() {
   const router = useRouter();
   const { t } = useLang();
+  const { register } = useAuth();
 
+  const [fullName, setFullName] = useState("");
+  const [storeName, setStoreName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,15 +54,15 @@ export default function SignupForm() {
     t("Very Strong", "খুব শক্তিশালী"),
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError(
         t(
-          "Please fill in all the required fields.",
-          "অনুগ্রহ করে সকল প্রয়োজনীয় তথ্য পূরণ করুন।"
+          "Please fill in your email address and password.",
+          "অনুগ্রহ করে আপনার ইমেইল এবং পাসওয়ার্ড দিন।"
         )
       );
       return;
@@ -73,7 +78,7 @@ export default function SignupForm() {
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (confirmPassword && password !== confirmPassword) {
       setError(
         t(
           "Passwords do not match. Please re-check.",
@@ -84,29 +89,41 @@ export default function SignupForm() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem("np_remember_7d", "true");
-      localStorage.setItem(
-        "np_session_expiry",
-        String(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      );
-      localStorage.setItem("np_user_email", email);
+    try {
+      const res = await register({
+        email: email.trim(),
+        password,
+        password2: confirmPassword || password,
+        full_name: fullName.trim() || undefined,
+        store_name: storeName.trim() || undefined,
+      });
+
+      if (res.success) {
+        router.push("/console");
+      } else {
+        setError(
+          res.error ||
+            t(
+              "Registration failed. Please try again.",
+              "রেজিস্ট্রেশন সম্পন্ন করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
+            )
+        );
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Registration failed";
+      setError(msg);
+    } finally {
       setLoading(false);
-      router.push("/console");
-    }, 900);
+    }
   };
 
   const handleGoogleSignup = () => {
     setGoogleLoading(true);
+    // Google OAuth integration
     setTimeout(() => {
-      localStorage.setItem("np_remember_7d", "true");
-      localStorage.setItem(
-        "np_session_expiry",
-        String(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      );
       setGoogleLoading(false);
-      router.push("/console");
-    }, 1000);
+      setError(t("Google OAuth is currently in verification mode. Please register with email.", "গুগল অথেন্টিকেশন বর্তমানে যাচাইকরণে রয়েছে। অনুগ্রহ করে ইমেইল দিয়ে রেজিস্টার করুন।"));
+    }, 600);
   };
 
   return (
@@ -185,6 +202,38 @@ export default function SignupForm() {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
+          {/* Full Name & Store Name */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[12.5px] font-medium text-text">
+                {t("Your Name", "আপনার নাম")}
+              </label>
+              <div className="relative mt-1">
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Farhana Rahman"
+                  className="h-10 w-full rounded-xl border border-black/9 bg-white/75 px-3 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12.5px] font-medium text-text">
+                {t("Store Name", "শপের নাম")}
+              </label>
+              <div className="relative mt-1">
+                <input
+                  type="text"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  placeholder="e.g. Nokshi Crafts"
+                  className="h-10 w-full rounded-xl border border-black/9 bg-white/75 px-3 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Email */}
           <div>
             <label className="block text-[12.5px] font-medium text-text">

@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/ui/primitives";
+import { useAuth } from "@/lib/auth-context";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { adminLogin, adminVerify2FA } = useAuth();
 
   // Step 1: Email & Password; Step 2: 2FA TOTP; Step 3: Verified Redirect
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -27,7 +29,7 @@ export default function AdminLoginPage() {
     }
   }, [step]);
 
-  const handleStep1Submit = (e: React.FormEvent) => {
+  const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -37,23 +39,25 @@ export default function AdminLoginPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      // Valid credentials simulation
-      if (email.includes("@") && password.length >= 6) {
-        setStep(2);
+    try {
+      const res = await adminLogin(email.trim(), password);
+      if (res.success) {
+        if (res.requires_2fa) {
+          setStep(2);
+        } else {
+          setStep(3);
+          setTimeout(() => router.push("/admin"), 800);
+        }
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
-        if (nextAttempt >= 5) {
-          setError(
-            "Too many failed attempts. Temporary 15-minute lock engaged.",
-          );
-        } else {
-          setError(`Invalid credentials. Attempt ${nextAttempt} of 5.`);
-        }
+        setError(res.error || `Invalid credentials. Attempt ${nextAttempt} of 5.`);
       }
-    }, 600);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Authentication failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTotpChange = (index: number, val: string) => {
@@ -80,23 +84,25 @@ export default function AdminLoginPage() {
     }
   };
 
-  const verify2FA = (codeString: string) => {
+  const verify2FA = async (codeString: string) => {
     setLoading(true);
     setError(null);
 
-    setTimeout(() => {
-      setLoading(false);
-      if (codeString === "123456" || codeString.length === 6) {
+    try {
+      const res = await adminVerify2FA(email.trim(), codeString);
+      if (res.success) {
         setStep(3);
-        setTimeout(() => {
-          router.push("/admin");
-        }, 800);
+        setTimeout(() => router.push("/admin"), 800);
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
-        setError("Invalid 2FA code. Use demo code: 123456");
+        setError(res.error || "Invalid 2FA code.");
       }
-    }, 700);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "2FA verification failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fillDemoCreds = () => {

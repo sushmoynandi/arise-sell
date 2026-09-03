@@ -23,7 +23,15 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: { email: string; password: string; password2: string; first_name: string; last_name: string }) => Promise<{ success: boolean; error?: string }>;
+  register: (data: {
+    email: string;
+    password: string;
+    password2?: string;
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+    store_name?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   adminLogin: (email: string, password: string) => Promise<{ success: boolean; requires_2fa?: boolean; error?: string }>;
   adminVerify2FA: (email: string, totp_code: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
@@ -45,15 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const me = (await api.auth.me()) as unknown as UserProfile;
       setUser(me);
     } catch {
-      // Fallback for demo mode
-      setUser({
-        id: "demo-user-id",
-        email: "farhana@nokshi.co",
-        first_name: "Farhana",
-        last_name: "Rahman",
-        is_verified: true,
-        role: "owner",
-      });
+      // Clear invalid/expired token without falling back to mock user
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("np_access_token");
+        localStorage.removeItem("np_refresh_token");
+      }
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -79,7 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (data: { email: string; password: string; password2: string; first_name: string; last_name: string }) => {
+  const register = async (data: {
+    email: string;
+    password: string;
+    password2?: string;
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+    store_name?: string;
+  }) => {
     try {
       const res = await api.auth.register(data);
       if (res.access) {

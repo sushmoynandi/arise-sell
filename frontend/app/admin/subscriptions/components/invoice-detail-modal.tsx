@@ -446,7 +446,9 @@ export function InvoiceDetailModal({
                 </div>
                 <p>
                   <span className="text-text-3">Invoice No: </span>
-                  <strong className="text-signal font-bold">{invoice.id}</strong>
+                  <strong className="text-signal font-bold">
+                    {invoice.id}
+                  </strong>
                 </p>
                 <p>
                   <span className="text-text-3">Date: </span>
@@ -499,7 +501,8 @@ export function InvoiceDetailModal({
                         {invoice.plan} Subscription Tier
                       </p>
                       <p className="text-[11px] text-text-3 mt-0.5">
-                        AI Comment &amp; Inbox auto-reply, order processing &amp; courier sync
+                        AI Comment &amp; Inbox auto-reply, order processing
+                        &amp; courier sync
                       </p>
                     </td>
                     <td className="py-2.5 px-2 text-center font-mono text-text-2 text-[11.5px] whitespace-nowrap">
@@ -529,9 +532,7 @@ export function InvoiceDetailModal({
                 {invoice.promoCode && (
                   <div className="flex justify-between text-amber-800 font-mono text-[11px] px-1">
                     <span>Discount ({invoice.promoCode}):</span>
-                    <span className="font-bold">
-                      -{formatTaka(discount)}
-                    </span>
+                    <span className="font-bold">-{formatTaka(discount)}</span>
                   </div>
                 )}
 
@@ -552,10 +553,12 @@ export function InvoiceDetailModal({
             {/* Footer */}
             <div className="border-t border-line pt-3.5 text-center text-[11px] text-text-3 leading-relaxed">
               <p className="font-semibold text-text text-[12px]">
-                Thank you for partnering with NextProduct AI to power your commerce.
+                Thank you for partnering with NextProduct AI to power your
+                commerce.
               </p>
               <p className="text-[10px] text-text-3 mt-0.5">
-                Official electronic tax invoice &amp; payment receipt. For priority billing support, contact{" "}
+                Official electronic tax invoice &amp; payment receipt. For
+                priority billing support, contact{" "}
                 <span className="text-signal font-mono font-medium">
                   support@nextproduct.ai
                 </span>

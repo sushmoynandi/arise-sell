@@ -1,10 +1,10 @@
-﻿"""Organization and Business Tenant Models."""
+"""Organization and Business Tenant Models."""
 from __future__ import annotations
 
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text
+from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,7 +41,7 @@ class Business(Base, TimestampMixin):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     org_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), index=True, nullable=True
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="SET NULL"), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     name_bn: Mapped[str | None] = mapped_column(String(255), nullable=True)
