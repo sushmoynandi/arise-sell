@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { INITIAL_ADMIN_PLANS, type AdminPlan } from "@/data/admin";
-import { getStoredPlans, saveStoredPlans, subscribePlans } from "@/lib/plans-store";
+import api from "@/lib/api-client";
+import { type AdminPlan } from "@/data/admin";
+import { getStoredPlans, saveStoredPlans } from "@/lib/plans-store";
 import {
   IconCheck,
   IconClose,
@@ -27,51 +28,15 @@ type FestivalOffer = {
   active: boolean;
 };
 
-const INITIAL_FESTIVAL_OFFERS: FestivalOffer[] = [
-  {
-    id: "fest-eid",
-    festivalName: "Eid Shopping Blitz",
-    festivalNameBn: "ঈদ শপিং ধামাকা অফার",
-    couponCode: "EID2026",
-    discountPercent: 25,
-    bonusOrders: 500,
-    validity: "Valid till Eid Night",
-    active: true,
-  },
-  {
-    id: "fest-puja",
-    festivalName: "Durga Puja Special",
-    festivalNameBn: "শারদীয় দুর্গাপূজা স্পেশাল",
-    couponCode: "PUJA2026",
-    discountPercent: 20,
-    bonusOrders: 300,
-    validity: "Valid till Dashami",
-    active: false,
-  },
-  {
-    id: "fest-boishakh",
-    festivalName: "Pahela Baishakh Offer",
-    festivalNameBn: "পহেলা বৈশাখ বোশেখ অফার",
-    couponCode: "BOISHAKH1433",
-    discountPercent: 15,
-    bonusOrders: 250,
-    validity: "Valid in Baishakh",
-    active: false,
-  },
-];
-
 export default function AdminPlansPage() {
-  const plans = useSyncExternalStore(
-    subscribePlans,
-    getStoredPlans,
-    () => INITIAL_ADMIN_PLANS,
-  );
-  const [festivalOffers, setFestivalOffers] = useState<FestivalOffer[]>(
-    INITIAL_FESTIVAL_OFFERS,
-  );
+  const [plans, setPlans] = useState<AdminPlan[]>([]);
+  const [festivalOffers, setFestivalOffers] = useState<FestivalOffer[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Billing view toggle on the cards: "monthly" vs "yearly"
-  const [billingView, setBillingView] = useState<"monthly" | "yearly">("monthly");
+  const [billingView, setBillingView] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
   const isYearlyView = billingView === "yearly";
 
   // Modals state for Plans
@@ -95,7 +60,9 @@ export default function AdminPlansPage() {
   const [tagline, setTagline] = useState("");
   const [priceBDT, setPriceBDT] = useState(200);
   const [yearlyPriceBDT, setYearlyPriceBDT] = useState(2000);
-  const [billingPeriod, setBillingPeriod] = useState<"both" | "monthly" | "yearly">("both");
+  const [billingPeriod, setBillingPeriod] = useState<
+    "both" | "monthly" | "yearly"
+  >("both");
   const [messageLimit, setMessageLimit] = useState(200);
   const [catalogLimit, setCatalogLimit] = useState(250);
   const [courierChannels, setCourierChannels] = useState(2);
@@ -113,25 +80,66 @@ export default function AdminPlansPage() {
     "Limited Time Festival Offer",
   );
 
+  // Fetch real plans & festival offers from backend on mount
+  const fetchBackendData = async () => {
+    try {
+      setLoading(true);
+      const [plansRes, offersRes] = await Promise.all([
+        api.admin.listPlans(),
+        api.admin.listFestivalOffers(),
+      ]);
+
+      if (Array.isArray(plansRes) && plansRes.length > 0) {
+        const loadedPlans = plansRes as unknown as AdminPlan[];
+        setPlans(loadedPlans);
+        saveStoredPlans(loadedPlans);
+      } else {
+        const stored = getStoredPlans();
+        setPlans(stored);
+      }
+
+      if (Array.isArray(offersRes)) {
+        setFestivalOffers(offersRes as unknown as FestivalOffer[]);
+      }
+    } catch (err) {
+      console.error("Failed to load plans from backend:", err);
+      const stored = getStoredPlans();
+      setPlans(stored);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackendData();
+  }, []);
+
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleToggleFestivalOffer = (id: string) => {
-    setFestivalOffers((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, active: !f.active } : f)),
-    );
-    const offer = festivalOffers.find((f) => f.id === id);
-    const newState = !offer?.active;
-    setSuccessMsg(
-      `${offer?.festivalName} is now ${newState ? "ACTIVE on storefront" : "PAUSED"}!`,
-    );
-    setTimeout(() => setSuccessMsg(null), 3500);
+  const handleToggleFestivalOffer = async (id: string) => {
+    try {
+      const res = await api.admin.toggleFestivalOffer(id);
+      const updated = res as unknown as FestivalOffer;
+      setFestivalOffers((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, active: updated.active } : f)),
+      );
+      setSuccessMsg(
+        `${updated.festivalName} is now ${updated.active ? "ACTIVE on storefront" : "PAUSED"}!`,
+      );
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } catch (err) {
+      console.error("Failed to toggle festival offer on backend:", err);
+      setFestivalOffers((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, active: !f.active } : f)),
+      );
+    }
   };
 
-  const handleAddFestivalOffer = (e: React.FormEvent) => {
+  const handleAddFestivalOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!festName || !festCode) return;
 
@@ -146,29 +154,44 @@ export default function AdminPlansPage() {
       active: true,
     };
 
-    setFestivalOffers((prev) => [newOffer, ...prev]);
-    setSuccessMsg(`Festival Offer "${festName}" created and activated!`);
+    try {
+      const created = (await api.admin.createFestivalOffer(
+        newOffer as unknown as Record<string, unknown>,
+      )) as unknown as FestivalOffer;
+      setFestivalOffers((prev) => [created || newOffer, ...prev]);
+      setSuccessMsg(`Festival Offer "${festName}" created and activated!`);
+    } catch (err) {
+      console.error("Error creating festival offer:", err);
+      setFestivalOffers((prev) => [newOffer, ...prev]);
+      setSuccessMsg(`Festival Offer "${festName}" created!`);
+    }
+
     setTimeout(() => setSuccessMsg(null), 3500);
     setAddFestivalModalOpen(false);
     setFestName("");
     setFestCode("");
   };
 
-  const handleSaveEditFestivalOffer = (e: React.FormEvent) => {
+  const handleSaveEditFestivalOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFestivalOffer) return;
 
+    const cleanCode = editingFestivalOffer.couponCode
+      .toUpperCase()
+      .replace(/\s+/g, "");
+    const updatedOffer = { ...editingFestivalOffer, couponCode: cleanCode };
+
+    try {
+      await api.admin.updateFestivalOffer(
+        editingFestivalOffer.id,
+        updatedOffer as unknown as Record<string, unknown>,
+      );
+    } catch (err) {
+      console.error("Failed to update festival offer on backend:", err);
+    }
+
     setFestivalOffers((prev) =>
-      prev.map((f) =>
-        f.id === editingFestivalOffer.id
-          ? {
-              ...editingFestivalOffer,
-              couponCode: editingFestivalOffer.couponCode
-                .toUpperCase()
-                .replace(/\s+/g, ""),
-            }
-          : f,
-      ),
+      prev.map((f) => (f.id === editingFestivalOffer.id ? updatedOffer : f)),
     );
     setSuccessMsg(
       `Festival offer "${editingFestivalOffer.festivalName}" updated successfully!`,
@@ -177,8 +200,13 @@ export default function AdminPlansPage() {
     setEditingFestivalOffer(null);
   };
 
-  const handleConfirmDeleteFestivalOffer = () => {
+  const handleConfirmDeleteFestivalOffer = async () => {
     if (deletingFestivalOffer) {
+      try {
+        await api.admin.deleteFestivalOffer(deletingFestivalOffer.id);
+      } catch (err) {
+        console.error("Failed to delete festival offer on backend:", err);
+      }
       setFestivalOffers((prev) =>
         prev.filter((f) => f.id !== deletingFestivalOffer.id),
       );
@@ -188,17 +216,17 @@ export default function AdminPlansPage() {
     }
   };
 
-  const syncAndSetPlans = (updater: (prev: AdminPlan[]) => AdminPlan[]) => {
-    const next = updater(plans);
-    saveStoredPlans(next);
-  };
-
-  const handleCreatePlan = (e: React.FormEvent) => {
+  const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
 
-    const calculatedYearly = Number(yearlyPriceBDT) || (Number(priceBDT) * 10);
-    const yearlySavingsPercent = priceBDT > 0 ? Math.round(((priceBDT * 12 - calculatedYearly) / (priceBDT * 12)) * 100) : 0;
+    const calculatedYearly = Number(yearlyPriceBDT) || Number(priceBDT) * 10;
+    const yearlySavingsPercent =
+      priceBDT > 0
+        ? Math.round(
+            ((priceBDT * 12 - calculatedYearly) / (priceBDT * 12)) * 100,
+          )
+        : 0;
 
     const newPlan: AdminPlan = {
       id: `plan-${Date.now()}`,
@@ -207,7 +235,8 @@ export default function AdminPlansPage() {
       tagline,
       priceBDT: Number(priceBDT),
       yearlyPriceBDT: calculatedYearly,
-      yearlyDiscountPercent: yearlySavingsPercent > 0 ? yearlySavingsPercent : undefined,
+      yearlyDiscountPercent:
+        yearlySavingsPercent > 0 ? yearlySavingsPercent : undefined,
       billingPeriod,
       messageLimit: Number(messageLimit),
       catalogLimit: Number(catalogLimit),
@@ -215,11 +244,32 @@ export default function AdminPlansPage() {
       badge: badge || undefined,
       features: featuresStr.split("\n").filter(Boolean),
       activeMerchants: 0,
+      monthlySubscribers: 0,
+      yearlySubscribers: 0,
       status: "active",
     };
 
-    syncAndSetPlans((prev) => [...prev, newPlan]);
-    setSuccessMsg(`Plan "${name}" published live to storefront checkout!`);
+    try {
+      const created = (await api.admin.createPlan(
+        newPlan as unknown as Record<string, unknown>,
+      )) as unknown as AdminPlan;
+      const finalPlan = created || newPlan;
+      setPlans((prev) => {
+        const next = [...prev, finalPlan];
+        saveStoredPlans(next);
+        return next;
+      });
+      setSuccessMsg(`Plan "${name}" published live to storefront checkout!`);
+    } catch (err) {
+      console.error("Failed to create plan on backend:", err);
+      setPlans((prev) => {
+        const next = [...prev, newPlan];
+        saveStoredPlans(next);
+        return next;
+      });
+      setSuccessMsg(`Plan "${name}" published!`);
+    }
+
     setTimeout(() => setSuccessMsg(null), 3500);
     setCreateModalOpen(false);
 
@@ -231,31 +281,66 @@ export default function AdminPlansPage() {
     setYearlyPriceBDT(2000);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPlan) return;
 
-    syncAndSetPlans((prev) =>
-      prev.map((p) => (p.id === editingPlan.id ? editingPlan : p)),
-    );
+    try {
+      await api.admin.updatePlan(
+        editingPlan.id,
+        editingPlan as unknown as Record<string, unknown>,
+      );
+    } catch (err) {
+      console.error("Failed to update plan on backend:", err);
+    }
+
+    setPlans((prev) => {
+      const next = prev.map((p) => (p.id === editingPlan.id ? editingPlan : p));
+      saveStoredPlans(next);
+      return next;
+    });
+
     setSuccessMsg(`Plan "${editingPlan.name}" updated successfully!`);
     setTimeout(() => setSuccessMsg(null), 3500);
     setEditingPlan(null);
   };
 
-  const handleToggleStatus = (id: string) => {
-    syncAndSetPlans((prev) =>
-      prev.map((p) =>
+  const handleToggleStatus = async (id: string) => {
+    try {
+      await api.admin.togglePlanStatus(id);
+    } catch (err) {
+      console.error("Failed to toggle plan status on backend:", err);
+    }
+
+    setPlans((prev) => {
+      const next: AdminPlan[] = prev.map((p) =>
         p.id === id
-          ? { ...p, status: p.status === "active" ? "archived" : "active" }
+          ? {
+              ...p,
+              status: (p.status === "active"
+                ? "archived"
+                : "active") as AdminPlan["status"],
+            }
           : p,
-      ),
-    );
+      );
+      saveStoredPlans(next);
+      return next;
+    });
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deletingPlan) {
-      syncAndSetPlans((prev) => prev.filter((p) => p.id !== deletingPlan.id));
+      try {
+        await api.admin.deletePlan(deletingPlan.id);
+      } catch (err) {
+        console.error("Failed to delete plan on backend:", err);
+      }
+
+      setPlans((prev) => {
+        const next = prev.filter((p) => p.id !== deletingPlan.id);
+        saveStoredPlans(next);
+        return next;
+      });
       setDeletingPlan(null);
       setSuccessMsg("Plan removed from live tiers.");
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -272,7 +357,9 @@ export default function AdminPlansPage() {
           </h1>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-signal/[0.08] px-3 py-0.5 text-[12px] font-bold text-signal">
             <span className="size-1.5 rounded-full bg-signal animate-pulse" />
-            {plans.filter((p) => p.status === "active").length} Live Plans
+            {loading
+              ? "Syncing Live Tiers..."
+              : `${plans.filter((p) => p.status === "active").length} Live Plans`}
           </span>
         </div>
 

@@ -300,12 +300,51 @@ class ApiClient {
       this.request(`/admin/subscriptions/invoices/${id}/refund`, {
         method: "POST",
       }),
-    listPlans: () => this.request<unknown[]>("/admin/plans"),
+    listPlans: () => this.request<Record<string, unknown>[]>("/admin/plans"),
     createPlan: (plan: Record<string, unknown>) =>
-      this.request("/admin/plans", {
+      this.request<Record<string, unknown>>("/admin/plans", {
         method: "POST",
         body: JSON.stringify(plan),
       }),
+    updatePlan: (id: string, plan: Record<string, unknown>) =>
+      this.request<Record<string, unknown>>(`/admin/plans/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(plan),
+      }),
+    togglePlanStatus: (id: string) =>
+      this.request<Record<string, unknown>>(`/admin/plans/${id}/status`, {
+        method: "PATCH",
+      }),
+    deletePlan: (id: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/admin/plans/${id}`,
+        { method: "DELETE" },
+      ),
+    listFestivalOffers: () =>
+      this.request<Record<string, unknown>[]>("/admin/plans/festival-offers"),
+    createFestivalOffer: (offer: Record<string, unknown>) =>
+      this.request<Record<string, unknown>>("/admin/plans/festival-offers", {
+        method: "POST",
+        body: JSON.stringify(offer),
+      }),
+    updateFestivalOffer: (id: string, offer: Record<string, unknown>) =>
+      this.request<Record<string, unknown>>(
+        `/admin/plans/festival-offers/${id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(offer),
+        },
+      ),
+    toggleFestivalOffer: (id: string) =>
+      this.request<Record<string, unknown>>(
+        `/admin/plans/festival-offers/${id}/toggle`,
+        { method: "PATCH" },
+      ),
+    deleteFestivalOffer: (id: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/admin/plans/festival-offers/${id}`,
+        { method: "DELETE" },
+      ),
     listAiKeys: () =>
       this.request<Record<string, unknown>[]>("/admin/ai-gateway/keys"),
     addAiKey: (key: Record<string, unknown>) =>

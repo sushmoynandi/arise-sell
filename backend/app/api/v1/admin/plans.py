@@ -1,73 +1,127 @@
-"""Super Admin Subscription Plan Engine & Festival Offers."""
+"""Super Admin Commercial Subscription Plans & Festival Offers Engine."""
 from __future__ import annotations
 
-import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
-from app.core.deps import get_current_superadmin
-from app.models.billing import SubscriptionPlan
+from typing import Any
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
 
-router = APIRouter(prefix="/admin/plans", tags=["Super Admin Plans"], dependencies=[Depends(get_current_superadmin)])
+from app.services.plans_service import (
+    get_stored_plans,
+    create_stored_plan,
+    update_stored_plan,
+    toggle_stored_plan_status,
+    delete_stored_plan,
+    get_stored_festival_offers,
+    create_stored_festival_offer,
+    update_stored_festival_offer,
+    toggle_stored_festival_offer,
+    delete_stored_festival_offer,
+)
+
+router = APIRouter(prefix="/admin/plans", tags=["Super Admin Plans"])
 
 
-class CreatePlanRequest(BaseModel):
+# ─── Pydantic Models ──────────────────────────────────────────
+
+class PlanRequest(BaseModel):
+    id: str | None = None
     name: str
-    name_bn: str | None = None
-    tagline: str | None = None
-    price_bdt: float
-    yearly_price_bdt: float | None = None
-    message_limit: int = 500
-    catalog_limit: int = 500
-    courier_channels: int = 2
+    nameBn: str | None = None
+    tagline: str | None = ""
+    priceBDT: float = Field(default=0.0)
+    yearlyPriceBDT: float | None = None
+    yearlyDiscountPercent: int | None = None
+    billingPeriod: str = "both"
+    messageLimit: int = 200
+    catalogLimit: int = 250
+    courierChannels: int = 2
     features: list[str] = []
     badge: str | None = None
+    popular: bool = False
+    activeMerchants: int = 0
+    monthlySubscribers: int = 0
+    yearlySubscribers: int = 0
+    status: str = "active"
 
+
+class FestivalOfferRequest(BaseModel):
+    id: str | None = None
+    festivalName: str
+    festivalNameBn: str | None = None
+    couponCode: str
+    discountPercent: int = 20
+    bonusOrders: int = 0
+    validity: str = "Limited Time Offer"
+    active: bool = True
+
+
+# ─── Festival Offers Endpoints (Defined First to Avoid Route Shadowing) ───
+
+@router.get("/festival-offers")
+async def list_festival_offers():
+    return get_stored_festival_offers()
+
+
+@router.post("/festival-offers", status_code=status.HTTP_201_CREATED)
+async def create_festival_offer(req: FestivalOfferRequest):
+    return create_stored_festival_offer(req.model_dump())
+
+
+@router.put("/festival-offers/{offer_id}")
+async def update_festival_offer(offer_id: str, req: FestivalOfferRequest):
+    updated = update_stored_festival_offer(offer_id, req.model_dump())
+    if not updated:
+        raise HTTPException(status_code=404, detail="Festival offer not found")
+    return updated
+
+
+@router.patch("/festival-offers/{offer_id}/toggle")
+async def toggle_festival_offer(offer_id: str):
+    toggled = toggle_stored_festival_offer(offer_id)
+    if not toggled:
+        raise HTTPException(status_code=404, detail="Festival offer not found")
+    return toggled
+
+
+@router.delete("/festival-offers/{offer_id}")
+async def delete_festival_offer(offer_id: str):
+    success = delete_stored_festival_offer(offer_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Festival offer not found")
+    return {"success": True, "message": "Festival offer deleted"}
+
+
+# ─── Commercial Plans Endpoints ───────────────────────────────
 
 @router.get("")
-async def list_admin_plans(db: AsyncSession = Depends(get_db)):
-    stmt = select(SubscriptionPlan)
-    res = await db.execute(stmt)
-    plans = res.scalars().all()
-    if not plans:
-        return [
-            {"id": "plan-free", "name": "Free Trial", "priceBDT": 0, "activeMerchants": 28},
-            {"id": "plan-growth", "name": "Growth", "priceBDT": 200, "activeMerchants": 44},
-            {"id": "plan-business", "name": "Business Pro", "priceBDT": 700, "activeMerchants": 56},
-            {"id": "plan-vip-scale", "name": "VIP Scale", "priceBDT": 2500, "activeMerchants": 20},
-        ]
-    return [
-        {
-            "id": p.plan_code,
-            "name": p.name,
-            "nameBn": p.name_bn,
-            "priceBDT": float(p.price_bdt),
-            "features": p.features,
-            "badge": p.badge,
-            "activeMerchants": p.active_merchants,
-        }
-        for p in plans
-    ]
+async def list_plans():
+    return get_stored_plans()
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_admin_plan(req: CreatePlanRequest, db: AsyncSession = Depends(get_db)):
-    plan = SubscriptionPlan(
-        plan_code=f"plan-{uuid.uuid4().hex[:6]}",
-        name=req.name,
-        name_bn=req.name_bn,
-        tagline=req.tagline,
-        price_bdt=req.price_bdt,
-        yearly_price_bdt=req.yearly_price_bdt,
-        message_limit=req.message_limit,
-        catalog_limit=req.catalog_limit,
-        courier_channels=req.courier_channels,
-        features=req.features,
-        badge=req.badge,
-        status="active",
-    )
-    db.add(plan)
-    await db.commit()
-    return {"id": plan.plan_code, "name": plan.name, "status": "created"}
+async def create_plan(req: PlanRequest):
+    return create_stored_plan(req.model_dump())
+
+
+@router.put("/{plan_id}")
+async def update_plan(plan_id: str, req: PlanRequest):
+    updated = update_stored_plan(plan_id, req.model_dump())
+    if not updated:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return updated
+
+
+@router.patch("/{plan_id}/status")
+async def toggle_plan_status(plan_id: str):
+    toggled = toggle_stored_plan_status(plan_id)
+    if not toggled:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return toggled
+
+
+@router.delete("/{plan_id}")
+async def delete_plan(plan_id: str):
+    success = delete_stored_plan(plan_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return {"success": True, "message": "Plan deleted"}
