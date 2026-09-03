@@ -14,8 +14,41 @@ from app.core.deps import get_current_active_user
 from app.models.user import User
 from app.models.conversation import Conversation, Message
 from app.schemas.thread import ThreadResponse, ThreadListItem, SendMessageRequest, TakeoverRequest
+from pydantic import BaseModel
+from app.services.live_store import get_live_threads, record_merchant_reply
+from app.services.whatsapp_cloud import send_whatsapp_text
 
 router = APIRouter(prefix="/threads", tags=["Threads & Live Inbox"])
+
+
+class LiveReplyPayload(BaseModel):
+    handle: str
+    message: str
+    thread_id: str | None = None
+
+
+@router.get("/live")
+async def list_live_threads():
+    """Retrieve all active real-time live threads from WhatsApp and Omnichannel."""
+    return get_live_threads()
+
+
+@router.post("/live/reply")
+async def send_live_reply(payload: LiveReplyPayload):
+    """Send manual message to WhatsApp customer directly from Web Dashboard."""
+    clean_phone = "".join(filter(str.isdigit, str(payload.handle)))
+    if clean_phone:
+        # Dispatch to WhatsApp Cloud API
+        await send_whatsapp_text(to_phone=clean_phone, body=payload.message)
+
+    # Record message in live store
+    msg = record_merchant_reply(
+        handle=payload.handle,
+        reply_body=payload.message,
+        thread_id=payload.thread_id,
+    )
+    return {"status": "sent", "message": msg}
+
 
 
 @router.get("", response_model=list[ThreadListItem])

@@ -1,0 +1,432 @@
+[
+  {
+    "id": "wa-8801305087389",
+    "customer": "Sushmoy Nandi",
+    "handle": "+8801305087389",
+    "channel": "whatsapp",
+    "lang": "banglish",
+    "district": "Dhaka",
+    "status": "human",
+    "intent": "Saree Collection & Delivery",
+    "value": 2500,
+    "unread": 0,
+    "lastAt": "Just now",
+    "messages": [
+      {
+        "id": "m1",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Apnadar Kaca ki Saree aca?",
+        "at": "23:46"
+      },
+      {
+        "id": "m2",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে অনেক স্বাগত। জি, আমাদের কাছে তাঁত, জামদানি ও কটনসহ বেশ কিছু সুন্দর শাড়ির সংগ্রহ রয়েছে... আমাদের ডেলিভারি চার্জ ঢাকার ভেতরে ৮০ টাকা এবং ঢাকার বাইরে ১৩০ টাকা। 🌾",
+        "at": "23:46",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Product Catalog & Delivery Quoted",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m3",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Tumi kmn aco AJ ratha vat kaiyaco?",
+        "at": "23:51"
+      },
+      {
+        "id": "m4",
+        "from": "agent",
+        "body": "আসসালামু আলাইকুম। আল্লাহর অশেষ রহমতে আমি ভালো আছি, আশা করি আপনিও ভালো আছেন। আমাদের ডেলিভারি চার্জ ঢাকার ভেতরে ৮০ টাকা এবং ঢাকার বাইরে ১৩০ টাকা। বলুন, কোন ধরণের পণ্যের সংগ্রহ দেখাতে পারি? 🌾",
+        "at": "23:51",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Polite Sales Response",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-5",
+        "from": "human",
+        "body": "আপনার সম্পূর্ণ ঠিকানা ও ফোন নাম্বারটি দিলে আমরা অর্ডার কনফার্ম করে দিচ্ছি।",
+        "at": "00:25",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-6",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Dhakar vitor delivery charges koto?",
+        "at": "00:25"
+      },
+      {
+        "id": "m-7",
+        "from": "agent",
+        "body": "নমস্কার! ঢাকা শহরের ভেতরে আমাদের হোম ডেলিভারি চার্জ মাত্র ৮০ টাকা। ক্যাশ অন ডেলিভারির ব্যবস্থাও আছে, আপনি পণ্য হাতে পেয়ে মূল্য পরিশোধ করতে পারবেন। \n\nআর কিছু কি জানতে চান? \n\n🌾",
+        "at": "00:25",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-8",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Apnar dokarnar sob thaka besi dami sari konta",
+        "at": "00:32"
+      },
+      {
+        "id": "m-9",
+        "from": "agent",
+        "body": "আসসালামু আলাইকুম! আমাদের ঐতিহ্যবাহী বাংলার জীবনধারাভিত্তিক ব্র্যান্ডে আপনাকে স্বাগতম। 🌾\n\nআমাদের সংগ্রহে বেশ কিছু চমৎকার ও এক্সক্লুসিভ তাঁতের ও জামদানি শাড়ি রয়েছে, যেগুলোর কাজ ও মানভেদে দাম ভিন্ন হয়। বর্তমানে আমাদের সবচেয়ে প্রিমিয়াম কালেকশনগুলোর মধ্যে ঐতিহ্যবাহী মসলিন এবং রাজকীয় ফাইন কাউন্ট জামদানি শাড়ি রয়েছে, যেগুলোর দাম সাধারণত ১৫,০০০ টাকা থেকে শুরু করে আপনাদের পছন্দ ও কাজের জটিলতা অনুযায়ী আরও ওপরে হতে পারে।\n\nআপনি কি কোনো বিশেষ উৎসব বা অনুষ্ঠানের জন্য শাড়ি খুঁজছেন? নাকি কোনো নির্দিষ্ট রঙের পছন্দ আছে? জানালে আমি আপনার রুচি অনুযায়ী সবচেয়ে সুন্দর ও দামি শাড়িটি ছবিসহ আপনাকে দেখাতে পারব। \n\nআর হ্যাঁ, ঢাকার ভেতরে ডেলিভারি চার্জ ৮০ টাকা এবং ঢাকার বাইরে ১৩0 টাকা। সুবিধামতো ক্যাশ অন ডেলিভারির ব্যবস্থাও রয়েছে।",
+        "at": "00:32",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-10",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "00:37"
+      },
+      {
+        "id": "m-11",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআমাদের ঐতিহ্যবাহী দেশীয় পণ্যের সম্ভার থেকে আজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? 🌾",
+        "at": "00:37",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-12",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Ki ki asa shop a",
+        "at": "00:42"
+      },
+      {
+        "id": "m-13",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের লাইফস্টাইল ব্র্যান্ডে আপনাকে অনেক স্বাগত। \n\nআমাদের কাছে পাবেন ঐতিহ্যের ছোঁয়া ঘেরা খাঁটি বাংলাদেশি পণ্যের এক চমৎকার সমাহার। যেমন ধরুন—\n• আরামদায়ক তাঁত ও জামদানি শাড়ি\n• ঐতিহ্যবাহী পাঞ্জাবি ও কুর্তি\n• ঘর সাজানোর নান্দনিক হস্তশিল্প (হোম ডেকোর)\n• আর প্রাকৃতিকভাবে তৈরি অর্গানিক কিছু প্রসাধনসামগ্রী।\n\nবলুন তো, আপনি ঠিক কোন ধরণের পণ্যের খোঁজ করছেন? ছবি বা বিস্তারিত জানালে আপনার পছন্দমতো বেছে দিতে আমার সুবিধা হতো। 🌾",
+        "at": "00:42",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-14",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Koto dam ai gular",
+        "at": "00:44"
+      },
+      {
+        "id": "m-15",
+        "from": "agent",
+        "body": "Voice: Warm, unhurried, polite? Yes.\n    *Uses \"আপনি\"? Yes (\"আপনি\",",
+        "at": "00:44",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-16",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "01:03"
+      },
+      {
+        "id": "m-17",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? আমাদের ঐতিহ্যবাহী শাড়ি, পাঞ্জাবি বা অন্য কোনো পণ্যের বিষয়ে কি জানতে চান? 🌾",
+        "at": "01:03",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-18",
+        "from": "human",
+        "body": "ঢাকার ভেতরে ডেলিভারি চার্জ ৮০ টাকা এবং ঢাকার বাইরে ১৩০ টাকা।",
+        "at": "01:11",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-19",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "01:12"
+      },
+      {
+        "id": "m-20",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআমাদের ঐতিহ্যবাহী দেশীয় পণ্যের সংগ্রহ থেকে আজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? \n\n🌾",
+        "at": "01:12",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-21",
+        "from": "human",
+        "body": "আপনার সম্পূর্ণ ঠিকানা ও ফোন নাম্বারটি দিলে আমরা অর্ডার কনফার্ম করে দিচ্ছি।",
+        "at": "01:12",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      }
+    ],
+    "insights": {
+      "sentiment": "high_intent",
+      "urgency": "normal",
+      "suggestedAction": "Ready for Order Confirmation"
+    }
+  },
+  {
+    "id": "wa-8801841620810",
+    "customer": "Customer (+0810)",
+    "handle": "+8801841620810",
+    "channel": "whatsapp",
+    "lang": "banglish",
+    "district": "Dhaka",
+    "status": "ai",
+    "intent": "Store Catalog & Availability",
+    "value": 3500,
+    "unread": 0,
+    "lastAt": "Just now",
+    "messages": [
+      {
+        "id": "m1",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Tomar dokane ki ase...",
+        "at": "23:54"
+      },
+      {
+        "id": "m2",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আমাদের ঐতিহ্যবাহী জামদানি, তাঁত ও কটন শাড়িসহ দেশীয় লাইফস্টাইল পণ্য রয়েছে। 🌾",
+        "at": "23:54",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Store Overview & Product Offerings",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m3",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "K Tumi vai",
+        "at": "23:55"
+      },
+      {
+        "id": "m4",
+        "from": "agent",
+        "body": "আমি আপনার শপিং অ্যাসিস্ট্যান্ট! আপনাকে আমাদের যেকোনো পণ্য বা ডেলিভারির বিষয়ে সাহায্য করতে প্রস্তুত। 🌾",
+        "at": "23:55",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Assistant Introduction",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-5",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Ami Amar bou er sari nite cai ..Ami kokhon o kini nai age...amake best jinis suggest koro...",
+        "at": "00:25"
+      },
+      {
+        "id": "m-6",
+        "from": "agent",
+        "body": "আসসালামু আলাইকুম। আপনার এই সুন্দর ভাবনার জন্য অনেক শুভেচ্ছা! স্ত্রীর জন্য প্রথমবার শাড়ি কেনা",
+        "at": "00:25",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-7",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Puro massage bolo",
+        "at": "00:25"
+      },
+      {
+        "id": "m-8",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগত জানাই। \n\nআপনার কথাটি ঠিক বুঝতে পারিনি, আপনি কি আমাদের কোনো পণ্যের সম্পূর্ণ দাম বা বিস্তারিত জানতে চাচ্ছেন? একটু কষ্ট করে যদি পণ্যের নাম বা কোডটি জানান, খুব আনন্দের সাথে আপনাকে সব তথ্য জানিয়ে দেবো। \n\nআমাদের ডেলিভারি চার্জ ঢাকার ভেতরে ৮০ টাকা এবং ঢাকার বাইরে ১৩0 টাকা। ক্যাশ অন ডেলিভারির ব্যবস্থাও আছে। \n\n🌾",
+        "at": "00:25",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-9",
+        "from": "human",
+        "body": "apnar wife ar name ki",
+        "at": "00:26",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-10",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "bola jabe na…",
+        "at": "00:32"
+      },
+      {
+        "id": "m-11",
+        "from": "agent",
+        "body": "আসসালামু আলাইকুম। আশা করি ভালো আছেন। \n\nআপনার কথাটি ঠিক বুঝতে পারলাম না। আপনার কি কিছু জানতে বা বলতে কোনো দ্বিধা কাজ করছে? একদম সংকোচ না করে বলুন না, আমি তো আছিই সাহায্য করার জন্য। \n\n🌾",
+        "at": "00:32",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      }
+    ],
+    "insights": {
+      "sentiment": "casual",
+      "urgency": "normal",
+      "suggestedAction": "Send Product Catalog"
+    }
+  },
+  {
+    "id": "wa-8801334186519",
+    "customer": "Sifat",
+    "handle": "+8801334186519",
+    "channel": "whatsapp",
+    "lang": "banglish",
+    "district": "Dhaka",
+    "status": "ai",
+    "intent": "Greeting & Store Introduction",
+    "value": 1500,
+    "unread": 0,
+    "lastAt": "11:47 pm",
+    "messages": [
+      {
+        "id": "m1",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "23:47"
+      },
+      {
+        "id": "m2",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। আজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? 🌾",
+        "at": "23:47",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated Greeting & Sales Introduction",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m3",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Apnader sngraho theke kisu dekhan",
+        "at": "23:50"
+      },
+      {
+        "id": "m4",
+        "from": "agent",
+        "body": "আমাদের ঐতিহ্যবাহী সুতি শাড়ি, পাঞ্জাবি, থ্রি-পিস এবং ঘর সাজানোর নানা পণ্যের চমৎকার সংগ্রহ রয়েছে। ডেলিভারি চার্জ ঢাকার ভেতর ৮০৳, বাইরে ১৩০৳। 🌾",
+        "at": "23:50",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Collection Showcase",
+          "tone": "signal"
+        }
+      }
+    ],
+    "insights": {
+      "sentiment": "casual",
+      "urgency": "normal",
+      "suggestedAction": "Show bestsellers"
+    }
+  },
+  {
+    "id": "wa-8801718360044",
+    "customer": "Farhan Kabir",
+    "handle": "+8801718360044",
+    "channel": "whatsapp",
+    "lang": "banglish",
+    "district": "Dhaka",
+    "status": "ai",
+    "intent": "Jamdani Saree Price",
+    "value": 6850,
+    "unread": 0,
+    "lastAt": "11:42 pm",
+    "messages": [
+      {
+        "id": "m1",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Jamdani saarir price koto?",
+        "at": "23:42"
+      },
+      {
+        "id": "m2",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের জামদানি শাড়ির প্রতি আগ্রহ দেখানোর জন্য আপনাকে অনেক ধন্যবাদ। আমাদের ঐতিহ্যবাহী সুতি ও হাফ-সিল্ক জামদানি শাড়িগুলোর দাম সাধারণত ২,৫০০ টাকা থেকে ১৫,০০০ টাকা পর্যন্ত হয়ে থাকে... 🌾",
+        "at": "23:42",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Price & Delivery Quoted",
+          "tone": "signal"
+        }
+      }
+    ],
+    "insights": {
+      "sentiment": "high_intent",
+      "urgency": "high",
+      "suggestedAction": "Send Product Images"
+    }
+  }
+]
