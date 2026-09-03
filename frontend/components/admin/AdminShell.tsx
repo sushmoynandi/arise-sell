@@ -250,7 +250,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-canvas text-text flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-[260px] flex-col border-r border-line bg-white shrink-0 sticky top-0 h-screen z-30">
+      <aside className="hidden lg:flex w-65 flex-col border-r border-line bg-white shrink-0 sticky top-0 h-screen z-30">
         {/* Clean Logo Header */}
         <div className="p-5 border-b border-line">
           <Link
@@ -283,7 +283,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                         className={cx(
                           "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] cursor-pointer select-none transition-colors duration-75",
                           active
-                            ? "bg-signal/[0.09] text-signal font-bold"
+                            ? "bg-signal/9 text-signal font-bold"
                             : "text-text-2 hover:bg-surface-2 hover:text-text font-medium",
                         )}
                       >
@@ -444,7 +444,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                           className="flex items-center justify-between p-2 rounded-lg bg-surface-2/30 border border-line/60 text-[11.5px]"
                         >
                           <div>
-                            <span className="text-text font-medium block truncate max-w-[170px]">
+                            <span className="text-text font-medium block truncate max-w-42.5">
                               {srv.name}
                             </span>
                             <span className="text-[9.5px] text-text-3 font-mono">
@@ -657,7 +657,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                               className={cx(
                                 "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium",
                                 active
-                                  ? "bg-signal/[0.09] text-signal font-bold"
+                                  ? "bg-signal/9 text-signal font-bold"
                                   : "text-text-2 hover:bg-surface-2",
                               )}
                             >
@@ -685,7 +685,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         {/* Page Content Body (Smooth 100ms Native Transition) */}
         <main
           key={pathname}
-          className="flex-1 p-5 sm:p-7 lg:p-9 max-w-[1440px] w-full mx-auto animate-in fade-in duration-100"
+          className="flex-1 p-5 sm:p-7 lg:p-9 max-w-360 w-full mx-auto animate-in fade-in duration-100"
         >
           {children}
         </main>

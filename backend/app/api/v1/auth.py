@@ -25,6 +25,7 @@ from app.core.security_middleware import (
     auth_register_limiter,
     forgot_password_limiter,
     auth_google_limiter,
+    auth_delete_limiter,
     get_client_ip,
 )
 from app.services.google_oauth import verify_google_identity, GoogleAuthError
@@ -41,9 +42,25 @@ from app.schemas.auth import (
     ResetPasswordRequest,
     LogoutResponse,
     GoogleAuthRequest,
+    DeleteAccountRequest,
+    DeleteAccountResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+async def _resolve_user_plan(user: User, db: AsyncSession) -> tuple[str | None, bool]:
+    """Helper to check whether user has an active, selected plan."""
+    if user.is_superadmin:
+        return "enterprise", True
+    if not user.business_id:
+        return None, False
+    stmt = select(Business).where(Business.id == user.business_id)
+    res = await db.execute(stmt)
+    biz = res.scalar_one_or_none()
+    if biz and biz.plan and biz.plan.lower() not in ("none", "pending", ""):
+        return biz.plan, True
+    return None, False
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -83,11 +100,12 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
     store_name = (req.store_name or f"{first_name}'s Store").strip()
     store_slug = f"store-{uuid.uuid4().hex[:6]}"
 
-    # Create business tenant with default commercial "Free" plan
+    # Create business tenant with plan="pending" (requires choosing plan before console)
     biz = Business(
         name=store_name,
         slug=store_slug,
-        plan="Free",
+        plan="pending",
+        orders_quota=0,
     )
     db.add(biz)
     await db.flush()
@@ -121,6 +139,8 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
             is_verified=user.is_verified,
             role=user.role,
             is_superadmin=user.is_superadmin,
+            plan=None,
+            has_plan=False,
         ),
     )
 
@@ -154,6 +174,8 @@ async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(
     access = create_access_token({"sub": str(user.id), "business_id": str(user.business_id), "role": user.role})
     refresh = create_refresh_token({"sub": str(user.id)})
 
+    plan_name, has_plan = await _resolve_user_plan(user, db)
+
     return TokenResponse(
         access=access,
         refresh=refresh,
@@ -165,6 +187,8 @@ async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(
             is_verified=user.is_verified,
             role=user.role,
             is_superadmin=user.is_superadmin,
+            plan=plan_name,
+            has_plan=has_plan,
         ),
     )
 
@@ -181,7 +205,11 @@ async def refresh_token(req: RefreshRequest):
 
 
 @router.get("/me", response_model=UserBrief)
-async def get_me(user: User = Depends(get_current_active_user)):
+async def get_me(
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    plan_name, has_plan = await _resolve_user_plan(user, db)
     return UserBrief(
         id=user.id,
         email=user.email,
@@ -190,6 +218,8 @@ async def get_me(user: User = Depends(get_current_active_user)):
         is_verified=user.is_verified,
         role=user.role,
         is_superadmin=user.is_superadmin,
+        plan=plan_name,
+        has_plan=has_plan,
     )
 
 
@@ -301,10 +331,10 @@ async def google_auth(
             user.avatar_url = profile.avatar_url
         await db.commit()
     else:
-        # Provision store & merchant user account
+        # Provision store & merchant user account with plan="pending"
         store_name = f"{profile.first_name}'s Store"
         store_slug = f"store-{uuid.uuid4().hex[:6]}"
-        biz = Business(name=store_name, slug=store_slug, plan="growth")
+        biz = Business(name=store_name, slug=store_slug, plan="pending", orders_quota=0)
         db.add(biz)
         await db.flush()
 
@@ -331,6 +361,8 @@ async def google_auth(
     )
     refresh = create_refresh_token({"sub": str(user.id)})
 
+    plan_name, has_plan = await _resolve_user_plan(user, db)
+
     return TokenResponse(
         access=access,
         refresh=refresh,
@@ -342,7 +374,69 @@ async def google_auth(
             is_verified=user.is_verified,
             role=user.role,
             is_superadmin=user.is_superadmin,
+            plan=plan_name,
+            has_plan=has_plan,
         ),
     )
+
+
+@router.delete("/account", response_model=DeleteAccountResponse)
+async def delete_account(
+    req: DeleteAccountRequest,
+    request: Request,
+    user: User = Depends(get_current_active_user),
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+):
+    """Irreversible account & store deletion (Right to be Forgotten)."""
+    # 1. Rate Limiting Protection
+    client_ip = get_client_ip(request)
+    allowed, retry_after = auth_delete_limiter.is_allowed(client_ip)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many delete requests. Please retry after {retry_after} seconds.",
+        )
+
+    # 2. Confirmation phrase assertion ('DELETE' or user's email)
+    phrase = req.confirm_phrase.strip()
+    if phrase != "DELETE" and phrase.lower() != user.email.lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Confirmation phrase does not match. Please enter 'DELETE' or your account email.",
+        )
+
+    # 3. Password check (if user has a set password and provided password)
+    if req.password:
+        if not verify_password(req.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect account password provided.",
+            )
+
+    # 4. Revoke active JWT Token
+    if token:
+        revoke_token(token)
+
+    # 5. Cascading Deletion
+    # If the user is the owner of the store, deleting the business cleans up all channels, products, threads, and staff
+    if user.role == "owner" and user.business_id:
+        biz_stmt = select(Business).where(Business.id == user.business_id)
+        biz_res = await db.execute(biz_stmt)
+        biz = biz_res.scalar_one_or_none()
+        if biz:
+            await db.delete(biz)
+        else:
+            await db.delete(user)
+    else:
+        await db.delete(user)
+
+    await db.commit()
+
+    return DeleteAccountResponse(
+        success=True,
+        message="Account and all associated store data have been permanently deleted.",
+    )
+
 
 

@@ -9,6 +9,7 @@ import { IconCheck, IconTruck } from "@/components/ui/icons";
 import { TENANT } from "@/data/tenant";
 import { PLANS } from "@/data/plans";
 import { cx } from "@/lib/format";
+import { useAuth } from "@/lib/auth-context";
 
 /* ─── Tab definitions ─── */
 const TABS = [
@@ -126,6 +127,57 @@ export default function SettingsPage() {
    TAB: Account Info
    ═══════════════════════════════════════════════════════════════════ */
 function TabAccount() {
+  const { user, deleteAccount } = useAuth();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [confirmPhrase, setConfirmPhrase] = useState("");
+  const [password, setPassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const fullName = user
+    ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email
+    : "Farhana Rahman";
+  const userEmail = user?.email || "farhana@nokshi.co";
+  const userInitials = user
+    ? `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}`.toUpperCase() ||
+      "FR"
+    : "FR";
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteError(null);
+
+    const targetEmail = user?.email?.toLowerCase().trim() || "";
+    const cleanPhrase = confirmPhrase.trim();
+
+    if (cleanPhrase !== "DELETE" && cleanPhrase.toLowerCase() !== targetEmail) {
+      setDeleteError(`Please type DELETE or ${userEmail} to confirm.`);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await deleteAccount({
+        confirm_phrase: cleanPhrase,
+        password: password.trim() || undefined,
+      });
+      if (res.success) {
+        window.location.href = "/login?deleted=true";
+      } else {
+        setDeleteError(
+          res.error ||
+            "Failed to delete account. Please check your credentials.",
+        );
+        setIsDeleting(false);
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Account deletion failed";
+      setDeleteError(msg);
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Panel>
@@ -136,24 +188,27 @@ function TabAccount() {
         <div className="p-5 space-y-4">
           <div className="flex items-center gap-4">
             <div className="size-16 rounded-full bg-signal/15 text-signal font-bold grid place-items-center text-xl font-display">
-              FR
+              {userInitials}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-text">Farhana Rahman</h3>
-              <p className="text-sm text-text-3 font-mono">farhana@nokshi.co</p>
-              <Badge tone="mint" className="mt-1">
-                Owner
+              <h3 className="text-lg font-bold text-text">{fullName}</h3>
+              <p className="text-sm text-text-3 font-mono">{userEmail}</p>
+              <Badge tone="mint" className="mt-1 capitalize">
+                {user?.role || "Owner"}
               </Badge>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-line/60">
-            <SettingsField label="Full Name" value="Farhana Rahman" />
-            <SettingsField label="Email Address" value="farhana@nokshi.co" />
-            <SettingsField label="Phone Number" value="+880 1711-XXXXXX" />
+            <SettingsField label="Full Name" value={fullName} />
+            <SettingsField label="Email Address" value={userEmail} />
             <SettingsField
-              label="Account Created"
-              value="March 2021"
+              label="Account Role"
+              value={user?.role?.toUpperCase() || "OWNER"}
+            />
+            <SettingsField
+              label="Status"
+              value={user?.is_verified ? "Verified Active Account" : "Active"}
               disabled
             />
           </div>
@@ -170,39 +225,172 @@ function TabAccount() {
             <div>
               <p className="text-sm font-bold text-text">Password</p>
               <p className="text-xs text-text-3 mt-0.5">
-                Last changed 45 days ago
+                Managed securely with bcrypt hashing
               </p>
             </div>
-            <Button size="sm" variant="outline">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                alert(
+                  "To change your password, use the 'Forgot password' option on login.",
+                )
+              }
+            >
               Change Password
             </Button>
           </div>
           <div className="p-5 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-text">
-                Two-Factor Authentication (2FA)
-              </p>
+              <p className="text-sm font-bold text-text">Session Protection</p>
               <p className="text-xs text-text-3 mt-0.5">
-                SMS OTP via +880 1711-XXXXXX
+                JWT Authentication with sliding window rate limiting
               </p>
             </div>
             <Badge tone="mint" dot>
-              Enabled
+              Active
             </Badge>
-          </div>
-          <div className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-text">Active Sessions</p>
-              <p className="text-xs text-text-3 mt-0.5">
-                Chrome on macOS (this device) — Dhaka, BD
-              </p>
-            </div>
-            <Button size="sm" variant="outline">
-              View All Sessions
-            </Button>
           </div>
         </div>
       </Panel>
+
+      {/* ─── Danger Zone: Permanent Account Deletion ─── */}
+      <div className="rounded-2xl border border-red-200 bg-red-50/40 p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-red-700">
+                Danger Zone
+              </span>
+            </div>
+            <h3 className="mt-2 text-base font-bold text-red-950 font-display">
+              Delete Account & Store
+            </h3>
+            <p className="mt-1 text-xs text-red-700 max-w-xl leading-relaxed">
+              Permanently delete your personal profile, credentials, store
+              settings, product catalogs, connected channels, and conversations.
+              This action is irreversible.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmPhrase("");
+              setPassword("");
+              setDeleteModalOpen(true);
+            }}
+            className="shrink-0 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors shadow-2xs cursor-pointer"
+          >
+            Delete Account
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl"
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-2xl bg-red-100 text-red-600 text-lg">
+                  ⚠️
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold text-text font-display">
+                    Delete Account Permanently?
+                  </h3>
+                  <p className="text-xs text-text-3">
+                    This action is immediate and cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-red-100 bg-red-50/60 p-3.5 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold">
+                  The following data will be erased immediately:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-red-700">
+                  <li>Your user login credentials and session tokens</li>
+                  <li>Your merchant store catalogs, orders, and products</li>
+                  <li>WhatsApp and Facebook Messenger live connections</li>
+                  <li>Customer conversation logs and AI knowledge base</li>
+                </ul>
+              </div>
+
+              {deleteError && (
+                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-600">
+                  {deleteError}
+                </div>
+              )}
+
+              <form onSubmit={handleDeleteAccount} className="mt-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    To confirm, please type{" "}
+                    <span className="font-mono text-red-600 font-bold">
+                      DELETE
+                    </span>{" "}
+                    or your email (
+                    <span className="font-mono text-text-2">{userEmail}</span>):
+                  </label>
+                  <input
+                    type="text"
+                    value={confirmPhrase}
+                    onChange={(e) => setConfirmPhrase(e.target.value)}
+                    placeholder="DELETE"
+                    required
+                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Enter Password (if your account uses one):
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Account password"
+                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalOpen(false)}
+                    disabled={isDeleting}
+                    className="rounded-xl border border-line bg-surface px-4 py-2 text-xs font-semibold text-text-2 hover:bg-surface-2 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isDeleting}
+                    className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition-colors disabled:opacity-60 cursor-pointer"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <span className="size-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <span>Permanently Delete Account</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

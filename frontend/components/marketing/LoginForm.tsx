@@ -65,7 +65,11 @@ export default function LoginForm() {
         if (rememberMe) {
           localStorage.setItem("np_remember_7d", "true");
         }
-        router.push("/console");
+        if (res.user?.has_plan || res.user?.is_superadmin) {
+          router.push("/console");
+        } else {
+          router.push("/choose-plan");
+        }
       } else {
         const errorMsg =
           res.error === "Invalid email or password"

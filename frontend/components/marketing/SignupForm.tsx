@@ -119,7 +119,11 @@ export default function SignupForm() {
       });
 
       if (res.success) {
-        router.push("/console");
+        if (res.user?.has_plan || res.user?.is_superadmin) {
+          router.push("/console");
+        } else {
+          router.push("/choose-plan");
+        }
       } else {
         setError(
           res.error ||

@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * NextProduct AI - React Auth Context & Provider
- * Manages user authentication state, tokens, and role permissions.
- */
-
 import React, {
   createContext,
   useContext,
@@ -24,6 +19,8 @@ export interface UserProfile {
   is_verified: boolean;
   role?: string;
   is_superadmin?: boolean;
+  plan?: string | null;
+  has_plan?: boolean;
 }
 
 interface AuthContextType {
@@ -34,7 +31,7 @@ interface AuthContextType {
     email: string,
     password: string,
     rememberMe?: boolean,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
   register: (data: {
     email: string;
     password: string;
@@ -43,7 +40,7 @@ interface AuthContextType {
     last_name?: string;
     full_name?: string;
     store_name?: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
   adminLogin: (
     email: string,
     password: string,
@@ -51,6 +48,10 @@ interface AuthContextType {
   adminVerify2FA: (
     email: string,
     totp_code: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  selectPlan: (
+    planId: string,
+    billingPeriod?: string,
   ) => Promise<{ success: boolean; error?: string }>;
   forgotPassword: (email: string) => Promise<{
     success: boolean;
@@ -66,6 +67,10 @@ interface AuthContextType {
   loginWithGoogle: (data: {
     credential?: string;
     access_token?: string;
+  }) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
+  deleteAccount: (data: {
+    password?: string;
+    confirm_phrase: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
@@ -80,9 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (u) {
       setCookie("np_role", u.role || "merchant", days);
       setCookie("np_is_superadmin", u.is_superadmin ? "true" : "false", days);
+      setCookie("np_has_plan", u.has_plan ? "true" : "false", days);
     } else {
       deleteCookie("np_role");
       deleteCookie("np_is_superadmin");
+      deleteCookie("np_has_plan");
     }
   };
 
@@ -122,8 +129,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userProfile = res.user as unknown as UserProfile;
             setUser(userProfile);
             syncUserCookies(userProfile, 7);
-            const returnTo =
-              sessionStorage.getItem("np_google_return_to") || "/console";
+
+            const hasPlan = userProfile.has_plan || userProfile.is_superadmin;
+            const returnTo = hasPlan
+              ? sessionStorage.getItem("np_google_return_to") || "/console"
+              : "/choose-plan";
             sessionStorage.removeItem("np_google_return_to");
             window.location.href = returnTo;
           } else {
@@ -149,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = res.user as unknown as UserProfile;
         setUser(userProfile);
         syncUserCookies(userProfile, days);
-        return { success: true };
+        return { success: true, user: userProfile };
       }
       return { success: false, error: "Invalid response from server" };
     } catch (err: unknown) {
@@ -174,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = res.user as unknown as UserProfile;
         setUser(userProfile);
         syncUserCookies(userProfile, 7);
-        return { success: true };
+        return { success: true, user: userProfile };
       }
       return { success: false, error: "Registration failed" };
     } catch (err: unknown) {
@@ -207,6 +217,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "2FA verification failed";
+      return { success: false, error: msg };
+    }
+  };
+
+  const selectPlan = async (planId: string, billingPeriod = "monthly") => {
+    try {
+      const res = await api.billing.selectPlan({
+        plan_id: planId,
+        billing_period: billingPeriod,
+      });
+      if (res.success) {
+        if (user) {
+          const updated: UserProfile = {
+            ...user,
+            plan: res.plan,
+            has_plan: true,
+          };
+          setUser(updated);
+          syncUserCookies(updated, 7);
+        }
+        return { success: true };
+      }
+      return { success: false, error: "Failed to activate plan" };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Plan activation failed";
       return { success: false, error: msg };
     }
   };
@@ -255,12 +290,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = res.user as unknown as UserProfile;
         setUser(userProfile);
         syncUserCookies(userProfile, 7);
-        return { success: true };
+        return { success: true, user: userProfile };
       }
       return { success: false, error: "Invalid response from server" };
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Google authentication failed";
+      return { success: false, error: msg };
+    }
+  };
+
+  const deleteAccount = async (data: {
+    password?: string;
+    confirm_phrase: string;
+  }) => {
+    try {
+      const res = await api.auth.deleteAccount(data);
+      if (res.success) {
+        api.clearTokens();
+        syncUserCookies(null);
+        setUser(null);
+        return { success: true };
+      }
+      return { success: false, error: "Failed to delete account" };
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Account deletion failed";
       return { success: false, error: msg };
     }
   };
@@ -282,9 +337,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         adminLogin,
         adminVerify2FA,
+        selectPlan,
         forgotPassword,
         resetPassword,
         loginWithGoogle,
+        deleteAccount,
         logout,
       }}
     >

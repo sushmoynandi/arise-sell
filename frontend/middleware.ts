@@ -8,6 +8,7 @@ export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get("np_access_token")?.value;
   const isSuperadmin =
     request.cookies.get("np_is_superadmin")?.value === "true";
+  const hasPlan = request.cookies.get("np_has_plan")?.value === "true";
 
   // 1. Superadmin Route Protection
   if (pathname.startsWith("/admin")) {
@@ -32,19 +33,41 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
     }
+
+    // Gating: Merchant must select a plan before entering the console
+    if (!isSuperadmin && !hasPlan) {
+      return NextResponse.redirect(new URL("/choose-plan", request.url));
+    }
   }
 
-  // 3. Guest Only Routes: If already authenticated, redirect to /console (or /admin)
+  // 3. Plan Selection Page Protection
+  if (pathname === "/choose-plan") {
+    if (!accessToken) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", "/choose-plan");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // If merchant already has an active plan, proceed to console
+    if (hasPlan && !isSuperadmin) {
+      return NextResponse.redirect(new URL("/console", request.url));
+    }
+  }
+
+  // 4. Guest Only Routes: If already authenticated, redirect appropriately
   if (pathname === "/login" || pathname === "/signup") {
     if (accessToken) {
       if (isSuperadmin) {
         return NextResponse.redirect(new URL("/admin", request.url));
       }
+      if (!hasPlan) {
+        return NextResponse.redirect(new URL("/choose-plan", request.url));
+      }
       return NextResponse.redirect(new URL("/console", request.url));
     }
   }
 
-  // 4. Inject Security Headers
+  // 5. Inject Security Headers
   const response = NextResponse.next();
   response.headers.set("X-Frame-Options", "SAMEORIGIN");
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -58,5 +81,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/console/:path*", "/admin/:path*", "/login", "/signup"],
+  matcher: [
+    "/console/:path*",
+    "/admin/:path*",
+    "/choose-plan",
+    "/login",
+    "/signup",
+  ],
 };

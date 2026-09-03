@@ -172,6 +172,11 @@ class ApiClient {
         body: JSON.stringify(body),
       }),
     me: () => this.request<Record<string, unknown>>("/auth/me"),
+    deleteAccount: (body: { password?: string; confirm_phrase: string }) =>
+      this.request<{ success: boolean; message: string }>("/auth/account", {
+        method: "DELETE",
+        body: JSON.stringify(body),
+      }).finally(() => this.clearTokens()),
   };
 
   // --- Live Threads & Inbox ---
@@ -299,6 +304,16 @@ class ApiClient {
   public billing = {
     listPlans: () => this.request<unknown[]>("/billing/plans"),
     listInvoices: () => this.request<unknown[]>("/billing/invoices"),
+    selectPlan: (data: { plan_id: string; billing_period?: string }) =>
+      this.request<{
+        success: boolean;
+        plan: string;
+        orders_quota: number;
+        message: string;
+      }>("/billing/select-plan", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     createTopup: (pack: string, payment_method: string) =>
       this.request("/billing/topup", {
         method: "POST",

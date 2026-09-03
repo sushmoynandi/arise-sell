@@ -64,6 +64,8 @@ class UserBrief(BaseModel):
     is_verified: bool = True
     role: str = "owner"
     is_superadmin: bool = False
+    plan: str | None = None
+    has_plan: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -84,3 +86,31 @@ class GoogleAuthRequest(BaseModel):
     """Google OAuth ID token or Access token."""
     credential: str | None = None
     access_token: str | None = None
+
+
+class SelectPlanRequest(BaseModel):
+    """Payload to select or upgrade subscription plan."""
+    plan_id: str = Field(..., description="Plan identifier: free, basic, growth, pro, scale")
+    billing_period: str = Field("monthly", description="Billing frequency: monthly or yearly")
+
+
+class SelectPlanResponse(BaseModel):
+    """Response after selecting a subscription plan."""
+    success: bool = True
+    plan: str
+    orders_quota: int
+    message: str
+
+
+class DeleteAccountRequest(BaseModel):
+    """Payload to confirm irreversible account deletion."""
+    password: str | None = Field(None, description="Account password if set")
+    confirm_phrase: str = Field(..., description="Confirmation phrase: must be 'DELETE' or user's email")
+
+
+class DeleteAccountResponse(BaseModel):
+    """Response confirming account deletion."""
+    success: bool = True
+    message: str = "Account and associated data have been permanently deleted."
+
+

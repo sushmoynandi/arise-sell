@@ -86,6 +86,10 @@ forgot_password_limiter = SimpleRateLimiter(max_requests=3, window_seconds=60)
 # Google OAuth token exchange limiter: max 10 requests per minute per IP
 auth_google_limiter = SimpleRateLimiter(max_requests=10, window_seconds=60)
 
+# Account deletion limiter: max 5 requests per minute per IP
+auth_delete_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
+
+
 
 def get_client_ip(request: Request) -> str:
     """Extract real client IP considering reverse proxies."""
