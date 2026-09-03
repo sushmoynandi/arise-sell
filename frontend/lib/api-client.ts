@@ -329,6 +329,19 @@ class ApiClient {
         "/admin/ai-gateway/test-key",
         { method: "POST", body: JSON.stringify(data) },
       ),
+    detectAiKey: (apiKey: string) =>
+      this.request<{
+        success: boolean;
+        provider?: "google" | "openai" | "anthropic" | "deepseek" | "groq" | "custom";
+        provider_name?: string;
+        models?: string[];
+        default_model?: string;
+        latency_ms?: number;
+        msg?: string;
+      }>("/admin/ai-gateway/detect-key", {
+        method: "POST",
+        body: JSON.stringify({ api_key: apiKey }),
+      }),
     testAiCascade: (prompt: string) =>
       this.request("/admin/ai-gateway/test-cascade", {
         method: "POST",

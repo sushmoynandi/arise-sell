@@ -14,6 +14,7 @@ from app.schemas.admin import AIProviderKeyResponse
 from app.services.ai_gateway import (
     add_stored_ai_key,
     delete_stored_ai_key,
+    detect_key_and_fetch_models,
     execute_ai_gateway_prompt,
     get_stored_ai_keys,
     ping_stored_ai_key,
@@ -35,6 +36,10 @@ class AddAIKeyRequest(BaseModel):
 class TestKeyRequest(BaseModel):
     provider: str
     model: str
+    api_key: str
+
+
+class DetectKeyRequest(BaseModel):
     api_key: str
 
 
@@ -122,6 +127,13 @@ async def ping_ai_key(key_id: str):
 async def test_single_ai_key(req: TestKeyRequest):
     """Test connection for a raw API key inside the modal without saving."""
     result = await test_raw_ai_key(req.provider, req.model, req.api_key.strip())
+    return result
+
+
+@router.post("/detect-key")
+async def detect_ai_key(req: DetectKeyRequest):
+    """Auto-detect provider and fetch live available models from raw API key."""
+    result = await detect_key_and_fetch_models(req.api_key)
     return result
 
 
