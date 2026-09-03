@@ -469,3 +469,18 @@ html.lang-bn h6 {
   size: A4 portrait;
   margin: 15mm 15mm;
 }
+
+/* =========================================================================
+   Hide Number Input Spinners / Arrows (Clean Inputs)
+   ========================================================================= */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+

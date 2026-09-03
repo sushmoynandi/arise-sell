@@ -62,7 +62,8 @@ export function PlanModals({
   const [tagline, setTagline] = useState("");
   const [priceBDT, setPriceBDT] = useState<string>("");
   const [yearlyPriceBDT, setYearlyPriceBDT] = useState<string>("");
-  const [yearlyDiscountPercent, setYearlyDiscountPercent] = useState<string>("");
+  const [yearlyDiscountPercent, setYearlyDiscountPercent] =
+    useState<string>("");
   const [billingPeriod, setBillingPeriod] = useState<PlanBillingPeriod>("both");
   const [messageLimit, setMessageLimit] = useState<string>("");
   const [catalogLimit, setCatalogLimit] = useState<string>("");
@@ -330,7 +331,7 @@ export function PlanModals({
                     value={localEdit.priceBDT || ""}
                     onChange={(e) => handleEditMonthlyChange(e.target.value)}
                     placeholder="e.g. 500"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -352,9 +353,11 @@ export function PlanModals({
                     type="number"
                     min={0}
                     value={localEdit.yearlyPriceBDT || ""}
-                    onChange={(e) => handleEditYearlyPriceChange(e.target.value)}
+                    onChange={(e) =>
+                      handleEditYearlyPriceChange(e.target.value)
+                    }
                     placeholder="e.g. 5000"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -368,9 +371,11 @@ export function PlanModals({
                       min={0}
                       max={100}
                       value={localEdit.yearlyDiscountPercent || ""}
-                      onChange={(e) => handleEditDiscountPercentChange(e.target.value)}
+                      onChange={(e) =>
+                        handleEditDiscountPercentChange(e.target.value)
+                      }
                       placeholder="e.g. 17"
-                      className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px]"
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[12px] font-mono pointer-events-none">
                       %
@@ -394,7 +399,7 @@ export function PlanModals({
                         messageLimit: Number(e.target.value),
                       })
                     }
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -434,7 +439,7 @@ export function PlanModals({
                         catalogLimit: Number(e.target.value),
                       })
                     }
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -451,7 +456,7 @@ export function PlanModals({
                         courierChannels: Number(e.target.value),
                       })
                     }
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -627,7 +632,7 @@ export function PlanModals({
                     value={priceBDT}
                     onChange={(e) => handleMonthlyChange(e.target.value)}
                     placeholder="e.g. 500"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -651,7 +656,7 @@ export function PlanModals({
                     value={yearlyPriceBDT}
                     onChange={(e) => handleYearlyPriceChange(e.target.value)}
                     placeholder="e.g. 5000"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -665,9 +670,11 @@ export function PlanModals({
                       min={0}
                       max={100}
                       value={yearlyDiscountPercent}
-                      onChange={(e) => handleDiscountPercentChange(e.target.value)}
+                      onChange={(e) =>
+                        handleDiscountPercentChange(e.target.value)
+                      }
                       placeholder="e.g. 17"
-                      className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px]"
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[12px] font-mono pointer-events-none">
                       %
@@ -686,7 +693,7 @@ export function PlanModals({
                     value={messageLimit}
                     onChange={(e) => setMessageLimit(e.target.value)}
                     placeholder="e.g. 200"
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -719,7 +726,7 @@ export function PlanModals({
                     value={catalogLimit}
                     onChange={(e) => setCatalogLimit(e.target.value)}
                     placeholder="e.g. 250"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -732,7 +739,7 @@ export function PlanModals({
                     value={courierChannels}
                     onChange={(e) => setCourierChannels(e.target.value)}
                     placeholder="e.g. 2"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
