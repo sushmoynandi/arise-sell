@@ -227,6 +227,8 @@ class ApiClient {
       this.request("/admin/ai-gateway/keys", { method: "POST", body: JSON.stringify(key) }),
     testAiCascade: (prompt: string) =>
       this.request("/admin/ai-gateway/test-cascade", { method: "POST", body: JSON.stringify({ prompt }) }),
+    testCascade: (prompt: string) =>
+      this.request("/admin/ai-gateway/test-cascade", { method: "POST", body: JSON.stringify({ prompt }) }),
     listCouriers: () => this.request<unknown[]>("/admin/couriers"),
     pingCourier: (id: string) =>
       this.request(`/admin/couriers/${id}/ping`, { method: "POST" }),
