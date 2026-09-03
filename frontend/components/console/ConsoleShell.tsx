@@ -366,6 +366,19 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     }));
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <div className="flex flex-col items-center gap-3">
+          <span className="inline-block size-7 animate-spin rounded-full border-2 border-line border-t-signal" />
+          <p className="text-xs font-mono text-text-3">
+            Loading console session...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-canvas text-text">
       {/* ---------------- sidebar (desktop) ---------------- */}

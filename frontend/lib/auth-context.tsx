@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import api from "./api-client";
 import { setCookie, deleteCookie } from "./cookies";
@@ -80,6 +81,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const googleAuthHandled = useRef(false);
 
   const syncUserCookies = (u: UserProfile | null, days: number = 7) => {
     if (u) {
@@ -119,7 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // 1. Check if returning from same-tab Google OAuth redirect
     const googleAccessToken = parseGoogleHashToken();
-    if (googleAccessToken) {
+    if (googleAccessToken && !googleAuthHandled.current) {
+      googleAuthHandled.current = true;
       setLoading(true);
       api.auth
         .google({ access_token: googleAccessToken })
@@ -130,24 +133,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userProfile);
             syncUserCookies(userProfile, 7);
 
-            const hasPlan = userProfile.has_plan || userProfile.is_superadmin;
-            const returnTo = hasPlan
-              ? sessionStorage.getItem("np_google_return_to") || "/console"
-              : "/choose-plan";
+            const hasPlan = Boolean(
+              userProfile.has_plan || userProfile.is_superadmin,
+            );
+            const returnTo = hasPlan ? "/console" : "/choose-plan";
             sessionStorage.removeItem("np_google_return_to");
-            window.location.href = returnTo;
+
+            // Guaranteed cookie flush before redirection
+            setTimeout(() => {
+              window.location.replace(returnTo);
+            }, 100);
           } else {
+            setLoading(false);
             fetchCurrentUser();
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Google authentication failed:", err);
+          setLoading(false);
           fetchCurrentUser();
         });
       return;
     }
 
-    // 2. Normal session check
-    fetchCurrentUser();
+    if (!googleAuthHandled.current) {
+      // 2. Normal session check
+      fetchCurrentUser();
+    }
   }, [fetchCurrentUser]);
 
   const login = async (email: string, password: string, rememberMe = true) => {

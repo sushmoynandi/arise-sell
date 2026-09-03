@@ -42,7 +42,7 @@ export default function LoginForm() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotMsg, setForgotMsg] = useState<string | null>(null);
+  const [, setForgotMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,11 +65,12 @@ export default function LoginForm() {
         if (rememberMe) {
           localStorage.setItem("np_remember_7d", "true");
         }
-        if (res.user?.has_plan || res.user?.is_superadmin) {
-          router.push("/console");
-        } else {
-          router.push("/choose-plan");
-        }
+        const target =
+          res.user?.has_plan || res.user?.is_superadmin
+            ? "/console"
+            : "/choose-plan";
+        router.replace(target);
+        router.refresh();
       } else {
         const errorMsg =
           res.error === "Invalid email or password"
@@ -248,7 +249,7 @@ export default function LoginForm() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="size-4 rounded-[4px] border border-black/[0.2] bg-white shadow-sm transition-all peer-checked:border-signal peer-checked:bg-signal" />
+                <div className="size-4 rounded-sm border border-black/20 bg-white shadow-sm transition-all peer-checked:border-signal peer-checked:bg-signal" />
                 <IconCheck
                   width={11}
                   height={11}
@@ -267,7 +268,7 @@ export default function LoginForm() {
                 setForgotEmail(email);
                 setForgotOpen(true);
               }}
-              className="text-[12px] font-medium text-signal transition-colors hover:text-[color:var(--signal-deep)] hover:underline cursor-pointer"
+              className="text-[12px] font-medium text-signal transition-colors hover:text-signal-deep hover:underline cursor-pointer"
             >
               {t("Forgot password?", "পাসওয়ার্ড ভুলে গেছেন?")}
             </button>
@@ -292,7 +293,7 @@ export default function LoginForm() {
           {t("Don't have an account?", "এখনও অ্যাকাউন্ট নেই?")}{" "}
           <Link
             href="/signup"
-            className="font-semibold text-signal transition-colors hover:text-[color:var(--signal-deep)] hover:underline"
+            className="font-semibold text-signal transition-colors hover:text-signal-deep hover:underline"
           >
             {t("Create account", "অ্যাকাউন্ট তৈরি করুন")}
           </Link>
@@ -347,7 +348,7 @@ export default function LoginForm() {
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="merchant@shop.com.bd"
-                      className="mt-1 h-10 w-full rounded-xl border border-black/[0.1] px-3.5 text-[13.5px] text-text focus:border-signal focus:outline-none focus:ring-3 focus:ring-signal/15"
+                      className="mt-1 h-10 w-full rounded-xl border border-black/10 px-3.5 text-[13.5px] text-text focus:border-signal focus:outline-none focus:ring-3 focus:ring-signal/15"
                     />
                   </div>
 
@@ -355,14 +356,14 @@ export default function LoginForm() {
                     <button
                       type="button"
                       onClick={() => setForgotOpen(false)}
-                      className="flex-1 rounded-xl border border-black/[0.1] py-2.5 text-[13px] font-medium text-text-2 hover:bg-neutral-50 cursor-pointer"
+                      className="flex-1 rounded-xl border border-black/10 py-2.5 text-[13px] font-medium text-text-2 hover:bg-neutral-50 cursor-pointer"
                     >
                       {t("Cancel", "বাতিল")}
                     </button>
                     <button
                       type="submit"
                       disabled={forgotLoading}
-                      className="flex-1 rounded-xl bg-signal py-2.5 text-[13px] font-medium text-white shadow-sm hover:bg-(--signal-deep) cursor-pointer"
+                      className="flex-1 rounded-xl bg-signal py-2.5 text-[13px] font-medium text-white shadow-sm hover:bg-signal-deep cursor-pointer"
                     >
                       {forgotLoading
                         ? t("Sending...", "পাঠানো হচ্ছে...")
@@ -387,7 +388,7 @@ export default function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setForgotOpen(false)}
-                    className="mt-5 w-full rounded-xl bg-signal py-2.5 text-[13.5px] font-medium text-white shadow-sm hover:bg-(--signal-deep) cursor-pointer"
+                    className="mt-5 w-full rounded-xl bg-signal py-2.5 text-[13.5px] font-medium text-white shadow-sm hover:bg-signal-deep cursor-pointer"
                   >
                     {t("Back to sign in", "লগইনে ফিরে যান")}
                   </button>

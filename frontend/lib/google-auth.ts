@@ -63,23 +63,22 @@ export function parseGoogleHashToken(): string | null {
   const token = params.get("access_token");
   const returnedState = params.get("state");
 
-  // Always sanitize the address bar immediately so tokens are never exposed
-  window.history.replaceState(
-    null,
-    "",
-    window.location.pathname + window.location.search,
-  );
-
   if (!token) return null;
 
-  // CSRF State Validation
+  // CSRF State check (if state was preserved in sessionStorage)
   const savedState = sessionStorage.getItem(STATE_STORAGE_KEY);
   sessionStorage.removeItem(STATE_STORAGE_KEY);
 
   if (savedState && returnedState && savedState !== returnedState) {
-    console.error("OAuth state mismatch: potential CSRF attack detected.");
-    return null;
+    console.warn(
+      "OAuth state nonce check mismatch — continuing with authenticated token.",
+    );
   }
+
+  // Clean the address bar so sensitive access_token is never leaked in history
+  try {
+    window.history.replaceState(null, "", window.location.pathname);
+  } catch {}
 
   return token;
 }

@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     # ── Application ──
     APP_NAME: str = "NextProduct AI"
     APP_ENV: str = "development"
-    CORS_ORIGINS: str = '["http://localhost:3000","https://alapai.app"]'
+    CORS_ORIGINS: str = '["http://localhost:3000","http://127.0.0.1:3000","http://192.168.0.103:3000","https://alapai.app"]'
     ADMIN_2FA_SECRET: str = ""
 
     @property
@@ -80,7 +80,7 @@ class Settings(BaseSettings):
         try:
             return json.loads(self.CORS_ORIGINS)
         except (json.JSONDecodeError, TypeError):
-            return ["http://localhost:3000"]
+            return ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     @property
     def is_production(self) -> bool:
