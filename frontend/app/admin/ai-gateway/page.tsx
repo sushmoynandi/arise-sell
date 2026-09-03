@@ -89,7 +89,7 @@ export default function AdminAiGatewayPage() {
       setLoading(true);
       const res = await api.admin.listAiKeys();
       if (Array.isArray(res)) {
-        setKeys(res);
+        setKeys(res as AiProviderKey[]);
       }
     } catch (err) {
       console.error("Failed to fetch AI keys:", err);
@@ -106,12 +106,7 @@ export default function AdminAiGatewayPage() {
   const handlePing = async (id: string) => {
     setTestingId(id);
     try {
-      const res = (await api.admin.pingAiKey(id)) as {
-        success: boolean;
-        latency?: number;
-        msg?: string;
-        error?: string;
-      };
+      const res = await api.admin.pingAiKey(id);
       if (res && res.success) {
         const latency = res.latency || 120;
         setKeys((prev) =>
@@ -131,8 +126,9 @@ export default function AdminAiGatewayPage() {
       } else {
         alert(res?.msg || res?.error || "Ping check failed");
       }
-    } catch (err: any) {
-      alert(`Ping error: ${err.message || "Failed to reach backend"}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to reach backend";
+      alert(`Ping error: ${msg}`);
     } finally {
       setTestingId(null);
     }
@@ -159,11 +155,12 @@ export default function AdminAiGatewayPage() {
         api_key: newKey.trim(),
       });
       setModalTestResult(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
       setModalTestResult({
         success: false,
         latency: 0,
-        msg: `Connection test failed: ${err.message || "Unknown error"}`,
+        msg: `Connection test failed: ${msg}`,
       });
     } finally {
       setModalTesting(false);
@@ -187,8 +184,9 @@ export default function AdminAiGatewayPage() {
     try {
       await api.admin.setPrimaryAiKey(id);
       await fetchKeys();
-    } catch (err: any) {
-      alert(`Failed to set primary: ${err.message || "Unknown error"}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      alert(`Failed to set primary: ${msg}`);
     }
   };
 
@@ -199,8 +197,9 @@ export default function AdminAiGatewayPage() {
         await api.admin.deleteAiKey(deletingKey.id);
         setDeletingKey(null);
         await fetchKeys();
-      } catch (err: any) {
-        alert(`Failed to delete key: ${err.message || "Unknown error"}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        alert(`Failed to delete key: ${msg}`);
       }
     }
   };
@@ -256,7 +255,6 @@ export default function AdminAiGatewayPage() {
 
       setTesterResult({
         route: res.provider || (isPrimaryBlocked ? "OpenAI" : "Google Gemini"),
-        model: res.model || (isPrimaryBlocked ? "gpt-4o-mini" : "gemini-2.0-flash"),
         model: res.model || (isPrimaryBlocked ? "gpt-4o-mini" : "gemini-3.6-flash"),
         latency: res.latency_ms || (isPrimaryBlocked ? 640 : 380),
         tokens: 112,
@@ -312,8 +310,9 @@ export default function AdminAiGatewayPage() {
       setModalTestResult(null);
       setAddModalOpen(false);
       await fetchKeys();
-    } catch (err: any) {
-      alert(`Failed to add key: ${err.message || "Unknown error"}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      alert(`Failed to add key: ${msg}`);
     }
   };
 

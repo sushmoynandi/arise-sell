@@ -306,12 +306,26 @@ class ApiClient {
         method: "POST",
         body: JSON.stringify(plan),
       }),
-    listAiKeys: () => this.request<unknown[]>("/admin/ai-gateway/keys"),
+    listAiKeys: () => this.request<Record<string, unknown>[]>("/admin/ai-gateway/keys"),
     addAiKey: (key: Record<string, unknown>) =>
       this.request("/admin/ai-gateway/keys", {
         method: "POST",
         body: JSON.stringify(key),
       }),
+    deleteAiKey: (id: string) =>
+      this.request(`/admin/ai-gateway/keys/${id}`, { method: "DELETE" }),
+    setPrimaryAiKey: (id: string) =>
+      this.request(`/admin/ai-gateway/keys/${id}/primary`, { method: "PATCH" }),
+    pingAiKey: (id: string) =>
+      this.request<{ success: boolean; latency?: number; msg?: string; error?: string }>(
+        `/admin/ai-gateway/keys/${id}/ping`,
+        { method: "POST" },
+      ),
+    testAiKey: (data: { provider: string; model: string; api_key: string }) =>
+      this.request<{ success: boolean; latency: number; msg: string }>(
+        "/admin/ai-gateway/test-key",
+        { method: "POST", body: JSON.stringify(data) },
+      ),
     testAiCascade: (prompt: string) =>
       this.request("/admin/ai-gateway/test-cascade", {
         method: "POST",
