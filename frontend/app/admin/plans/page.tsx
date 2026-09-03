@@ -23,7 +23,8 @@ type FestivalOffer = {
   festivalNameBn: string;
   couponCode: string;
   discountPercent: number;
-  bonusOrders: number;
+  bonusMessages?: number;
+  bonusOrders?: number;
   validity: string;
   active: boolean;
 };
@@ -68,7 +69,7 @@ export default function AdminPlansPage() {
   const [courierChannels, setCourierChannels] = useState(2);
   const [badge, setBadge] = useState("");
   const [featuresStr, setFeaturesStr] = useState(
-    "200 closed orders / month\nWhatsApp & Facebook Messenger\nSteadfast & Pathao 1-click booking\n2 team member seats",
+    "200 AI replies / month\nWhatsApp & Facebook Messenger\nSteadfast & Pathao 1-click booking\n2 team member seats",
   );
 
   // Form State for new Festival Offer
@@ -149,6 +150,7 @@ export default function AdminPlansPage() {
       festivalNameBn: festName,
       couponCode: festCode.toUpperCase().replace(/\s+/g, ""),
       discountPercent: Number(festDiscount),
+      bonusMessages: Number(festBonus),
       bonusOrders: Number(festBonus),
       validity: festValidity,
       active: true,
@@ -412,7 +414,7 @@ export default function AdminPlansPage() {
                 Seasonal &amp; Festival Promo Campaigns
               </h2>
               <p className="text-[12px] text-text-3">
-                Manage promotional coupon codes, discounts, and order allowances.
+                Manage promotional coupon codes, discounts, and bonus AI reply credits.
               </p>
             </div>
           </div>
@@ -434,7 +436,7 @@ export default function AdminPlansPage() {
               <tr>
                 <th className="py-3 px-4.5">Campaign &amp; Coupon</th>
                 <th className="py-3 px-4">Discount</th>
-                <th className="py-3 px-4">Bonus Orders</th>
+                <th className="py-3 px-4">Bonus AI Replies</th>
                 <th className="py-3 px-4">Validity</th>
                 <th className="py-3 px-4">Live Status</th>
                 <th className="py-3 px-4.5 text-right">Actions</th>
@@ -486,7 +488,7 @@ export default function AdminPlansPage() {
                     </td>
 
                     <td className="py-3.5 px-4 font-mono font-semibold text-text">
-                      +{offer.bonusOrders.toLocaleString()} orders
+                      +{(offer.bonusMessages ?? offer.bonusOrders ?? 0).toLocaleString()} AI replies
                     </td>
 
                     <td className="py-3.5 px-4 text-text-3 font-mono text-[12px]">
@@ -549,7 +551,8 @@ export default function AdminPlansPage() {
               Commercial Storefront Plans ({plans.length})
             </h2>
             <p className="text-[12px] text-text-3">
-              Auto-synchronized with storefront checkout and Subscriptions billing.
+              Auto-synchronized with storefront checkout and Subscriptions
+              billing.
             </p>
           </div>
 
@@ -591,8 +594,10 @@ export default function AdminPlansPage() {
             const displayedPrice = isYearlyView
               ? (p.yearlyPriceBDT ?? p.priceBDT * 10)
               : p.priceBDT;
-            const monthlyEquivalent = isYearlyView && !isFree ? Math.round(displayedPrice / 12) : null;
-            const savingsBDT = isYearlyView && !isFree ? (p.priceBDT * 12 - displayedPrice) : 0;
+            const monthlyEquivalent =
+              isYearlyView && !isFree ? Math.round(displayedPrice / 12) : null;
+            const savingsBDT =
+              isYearlyView && !isFree ? p.priceBDT * 12 - displayedPrice : 0;
 
             return (
               <div
@@ -642,7 +647,9 @@ export default function AdminPlansPage() {
 
                     {isYearlyView && !isFree && (
                       <div className="flex items-center gap-1.5 text-[11.5px] font-mono">
-                        <span className="text-text-3">৳{monthlyEquivalent}/mo</span>
+                        <span className="text-text-3">
+                          ৳{monthlyEquivalent}/mo
+                        </span>
                         {savingsBDT > 0 && (
                           <span className="text-signal font-bold bg-signal/[0.08] px-1.5 py-0.2 rounded border border-signal/20">
                             Save {formatTaka(savingsBDT)}/yr
@@ -652,7 +659,7 @@ export default function AdminPlansPage() {
                     )}
 
                     <p className="text-[12.5px] text-signal font-semibold pt-0.5">
-                      {p.messageLimit.toLocaleString()} orders included
+                      {p.messageLimit.toLocaleString()} AI replies / mo
                     </p>
                   </div>
 
@@ -798,14 +805,19 @@ export default function AdminPlansPage() {
 
               <div>
                 <label className="block font-bold text-text mb-1">
-                  Bonus Orders Included
+                  Bonus AI Replies Included
                 </label>
                 <input
                   type="number"
-                  value={editingFestivalOffer.bonusOrders}
+                  value={
+                    editingFestivalOffer.bonusMessages ??
+                    editingFestivalOffer.bonusOrders ??
+                    0
+                  }
                   onChange={(e) =>
                     setEditingFestivalOffer({
                       ...editingFestivalOffer,
+                      bonusMessages: Number(e.target.value),
                       bonusOrders: Number(e.target.value),
                     })
                   }
@@ -967,13 +979,13 @@ export default function AdminPlansPage() {
 
               <div>
                 <label className="block font-bold text-text mb-1">
-                  Bonus Orders Included
+                  Bonus AI Replies Included
                 </label>
                 <input
                   type="number"
                   value={festBonus}
                   onChange={(e) => setFestBonus(Number(e.target.value))}
-                  placeholder="e.g. 500"
+                  placeholder="e.g. 500 (bonus reply credits)"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                 />
               </div>
@@ -1085,7 +1097,9 @@ export default function AdminPlansPage() {
                   </div>
                   <input
                     type="number"
-                    value={editingPlan.yearlyPriceBDT ?? editingPlan.priceBDT * 10}
+                    value={
+                      editingPlan.yearlyPriceBDT ?? editingPlan.priceBDT * 10
+                    }
                     onChange={(e) =>
                       setEditingPlan({
                         ...editingPlan,
@@ -1100,7 +1114,7 @@ export default function AdminPlansPage() {
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
-                    Order Quota / mo
+                    AI Reply Quota / mo
                   </label>
                   <input
                     type="number"
@@ -1125,7 +1139,10 @@ export default function AdminPlansPage() {
                     onChange={(e) =>
                       setEditingPlan({
                         ...editingPlan,
-                        billingPeriod: e.target.value as "both" | "monthly" | "yearly",
+                        billingPeriod: e.target.value as
+                          | "both"
+                          | "monthly"
+                          | "yearly",
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-semibold text-[12.5px]"
@@ -1339,7 +1356,7 @@ export default function AdminPlansPage() {
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
-                    Order Quota / mo
+                    AI Reply Quota / mo
                   </label>
                   <input
                     type="number"
@@ -1357,7 +1374,9 @@ export default function AdminPlansPage() {
                   <select
                     value={billingPeriod}
                     onChange={(e) =>
-                      setBillingPeriod(e.target.value as "both" | "monthly" | "yearly")
+                      setBillingPeriod(
+                        e.target.value as "both" | "monthly" | "yearly",
+                      )
                     }
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-semibold text-[12.5px]"
                   >
@@ -1388,9 +1407,7 @@ export default function AdminPlansPage() {
                   <input
                     type="number"
                     value={courierChannels}
-                    onChange={(e) =>
-                      setCourierChannels(Number(e.target.value))
-                    }
+                    onChange={(e) => setCourierChannels(Number(e.target.value))}
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                   />
                 </div>

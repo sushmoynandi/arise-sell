@@ -27,7 +27,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "catalogLimit": 50,
         "courierChannels": 1,
         "features": [
-            "40 closed orders / month",
+            "40 AI replies / month (Comment + Inbox)",
             "1 channel (Messenger or WhatsApp)",
             "Bangla · Banglish · English AI agent",
             "Photo → product vision matching",
@@ -44,7 +44,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "id": "plan-growth",
         "name": "Growth",
         "nameBn": "গ্রোথ",
-        "tagline": "For growing Facebook & WhatsApp shops with daily orders",
+        "tagline": "For growing Facebook & WhatsApp shops with daily customer messages",
         "priceBDT": 200,
         "yearlyPriceBDT": 2000,
         "yearlyDiscountPercent": 17,
@@ -55,7 +55,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "badge": "Best for Starters",
         "popular": False,
         "features": [
-            "200 closed orders / month",
+            "200 AI replies / month (Comment + Inbox)",
             "WhatsApp & Facebook Messenger connected",
             "Steadfast & Pathao 1-click booking",
             "Branded Bangla digital invoices",
@@ -82,7 +82,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "badge": "Most Popular",
         "popular": True,
         "features": [
-            "600 closed orders / month",
+            "600 AI replies / month (Comment + Inbox)",
             "Omnichannel: Messenger + WhatsApp + Instagram",
             "Courier fraud blacklist auto-check",
             "AI negotiations up to discount threshold",
@@ -110,7 +110,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "badge": "Enterprise Scale",
         "popular": False,
         "features": [
-            "2,000 closed orders / month",
+            "2,000 AI replies / month (Comment + Inbox)",
             "All channels & couriers unlocked",
             "Custom LLM fine-tuning on shop history",
             "Priority VIP server cluster (low latency)",
@@ -132,6 +132,7 @@ DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
         "festivalNameBn": "ঈদ শপিং ধামাকা অফার",
         "couponCode": "EID2026",
         "discountPercent": 25,
+        "bonusMessages": 500,
         "bonusOrders": 500,
         "validity": "Valid till Eid Night",
         "active": True,
@@ -142,6 +143,7 @@ DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
         "festivalNameBn": "শারদীয় দুর্গাপূজা স্পেশাল",
         "couponCode": "PUJA2026",
         "discountPercent": 20,
+        "bonusMessages": 300,
         "bonusOrders": 300,
         "validity": "Valid till Dashami",
         "active": False,
@@ -152,6 +154,7 @@ DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
         "festivalNameBn": "পহেলা বৈশাখ বোশেখ অফার",
         "couponCode": "BOISHAKH1433",
         "discountPercent": 15,
+        "bonusMessages": 250,
         "bonusOrders": 250,
         "validity": "Valid in Baishakh",
         "active": False,
@@ -192,7 +195,7 @@ def save_stored_plans(plans: list[dict[str, Any]]) -> None:
 def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
     plans = get_stored_plans()
     plan_id = data.get("id") or f"plan-{int(time.time() * 1000)}"
-    
+
     price_bdt = float(data.get("priceBDT", 0))
     yearly_price = float(data.get("yearlyPriceBDT", price_bdt * 10))
     yearly_discount = data.get("yearlyDiscountPercent")
@@ -290,13 +293,15 @@ def create_stored_festival_offer(data: dict[str, Any]) -> dict[str, Any]:
     offers = get_stored_festival_offers()
     offer_id = data.get("id") or f"fest-{int(time.time() * 1000)}"
 
+    bonus_count = int(data.get("bonusMessages") or data.get("bonusOrders") or 0)
     new_offer: dict[str, Any] = {
         "id": offer_id,
         "festivalName": data.get("festivalName", ""),
         "festivalNameBn": data.get("festivalNameBn") or data.get("festivalName", ""),
         "couponCode": str(data.get("couponCode", "")).upper().replace(" ", ""),
         "discountPercent": int(data.get("discountPercent", 20)),
-        "bonusOrders": int(data.get("bonusOrders", 0)),
+        "bonusMessages": bonus_count,
+        "bonusOrders": bonus_count,
         "validity": data.get("validity", "Limited Time Offer"),
         "active": bool(data.get("active", True)),
     }
@@ -343,3 +348,4 @@ def delete_stored_festival_offer(offer_id: str) -> bool:
         save_stored_festival_offers(new_offers)
         return True
     return False
+
