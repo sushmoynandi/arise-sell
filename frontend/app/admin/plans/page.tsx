@@ -294,9 +294,6 @@ export default function AdminPlansPage() {
               )}
             >
               <span>Yearly (বাৎসরিক)</span>
-              <span className="rounded-md bg-signal/12 text-signal px-1.5 py-0.2 text-[10px] font-bold">
-                Save 17%
-              </span>
             </button>
           </div>
         </div>
