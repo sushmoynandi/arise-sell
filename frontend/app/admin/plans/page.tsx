@@ -319,14 +319,15 @@ export default function AdminPlansPage() {
           </div>
         ) : plans.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center space-y-3 shadow-2xs">
-            <div className="size-12 rounded-2xl bg-signal/[0.08] text-signal grid place-items-center mx-auto mb-2">
+            <div className="size-12 rounded-2xl bg-signal/8 text-signal grid place-items-center mx-auto mb-2">
               <IconTag width={22} height={22} />
             </div>
             <h3 className="font-bold text-text text-base">
               No Subscription Plans Found
             </h3>
             <p className="text-text-3 text-sm max-w-sm mx-auto">
-              You haven&apos;t created any commercial subscription plans in the database yet. Click below to add your first plan.
+              You haven&apos;t created any commercial subscription plans in the
+              database yet. Click below to add your first plan.
             </p>
             <div className="pt-2">
               <Button
