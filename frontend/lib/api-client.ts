@@ -315,6 +315,10 @@ class ApiClient {
       this.request<Record<string, unknown>>(`/admin/plans/${id}/status`, {
         method: "PATCH",
       }),
+    togglePlanHome: (id: string) =>
+      this.request<Record<string, unknown>>(`/admin/plans/${id}/toggle-home`, {
+        method: "PATCH",
+      }),
     deletePlan: (id: string) =>
       this.request<{ success: boolean; message: string }>(
         `/admin/plans/${id}`,

@@ -165,7 +165,10 @@ export default function PricingPreview() {
               <IconTag width={22} height={22} />
             </div>
             <h3 className="font-bold text-text text-base">
-              {t("No Plans Available", "কোনো সাবস্ক্রিপশন প্ল্যান পাওয়া যায়নি")}
+              {t(
+                "No Plans Available",
+                "কোনো সাবস্ক্রিপশন প্ল্যান পাওয়া যায়নি",
+              )}
             </h3>
             <p className="text-text-3 text-sm max-w-sm mx-auto">
               {t(
@@ -199,9 +202,9 @@ export default function PricingPreview() {
               const savings = p.priceBDT * 12 - yearlyPrice;
               const isFeatured = Boolean(
                 p.popular ||
-                  p.badge?.toLowerCase().includes("popular") ||
-                  p.badge?.toLowerCase().includes("best") ||
-                  p.badge?.toLowerCase().includes("vip"),
+                p.badge?.toLowerCase().includes("popular") ||
+                p.badge?.toLowerCase().includes("best") ||
+                p.badge?.toLowerCase().includes("vip"),
               );
 
               return (

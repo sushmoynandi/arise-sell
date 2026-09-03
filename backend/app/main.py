@@ -96,10 +96,15 @@ app.include_router(analytics_router, prefix="/api/v1")
 
 @app.get("/api/v1/plans", tags=["Subscription Plans"])
 async def list_public_plans():
-    """Public endpoint to fetch commercial plans for homepage and pricing preview."""
+    """Public endpoint to fetch commercial plans for homepage and pricing preview.
+    Returns only active plans that admin chose to show on homepage (max 4)."""
     from app.services.plans_service import get_stored_plans
     plans = await get_stored_plans()
-    return [p for p in plans if p.get("status") == "active"]
+    home_plans = [
+        p for p in plans
+        if p.get("status") == "active" and p.get("showOnHome", True)
+    ]
+    return home_plans[:4]
 
 
 # Mount Super Admin Routers

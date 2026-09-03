@@ -10,6 +10,7 @@ from app.services.plans_service import (
     create_stored_plan,
     update_stored_plan,
     toggle_stored_plan_status,
+    toggle_stored_plan_home,
     delete_stored_plan,
     get_stored_festival_offers,
     create_stored_festival_offer,
@@ -42,6 +43,7 @@ class PlanRequest(BaseModel):
     monthlySubscribers: int = 0
     yearlySubscribers: int = 0
     status: str = "active"
+    showOnHome: bool = True
 
 
 class FestivalOfferRequest(BaseModel):
@@ -114,6 +116,14 @@ async def update_plan(plan_id: str, req: PlanRequest):
 @router.patch("/{plan_id}/status")
 async def toggle_plan_status(plan_id: str):
     toggled = await toggle_stored_plan_status(plan_id)
+    if not toggled:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return toggled
+
+
+@router.patch("/{plan_id}/toggle-home")
+async def toggle_plan_home_endpoint(plan_id: str):
+    toggled = await toggle_stored_plan_home(plan_id)
     if not toggled:
         raise HTTPException(status_code=404, detail="Plan not found")
     return toggled

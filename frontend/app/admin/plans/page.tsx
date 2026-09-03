@@ -217,6 +217,36 @@ export default function AdminPlansPage() {
     }
   };
 
+  const handleTogglePlanHome = async (id: string) => {
+    const targetPlan = plans.find((p) => p.id === id);
+    if (!targetPlan) return;
+
+    const currentHomePlans = plans.filter(
+      (p) => p.showOnHome && p.status === "active",
+    );
+    if (!targetPlan.showOnHome && currentHomePlans.length >= 4) {
+      alert(
+        "হোমপেজে সর্বোচ্চ ৪টি প্ল্যান রাখা যাবে। অনুগ্রহ করে অন্য একটি প্ল্যানের 'On Home' বন্ধ করে এটি চালু করুন।",
+      );
+      return;
+    }
+
+    try {
+      const res = await api.admin.togglePlanHome(id);
+      const updated = res as unknown as AdminPlan;
+      setPlans((prev) =>
+        prev.map((p) =>
+          p.id === id ? { ...p, showOnHome: updated.showOnHome } : p,
+        ),
+      );
+      showNotification(
+        `Plan "${targetPlan.name}" is now ${updated.showOnHome ? "VISIBLE on homepage" : "HIDDEN from homepage"}!`,
+      );
+    } catch (err) {
+      console.error("Failed to toggle plan home status on backend:", err);
+    }
+  };
+
   const handleConfirmDeletePlan = async () => {
     if (!deletingPlan) return;
     const targetId = deletingPlan.id;
@@ -235,6 +265,9 @@ export default function AdminPlansPage() {
   };
 
   const activePlansCount = plans.filter((p) => p.status === "active").length;
+  const homePlansCount = plans.filter(
+    (p) => p.showOnHome && p.status === "active",
+  ).length;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto py-1">
@@ -260,9 +293,17 @@ export default function AdminPlansPage() {
       <div className="space-y-3 pt-1">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div>
-            <h2 className="text-[15.5px] font-bold text-text">
-              Commercial Storefront Plans ({plans.length})
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-[15.5px] font-bold text-text">
+                Commercial Storefront Plans ({plans.length})
+              </h2>
+              <span
+                className="rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[11px] font-mono font-bold"
+                title="Maximum 4 plans can be shown on public homepage"
+              >
+                🌐 Home: {homePlansCount}/4
+              </span>
+            </div>
             <p className="text-[12px] text-text-3">
               Auto-synchronized with storefront checkout and Subscriptions
               billing.
@@ -347,6 +388,7 @@ export default function AdminPlansPage() {
                 isYearlyView={isYearlyView}
                 onEdit={(plan) => setEditingPlan(plan)}
                 onToggleStatus={handleTogglePlanStatus}
+                onToggleHome={handleTogglePlanHome}
                 onDelete={(plan) => setDeletingPlan(plan)}
               />
             ))}

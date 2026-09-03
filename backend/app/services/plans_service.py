@@ -91,7 +91,8 @@ async def get_stored_plans() -> list[dict[str, Any]]:
             rows = await conn.fetch("""
                 SELECT plan_code, name, name_bn, tagline, price_bdt, yearly_price_bdt,
                        yearly_discount_percent, billing_period, message_limit, catalog_limit,
-                       courier_channels, features, badge, popular, active_merchants, status
+                       courier_channels, features, badge, popular, active_merchants, status,
+                       show_on_home
                 FROM subscription_plans
                 ORDER BY price_bdt ASC;
             """)
@@ -115,6 +116,7 @@ async def get_stored_plans() -> list[dict[str, Any]]:
                     "popular": bool(r["popular"]),
                     "activeMerchants": r["active_merchants"],
                     "status": r["status"],
+                    "showOnHome": bool(r["show_on_home"]) if r["show_on_home"] is not None else True,
                 })
             _save_json_plans(plans)
             return plans
@@ -171,6 +173,7 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
         "popular": bool(data.get("popular", False)),
         "activeMerchants": int(data.get("activeMerchants", 0)),
         "status": data.get("status", "active"),
+        "showOnHome": bool(data.get("showOnHome", True)),
     }
 
     # Save to PostgreSQL
@@ -183,9 +186,9 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
                     id, plan_code, name, name_bn, tagline, price_bdt, yearly_price_bdt,
                     yearly_discount_percent, billing_period, message_limit, catalog_limit,
                     courier_channels, features, badge, popular, active_merchants, status,
-                    created_at, updated_at
+                    show_on_home, created_at, updated_at
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
                     NOW(), NOW()
                 ) ON CONFLICT (plan_code) DO UPDATE SET
                     name = EXCLUDED.name,
@@ -202,12 +205,13 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
                     badge = EXCLUDED.badge,
                     popular = EXCLUDED.popular,
                     status = EXCLUDED.status,
+                    show_on_home = EXCLUDED.show_on_home,
                     updated_at = NOW();
             """, row_id, plan_id, new_plan["name"], new_plan["nameBn"], new_plan["tagline"],
             price_bdt, yearly_price, new_plan["yearlyDiscountPercent"], new_plan["billingPeriod"],
             new_plan["messageLimit"], new_plan["catalogLimit"], new_plan["courierChannels"],
             json.dumps(new_plan["features"]), new_plan["badge"], new_plan["popular"],
-            new_plan["activeMerchants"], new_plan["status"]
+            new_plan["activeMerchants"], new_plan["status"], new_plan["showOnHome"]
             )
         except Exception as e:
             print("Postgres insert failed:", e)
@@ -245,6 +249,16 @@ async def toggle_stored_plan_status(plan_id: str) -> dict[str, Any] | None:
         if p.get("id") == plan_id:
             current = p.get("status", "active")
             p["status"] = "archived" if current == "active" else "active"
+            return await create_stored_plan(p)
+    return None
+
+
+async def toggle_stored_plan_home(plan_id: str) -> dict[str, Any] | None:
+    plans = await get_stored_plans()
+    for p in plans:
+        if p.get("id") == plan_id:
+            current = bool(p.get("showOnHome", True))
+            p["showOnHome"] = not current
             return await create_stored_plan(p)
     return None
 

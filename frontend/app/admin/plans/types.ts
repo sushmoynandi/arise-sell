@@ -30,4 +30,5 @@ export type AdminPlan = {
   monthlySubscribers?: number;
   yearlySubscribers?: number;
   status: "active" | "archived" | "draft";
+  showOnHome?: boolean;
 };

@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Badge, Button, Panel } from "@/components/ui/primitives";
 import { IconCheck, IconTag } from "@/components/ui/icons";
-import {
-  Magnetic,
-  SPRING,
-  Stagger,
-  StaggerItem,
-} from "@/components/motion";
+import { Magnetic, SPRING, Stagger, StaggerItem } from "@/components/motion";
 import { ENTERPRISE, OVERAGE } from "@/data/plans";
 import { cx } from "@/lib/format";
 
@@ -32,7 +27,9 @@ interface BackendPlan {
 }
 
 export default function PricingTable() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
   const isYearly = billingCycle === "yearly";
 
   const [plans, setPlans] = useState<BackendPlan[]>([]);
@@ -131,7 +128,8 @@ export default function PricingTable() {
             No Subscription Plans Available
           </h3>
           <p className="text-text-3 text-sm max-w-sm mx-auto">
-            Plans are being configured by the administrator. Please check back shortly.
+            Plans are being configured by the administrator. Please check back
+            shortly.
           </p>
         </div>
       ) : (
@@ -140,8 +138,9 @@ export default function PricingTable() {
             "grid grid-cols-1 gap-4",
             plans.length === 1 && "max-w-md mx-auto",
             plans.length === 2 && "sm:grid-cols-2 max-w-3xl mx-auto",
-            plans.length === 3 && "sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto",
-            plans.length >= 4 && "sm:grid-cols-2 lg:grid-cols-4"
+            plans.length === 3 &&
+              "sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto",
+            plans.length >= 4 && "sm:grid-cols-2 lg:grid-cols-4",
           )}
           amount={0.05}
         >
@@ -159,9 +158,9 @@ export default function PricingTable() {
             const savings = p.priceBDT * 12 - yearlyPrice;
             const isFeatured = Boolean(
               p.popular ||
-                p.badge?.toLowerCase().includes("popular") ||
-                p.badge?.toLowerCase().includes("best") ||
-                p.badge?.toLowerCase().includes("vip"),
+              p.badge?.toLowerCase().includes("popular") ||
+              p.badge?.toLowerCase().includes("best") ||
+              p.badge?.toLowerCase().includes("vip"),
             );
 
             return (
@@ -169,7 +168,8 @@ export default function PricingTable() {
                 <Panel
                   className={cx(
                     "relative flex h-full flex-col justify-between p-6",
-                    isFeatured && "border-(--signal-line) ring-1 ring-signal/20",
+                    isFeatured &&
+                      "border-(--signal-line) ring-1 ring-signal/20",
                   )}
                 >
                   {p.badge && (
