@@ -301,7 +301,9 @@ export function PlanModals({
                     <span
                       className={cx(
                         "pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
-                        localEdit.showOnHome ? "translate-x-4" : "translate-x-0",
+                        localEdit.showOnHome
+                          ? "translate-x-4"
+                          : "translate-x-0",
                       )}
                     />
                   </button>

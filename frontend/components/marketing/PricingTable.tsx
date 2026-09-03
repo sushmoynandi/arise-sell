@@ -45,7 +45,7 @@ export default function PricingTable() {
         if (res.ok) {
           const data = await res.json();
           if (mounted && Array.isArray(data)) {
-            setPlans(data.filter((p: BackendPlan) => p.status === "active"));
+            setPlans(data);
           }
         }
       } catch (err) {

@@ -172,7 +172,7 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
         "badge": data.get("badge"),
         "popular": bool(data.get("popular", False)),
         "activeMerchants": int(data.get("activeMerchants", 0)),
-        "status": data.get("status", "active"),
+        "status": "active" if bool(data.get("showOnHome", False)) else data.get("status", "active"),
         "showOnHome": bool(data.get("showOnHome", False)),
     }
 
@@ -248,7 +248,10 @@ async def toggle_stored_plan_status(plan_id: str) -> dict[str, Any] | None:
     for p in plans:
         if p.get("id") == plan_id:
             current = p.get("status", "active")
-            p["status"] = "archived" if current == "active" else "active"
+            new_status = "archived" if current == "active" else "active"
+            p["status"] = new_status
+            if new_status == "archived":
+                p["showOnHome"] = False
             return await create_stored_plan(p)
     return None
 
