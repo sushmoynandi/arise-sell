@@ -132,7 +132,20 @@ app.include_router(courier_webhook_router, prefix="/api/v1")
 app.include_router(payment_webhook_router, prefix="/api/v1")
 
 
+@app.get("/", tags=["Root"])
+async def root_index():
+    """Root endpoint showing service status and API docs link."""
+    return {
+        "service": settings.APP_NAME,
+        "status": "online 🚀",
+        "version": "1.0.0",
+        "docs_url": "/docs",
+        "health_url": "/health",
+    }
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Health check for load balancers and container orchestrators."""
     return {"status": "ok", "version": "1.0.0", "service": settings.APP_NAME}
+
