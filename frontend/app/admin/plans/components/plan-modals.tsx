@@ -31,6 +31,21 @@ export function PlanModals({
   onCloseCreate,
   onCreatePlan,
 }: PlanModalsProps) {
+  // Bidirectional calculation helpers
+  const calcYearlyFromDiscount = (monthly: number, discountPct: number): number => {
+    if (monthly <= 0) return 0;
+    const annualFull = monthly * 12;
+    const safeDiscount = Math.max(0, Math.min(100, discountPct));
+    return Math.max(0, Math.round(annualFull * (1 - safeDiscount / 100)));
+  };
+
+  const calcDiscountFromYearly = (monthly: number, yearly: number): number => {
+    if (monthly <= 0) return 0;
+    const annualFull = monthly * 12;
+    const pct = Math.round(((annualFull - yearly) / annualFull) * 100);
+    return Math.max(0, Math.min(100, pct));
+  };
+
   // Local edit state
   const [localEdit, setLocalEdit] = useState<AdminPlan | null>(editingPlan);
 
@@ -44,6 +59,7 @@ export function PlanModals({
   const [tagline, setTagline] = useState("");
   const [priceBDT, setPriceBDT] = useState<number>(0);
   const [yearlyPriceBDT, setYearlyPriceBDT] = useState<number>(0);
+  const [yearlyDiscountPercent, setYearlyDiscountPercent] = useState<number>(17);
   const [billingPeriod, setBillingPeriod] = useState<PlanBillingPeriod>("both");
   const [messageLimit, setMessageLimit] = useState<number>(200);
   const [catalogLimit, setCatalogLimit] = useState<number>(250);
@@ -51,6 +67,106 @@ export function PlanModals({
   const [badge, setBadge] = useState("");
   const [featuresStr, setFeaturesStr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handlers for Create Form Price Inputs
+  const handleMonthlyChange = (val: number) => {
+    const monthly = Math.max(0, val);
+    setPriceBDT(monthly);
+    if (monthly <= 0) {
+      setYearlyPriceBDT(0);
+      setYearlyDiscountPercent(0);
+    } else {
+      const discount = yearlyDiscountPercent > 0 ? yearlyDiscountPercent : 17;
+      setYearlyDiscountPercent(discount);
+      setYearlyPriceBDT(calcYearlyFromDiscount(monthly, discount));
+    }
+  };
+
+  const handleYearlyPriceChange = (val: number) => {
+    const yearly = Math.max(0, val);
+    setYearlyPriceBDT(yearly);
+    if (priceBDT > 0) {
+      setYearlyDiscountPercent(calcDiscountFromYearly(priceBDT, yearly));
+    }
+  };
+
+  const handleDiscountPercentChange = (val: number) => {
+    const safeDiscount = Math.max(0, Math.min(100, val));
+    setYearlyDiscountPercent(safeDiscount);
+    if (priceBDT > 0) {
+      setYearlyPriceBDT(calcYearlyFromDiscount(priceBDT, safeDiscount));
+    }
+  };
+
+  const handleApplyTwoMonthsFree = () => {
+    if (priceBDT > 0) {
+      const freePrice = priceBDT * 10;
+      setYearlyPriceBDT(freePrice);
+      setYearlyDiscountPercent(calcDiscountFromYearly(priceBDT, freePrice));
+    }
+  };
+
+  // Handlers for Edit Form Price Inputs
+  const handleEditMonthlyChange = (newMonthly: number) => {
+    if (!localEdit) return;
+    const monthly = Math.max(0, newMonthly);
+    if (monthly <= 0) {
+      setLocalEdit({
+        ...localEdit,
+        priceBDT: 0,
+        yearlyPriceBDT: 0,
+        yearlyDiscountPercent: 0,
+      });
+    } else {
+      const discount = (localEdit.yearlyDiscountPercent && localEdit.yearlyDiscountPercent > 0)
+        ? localEdit.yearlyDiscountPercent
+        : 17;
+      const yearly = calcYearlyFromDiscount(monthly, discount);
+      setLocalEdit({
+        ...localEdit,
+        priceBDT: monthly,
+        yearlyPriceBDT: yearly,
+        yearlyDiscountPercent: discount,
+      });
+    }
+  };
+
+  const handleEditYearlyPriceChange = (newYearly: number) => {
+    if (!localEdit) return;
+    const yearly = Math.max(0, newYearly);
+    const discount = localEdit.priceBDT > 0
+      ? calcDiscountFromYearly(localEdit.priceBDT, yearly)
+      : (localEdit.yearlyDiscountPercent ?? 0);
+    setLocalEdit({
+      ...localEdit,
+      yearlyPriceBDT: yearly,
+      yearlyDiscountPercent: discount,
+    });
+  };
+
+  const handleEditDiscountPercentChange = (val: number) => {
+    if (!localEdit) return;
+    const safeDiscount = Math.max(0, Math.min(100, val));
+    const yearly = localEdit.priceBDT > 0
+      ? calcYearlyFromDiscount(localEdit.priceBDT, safeDiscount)
+      : (localEdit.yearlyPriceBDT ?? 0);
+    setLocalEdit({
+      ...localEdit,
+      yearlyPriceBDT: yearly,
+      yearlyDiscountPercent: safeDiscount,
+    });
+  };
+
+  const handleEditTwoMonthsFree = () => {
+    if (!localEdit || localEdit.priceBDT <= 0) return;
+    const freePrice = localEdit.priceBDT * 10;
+    const discount = calcDiscountFromYearly(localEdit.priceBDT, freePrice);
+    setLocalEdit({
+      ...localEdit,
+      yearlyPriceBDT: freePrice,
+      yearlyDiscountPercent: discount,
+    });
+  };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +197,8 @@ export function PlanModals({
         nameBn: nameBn || name,
         tagline,
         priceBDT: Number(priceBDT),
-        yearlyPriceBDT: Number(yearlyPriceBDT || priceBDT * 10),
-        yearlyDiscountPercent: 17,
+        yearlyPriceBDT: Number(yearlyPriceBDT),
+        yearlyDiscountPercent: Number(yearlyDiscountPercent),
         billingPeriod,
         messageLimit: Number(messageLimit),
         catalogLimit: Number(catalogLimit),
@@ -103,6 +219,7 @@ export function PlanModals({
       setTagline("");
       setPriceBDT(0);
       setYearlyPriceBDT(0);
+      setYearlyDiscountPercent(17);
       setBillingPeriod("both");
       setMessageLimit(200);
       setCatalogLimit(250);
@@ -158,59 +275,81 @@ export function PlanModals({
                 />
               </div>
 
-              {/* Monthly Price & Yearly Price */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block font-bold text-text mb-1">
-                    Monthly Price (৳/mo)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={localEdit.priceBDT}
-                    onChange={(e) => {
-                      const newMonthly = Number(e.target.value);
-                      setLocalEdit({
-                        ...localEdit,
-                        priceBDT: newMonthly,
-                      });
-                    }}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
-                  />
+              {/* Monthly Price, Yearly Price & Save % */}
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="block font-bold text-text mb-1">
+                      Monthly Price (৳/mo)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={localEdit.priceBDT}
+                      onChange={(e) => handleEditMonthlyChange(Number(e.target.value))}
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-bold text-text">
+                        Yearly Price (৳/yr)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleEditTwoMonthsFree}
+                        className="text-[10.5px] text-signal font-semibold hover:underline cursor-pointer"
+                        title="Set 2 months free (Monthly × 10)"
+                      >
+                        2 mo free
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      value={localEdit.yearlyPriceBDT ?? 0}
+                      onChange={(e) => handleEditYearlyPriceChange(Number(e.target.value))}
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-bold text-text">
+                        Yearly Save %
+                      </label>
+                      <span className="text-[10.5px] text-text-3 font-mono">
+                        {localEdit.yearlyDiscountPercent ?? 0}% off
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={localEdit.yearlyDiscountPercent ?? 0}
+                        onChange={(e) => handleEditDiscountPercentChange(Number(e.target.value))}
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px]"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[12px] font-mono pointer-events-none">
+                        %
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-text">
-                      Yearly Price (৳/yr)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const autoYearly = localEdit.priceBDT * 10;
-                        setLocalEdit({
-                          ...localEdit,
-                          yearlyPriceBDT: autoYearly,
-                        });
-                      }}
-                      className="text-[10.5px] text-signal font-semibold hover:underline cursor-pointer"
-                      title="Set 2 months free (Monthly × 10)"
-                    >
-                      2 mo free
-                    </button>
+                {localEdit.priceBDT > 0 && (localEdit.yearlyPriceBDT ?? 0) > 0 && (
+                  <div className="text-[11.5px] text-signal bg-signal/[0.07] border border-signal/20 rounded-xl px-3 py-1.5 font-mono flex items-center justify-between">
+                    <span>
+                      ৳{(localEdit.yearlyPriceBDT ?? 0).toLocaleString()}/yr ≈ ৳{Math.round((localEdit.yearlyPriceBDT ?? 0) / 12).toLocaleString()}/mo
+                    </span>
+                    <span className="font-bold">
+                      Save {localEdit.yearlyDiscountPercent ?? 0}% (৳{(localEdit.priceBDT * 12 - (localEdit.yearlyPriceBDT ?? 0)).toLocaleString()} saved)
+                    </span>
                   </div>
-                  <input
-                    type="number"
-                    value={localEdit.yearlyPriceBDT ?? localEdit.priceBDT * 10}
-                    onChange={(e) =>
-                      setLocalEdit({
-                        ...localEdit,
-                        yearlyPriceBDT: Number(e.target.value),
-                      })
-                    }
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
-                  />
-                </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
@@ -426,45 +565,81 @@ export function PlanModals({
                 />
               </div>
 
-              {/* Monthly & Yearly Price Inputs */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block font-bold text-text mb-1">
-                    Monthly Price (৳/mo)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={priceBDT}
-                    onChange={(e) => {
-                      const m = Number(e.target.value);
-                      setPriceBDT(m);
-                      setYearlyPriceBDT(m * 10);
-                    }}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
-                  />
+              {/* Monthly Price, Yearly Price & Save % */}
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="block font-bold text-text mb-1">
+                      Monthly Price (৳/mo)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={priceBDT}
+                      onChange={(e) => handleMonthlyChange(Number(e.target.value))}
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-bold text-text">
+                        Yearly Price (৳/yr)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleApplyTwoMonthsFree}
+                        className="text-[10.5px] text-signal font-semibold hover:underline cursor-pointer"
+                        title="Set 2 months free (Monthly × 10)"
+                      >
+                        2 mo free
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      value={yearlyPriceBDT}
+                      onChange={(e) => handleYearlyPriceChange(Number(e.target.value))}
+                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-bold text-text">
+                        Yearly Save %
+                      </label>
+                      <span className="text-[10.5px] text-text-3 font-mono">
+                        {yearlyDiscountPercent}% off
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={yearlyDiscountPercent}
+                        onChange={(e) => handleDiscountPercentChange(Number(e.target.value))}
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px]"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[12px] font-mono pointer-events-none">
+                        %
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-text">
-                      Yearly Price (৳/yr)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setYearlyPriceBDT(priceBDT * 10)}
-                      className="text-[10.5px] text-signal font-semibold hover:underline cursor-pointer"
-                    >
-                      2 mo free
-                    </button>
+                {priceBDT > 0 && yearlyPriceBDT > 0 && (
+                  <div className="text-[11.5px] text-signal bg-signal/[0.07] border border-signal/20 rounded-xl px-3 py-1.5 font-mono flex items-center justify-between">
+                    <span>
+                      ৳{yearlyPriceBDT.toLocaleString()}/yr ≈ ৳{Math.round(yearlyPriceBDT / 12).toLocaleString()}/mo
+                    </span>
+                    <span className="font-bold">
+                      Save {yearlyDiscountPercent}% (৳{(priceBDT * 12 - yearlyPriceBDT).toLocaleString()} saved)
+                    </span>
                   </div>
-                  <input
-                    type="number"
-                    value={yearlyPriceBDT}
-                    onChange={(e) => setYearlyPriceBDT(Number(e.target.value))}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
-                  />
-                </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">

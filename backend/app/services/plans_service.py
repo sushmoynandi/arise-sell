@@ -130,10 +130,29 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
     plan_id = data.get("id") or f"plan-{int(time.time() * 1000)}"
     price_bdt = float(data.get("priceBDT", 0))
     yearly_raw = data.get("yearlyPriceBDT")
-    yearly_price = float(yearly_raw) if yearly_raw is not None else float(price_bdt * 10)
-    yearly_discount = data.get("yearlyDiscountPercent")
-    if yearly_discount is None and price_bdt > 0:
-        yearly_discount = round(((price_bdt * 12 - yearly_price) / (price_bdt * 12)) * 100)
+    discount_raw = data.get("yearlyDiscountPercent")
+
+    yearly_discount = 0
+    yearly_price = 0.0
+
+    if price_bdt > 0:
+        annual_full = price_bdt * 12
+        # Case A: Admin provided discount percent, but yearlyPriceBDT is missing or 0
+        if discount_raw is not None and int(discount_raw) > 0 and (yearly_raw is None or float(yearly_raw) == 0):
+            yearly_discount = max(0, min(100, int(discount_raw)))
+            yearly_price = round(annual_full * (1 - yearly_discount / 100))
+        # Case B: Admin provided yearly price
+        elif yearly_raw is not None and float(yearly_raw) > 0:
+            yearly_price = float(yearly_raw)
+            yearly_discount = max(0, min(100, round(((annual_full - yearly_price) / annual_full) * 100)))
+        # Case C: Admin provided discount percent (e.g. 0%)
+        elif discount_raw is not None:
+            yearly_discount = max(0, min(100, int(discount_raw)))
+            yearly_price = round(annual_full * (1 - yearly_discount / 100))
+        # Case D: Default to 10 months (2 mo free, 17% savings)
+        else:
+            yearly_price = price_bdt * 10
+            yearly_discount = 17
 
     new_plan: dict[str, Any] = {
         "id": plan_id,
