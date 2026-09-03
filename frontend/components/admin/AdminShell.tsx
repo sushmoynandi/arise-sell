@@ -225,10 +225,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [telemetryDropdownOpen, setTelemetryDropdownOpen] = useState(false);
 
   useEffect(() => {
+    if (pathname === "/admin/login") return;
     if (!loading && (!isAuthenticated || !user?.is_superadmin)) {
       router.push(`/admin/login?from=${encodeURIComponent(pathname)}`);
     }
   }, [loading, isAuthenticated, user, router, pathname]);
+
+  // The login page manages its own dedicated full-page presentation
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   const currentNav = ADMIN_NAV.flatMap((g) => g.items).find(
     (i) => i.href === pathname,

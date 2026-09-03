@@ -8,7 +8,20 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { adminLogin, adminVerify2FA } = useAuth();
+  const {
+    adminLogin,
+    adminVerify2FA,
+    user,
+    loading: authLoading,
+    isAuthenticated,
+  } = useAuth();
+
+  // If already authenticated as superadmin, redirect to /admin immediately
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user?.is_superadmin) {
+      window.location.replace("/admin");
+    }
+  }, [authLoading, isAuthenticated, user]);
 
   // Step 1: Email & Password; Step 2: 2FA TOTP; Step 3: Verified Redirect
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -46,7 +59,9 @@ export default function AdminLoginPage() {
           setStep(2);
         } else {
           setStep(3);
-          setTimeout(() => router.push("/admin"), 800);
+          setTimeout(() => {
+            window.location.replace("/admin");
+          }, 300);
         }
       } else {
         const nextAttempt = attempts + 1;
@@ -94,7 +109,9 @@ export default function AdminLoginPage() {
       const res = await adminVerify2FA(email.trim(), codeString);
       if (res.success) {
         setStep(3);
-        setTimeout(() => router.push("/admin"), 800);
+        setTimeout(() => {
+          window.location.replace("/admin");
+        }, 300);
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
@@ -401,6 +418,14 @@ export default function AdminLoginPage() {
               <p className="text-[11.5px] text-text-3 font-mono">
                 Redirecting to /admin...
               </p>
+              <div className="pt-2">
+                <a
+                  href="/admin"
+                  className="text-xs font-semibold text-signal hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  Enter Admin Control Center →
+                </a>
+              </div>
             </div>
           )}
         </div>
