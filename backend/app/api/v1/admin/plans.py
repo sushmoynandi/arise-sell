@@ -43,7 +43,7 @@ class PlanRequest(BaseModel):
     monthlySubscribers: int = 0
     yearlySubscribers: int = 0
     status: str = "active"
-    showOnHome: bool = True
+    showOnHome: bool = False
 
 
 class FestivalOfferRequest(BaseModel):

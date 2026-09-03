@@ -173,7 +173,7 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
         "popular": bool(data.get("popular", False)),
         "activeMerchants": int(data.get("activeMerchants", 0)),
         "status": data.get("status", "active"),
-        "showOnHome": bool(data.get("showOnHome", True)),
+        "showOnHome": bool(data.get("showOnHome", False)),
     }
 
     # Save to PostgreSQL

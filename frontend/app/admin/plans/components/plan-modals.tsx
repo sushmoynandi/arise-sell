@@ -73,7 +73,6 @@ export function PlanModals({
   const [catalogLimit, setCatalogLimit] = useState<string>("");
   const [courierChannels, setCourierChannels] = useState<string>("");
   const [badge, setBadge] = useState("");
-  const [showOnHome, setShowOnHome] = useState<boolean>(true);
   const [featuresStr, setFeaturesStr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -234,7 +233,7 @@ export function PlanModals({
         popular: false,
         activeMerchants: 0,
         status: "active",
-        showOnHome,
+        showOnHome: false,
         features:
           parsedFeatures.length > 0
             ? parsedFeatures
@@ -253,7 +252,6 @@ export function PlanModals({
       setCatalogLimit("");
       setCourierChannels("");
       setBadge("");
-      setShowOnHome(true);
       setFeaturesStr("");
       onCloseCreate();
     } finally {
@@ -508,7 +506,7 @@ export function PlanModals({
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={localEdit.showOnHome ?? true}
+                    checked={Boolean(localEdit.showOnHome)}
                     onChange={(e) =>
                       setLocalEdit({
                         ...localEdit,
@@ -815,20 +813,6 @@ export function PlanModals({
                   placeholder="e.g. 200 Messages / month (Comment + Inbox)&#10;WhatsApp & Messenger integration"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none text-[12.5px]"
                 />
-              </div>
-
-              <div className="pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showOnHome}
-                    onChange={(e) => setShowOnHome(e.target.checked)}
-                    className="rounded border-line text-signal focus:ring-signal size-4 cursor-pointer"
-                  />
-                  <span className="text-[13px] text-text font-medium">
-                    Show on Public Homepage (সর্বোচ্চ ৪টি হোমপেজে প্রদর্শিত হবে)
-                  </span>
-                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
