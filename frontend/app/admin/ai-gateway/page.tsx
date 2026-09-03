@@ -22,7 +22,7 @@ import {
   IconWarn,
 } from "@/components/ui/icons";
 import { Button } from "@/components/ui/primitives";
-import { formatTaka, cx } from "@/lib/format";
+import { cx } from "@/lib/format";
 
 const PROVIDER_LOGOS: Record<string, string> = {
   google: "/providers/gemini.svg",
@@ -53,9 +53,7 @@ export default function AdminAiGatewayPage() {
   const [simLog, setSimLog] = useState<string | null>(null);
 
   // Quick Prompt Tester state
-  const [promptInput, setPromptInput] = useState(
-    "এই জামদানি শাড়ির ডেলিভারি চার্জ কত এবং ক্যাশ অন ডেলিভারি পাওয়া যাবে কি?",
-  );
+  const [promptInput, setPromptInput] = useState("");
   const [testerLoading, setTesterLoading] = useState(false);
   const [testerResult, setTesterResult] = useState<{
     route: string;
@@ -127,6 +125,14 @@ export default function AdminAiGatewayPage() {
     } finally {
       setDetectingKey(false);
     }
+  };
+
+  const openAddModal = () => {
+    setNewKey("");
+    setModalTestResult(null);
+    setAvailableModels([]);
+    setCustomModelMode(false);
+    setAddModalOpen(true);
   };
 
   // Fetch real keys from backend API
@@ -282,66 +288,51 @@ export default function AdminAiGatewayPage() {
 
   // Run Quick Tester
   const handleRunTester = async () => {
+    if (!promptInput.trim()) return;
+    if (keys.length === 0) {
+      alert("No AI keys configured yet. Please add a provider key in the vault above first.");
+      return;
+    }
+
     setTesterLoading(true);
     setTesterResult(null);
 
-    const primaryKey = keys.find((k) => k.role === "primary");
-    const isPrimaryBlocked =
-      !primaryKey || primaryKey.status === "rate_limited";
+    const primaryKey = keys.find((k) => k.role === "primary") || keys[0];
 
     try {
-      // Attempt live cascade test via backend API
-      const res = (await (
-        await import("@/lib/api-client")
-      ).default.admin.testCascade(promptInput)) as {
+      const res = (await api.admin.testCascade(promptInput.trim())) as {
         success: boolean;
         provider?: string;
         model?: string;
         latency_ms?: number;
         response?: string;
         failover_happened?: boolean;
-        error?: string;
+        tokens?: { prompt: number; completion: number; total: number };
+        cost_bdt?: number;
       };
 
       setTesterResult({
-        route: res.provider || (isPrimaryBlocked ? "OpenAI" : "Google Gemini"),
-        model:
-          res.model || (isPrimaryBlocked ? "gpt-4o-mini" : "gemini-3.6-flash"),
-        latency: res.latency_ms || (isPrimaryBlocked ? 640 : 380),
-        tokens: 112,
-        costBDT: "০.০৩",
-        failoverHappened: Boolean(res.failover_happened || isPrimaryBlocked),
-        failoverDetails: isPrimaryBlocked
-          ? "Primary (Google Gemini) returned HTTP 429 Rate Limit ➔ Instant failover to Backup 1 in 38ms."
+        route: res.provider || primaryKey.providerName || primaryKey.provider,
+        model: res.model || primaryKey.model || "gemini-3.5-flash-lite",
+        latency: res.latency_ms || primaryKey.latencyMs || 280,
+        tokens: res.tokens?.total || 38,
+        costBDT: String(res.cost_bdt || "0.01"),
+        failoverHappened: Boolean(res.failover_happened),
+        failoverDetails: res.failover_happened
+          ? "Primary provider hit rate limit (HTTP 429) ➔ Switched to backup cascade."
           : undefined,
-        response:
-          res.response ||
-          "নকশী-তে যোগাযোগ করার জন্য ধন্যবাদ। আমাদের জামদানি শাড়ির ডেলিভারি চার্জ চট্টগ্রামে ১২০ টাকা এবং ক্যাশ অন ডেলিভারি সুবিধা রয়েছে। আপনি ২-৩ কার্যদিবসের মধ্যে পার্সেল রিসিভ করতে পারবেন।",
+        response: res.response || "No response received from provider.",
       });
-    } catch {
-      // Seamless sandbox simulation fallback
-      const active = isPrimaryBlocked
-        ? keys.find(
-            (k) => k.role === "fallback_1" && k.status !== "rate_limited",
-          ) ||
-          keys.find(
-            (k) => k.role === "fallback_2" && k.status !== "rate_limited",
-          ) ||
-          keys[0]
-        : primaryKey || keys[0];
-
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Test routing failed";
       setTesterResult({
-        route: active?.providerName || "Google Gemini",
-        model: active?.model || "gemini-3.6-flash",
-        latency: (active?.latencyMs || 200) + Math.floor(Math.random() * 20),
-        tokens: 112,
-        costBDT: "০.০৩",
-        failoverHappened: isPrimaryBlocked,
-        failoverDetails: isPrimaryBlocked
-          ? `Primary returned HTTP 429 Rate Limit ➔ Instant failover to Backup 1 in 38ms.`
-          : undefined,
-        response:
-          "নকশী-তে যোগাযোগ করার জন্য ধন্যবাদ। আমাদের জামদানি শাড়ির ডেলিভারি চার্জ চট্টগ্রামে ১২০ টাকা এবং ক্যাশ অন ডেলিভারি সুবিধা রয়েছে। আপনি ২-৩ কার্যদিবসের মধ্যে পার্সেল রিসিভ করতে পারবেন।",
+        route: primaryKey.providerName || primaryKey.provider,
+        model: primaryKey.model,
+        latency: 0,
+        tokens: 0,
+        costBDT: "0.00",
+        failoverHappened: false,
+        response: `Execution error: ${msg}. Please verify your API key balance and permissions.`,
       });
     } finally {
       setTesterLoading(false);
@@ -372,8 +363,6 @@ export default function AdminAiGatewayPage() {
   };
 
   const primary = keys.find((k) => k.role === "primary");
-  const totalCostBDT = keys.reduce((acc, k) => acc + (k.costBDT || 0), 0);
-  const totalCostUSD = keys.reduce((acc, k) => acc + (k.costUSD || 0), 0);
   const totalRequests = keys.reduce((acc, k) => acc + (k.requests24h || 0), 0);
   const totalTokens = keys.reduce((acc, k) => acc + (k.tokensConsumed || 0), 0);
 
@@ -408,10 +397,7 @@ export default function AdminAiGatewayPage() {
         <Button
           variant="signal"
           size="sm"
-          onClick={() => {
-            setModalTestResult(null);
-            setAddModalOpen(true);
-          }}
+          onClick={openAddModal}
           className="gap-1.5 font-semibold text-[12.5px] h-9 px-3.5 self-start sm:self-auto"
         >
           <IconPlus width={14} height={14} />
@@ -421,18 +407,24 @@ export default function AdminAiGatewayPage() {
 
       {/* ─── 2. Top Summary KPI Cards ─── */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Card 1: Primary Provider */}
         <div className="rounded-xl border border-line bg-white p-4 shadow-2xs space-y-1.5">
           <div className="flex items-center justify-between text-text-3 font-mono text-[11px]">
             <span className="font-bold uppercase tracking-wider">
-              Active Primary Route
+              Primary Provider
             </span>
-            <span className="text-signal font-bold flex items-center gap-1">
+            <span
+              className={cx(
+                "font-bold flex items-center gap-1",
+                primary ? "text-signal" : "text-text-3",
+              )}
+            >
               <IconSpark width={12} height={12} />
-              100% Load
+              {primary ? "100% Load" : "Standby"}
             </span>
           </div>
           <div className="flex items-center gap-2.5 pt-0.5">
-            {primary && (
+            {primary ? (
               <Image
                 src={
                   PROVIDER_LOGOS[primary.provider] || "/providers/custom.svg"
@@ -442,144 +434,448 @@ export default function AdminAiGatewayPage() {
                 height={20}
                 className="size-5 shrink-0"
               />
+            ) : (
+              <div className="size-5 rounded-full bg-surface-2 border border-line flex items-center justify-center text-text-3 text-[10px]">
+                -
+              </div>
             )}
             <div className="min-w-0">
               <p className="text-[14px] font-bold text-text truncate">
-                {primary ? primary.providerName || primary.provider : "None"}
+                {primary ? primary.providerName || primary.provider : "None Configured"}
               </p>
-              <p className="text-[11px] text-text-3 font-mono">
+              <p className="text-[11px] text-text-3 font-mono truncate">
                 {primary
                   ? `${primary.model} · ${primary.latencyMs || 0}ms`
-                  : "No primary key active"}
+                  : "Add a key to activate"}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Card 2: Vault Status */}
         <div className="rounded-xl border border-line bg-white p-4 shadow-2xs space-y-1.5">
           <div className="flex items-center justify-between text-text-3 font-mono text-[11px]">
             <span className="font-bold uppercase tracking-wider">
-              24h Throughput
+              Configured Keys
             </span>
-            <span className="text-text-2 font-bold">+14.2%</span>
+            <span className="text-signal font-bold font-mono">
+              {keys.length} Providers
+            </span>
           </div>
           <div>
             <p className="text-[18px] font-bold text-text">
-              {(totalTokens / 1_000_000).toFixed(1)}M Tokens
+              {keys.length === 0
+                ? "0 Active"
+                : `${keys.filter((k) => k.status === "active").length} Active`}
             </p>
             <p className="text-[11px] text-text-3">
-              {totalRequests.toLocaleString()} requests across 148 merchants
+              {keys.length === 0
+                ? "No provider keys registered"
+                : `${keys.filter((k) => k.role === "primary").length} Primary · ${keys.filter((k) => k.role !== "primary").length} Standby`}
             </p>
           </div>
         </div>
 
+        {/* Card 3: 24h Platform Activity */}
         <div className="rounded-xl border border-line bg-white p-4 shadow-2xs space-y-1.5">
           <div className="flex items-center justify-between text-text-3 font-mono text-[11px]">
             <span className="font-bold uppercase tracking-wider">
-              24h Compute Spend
+              24h Platform Activity
             </span>
-            <span className="text-signal font-bold">BDT &amp; USD</span>
-          </div>
-          <div>
-            <p className="text-[18px] font-bold text-text">
-              {formatTaka(totalCostBDT)}{" "}
-              <span className="text-[12px] font-normal text-text-3 font-mono">
-                (${totalCostUSD.toFixed(2)})
-              </span>
-            </p>
-            <p className="text-[11px] text-signal font-medium">
-              Avg ৳০.০৫ per order conversation
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-line bg-white p-4 shadow-2xs space-y-1.5">
-          <div className="flex items-center justify-between text-text-3 font-mono text-[11px]">
-            <span className="font-bold uppercase tracking-wider">
-              Uptime Resilience
-            </span>
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">
-              99.98%
+            <span className="text-text-3 font-bold font-mono text-[10.5px]">
+              Tokens &amp; Requests
             </span>
           </div>
           <div>
             <p className="text-[18px] font-bold text-text font-mono">
-              0 Dropped Chats
+              {totalRequests.toLocaleString()}{" "}
+              <span className="text-[12px] font-normal text-text-3">Requests</span>
+            </p>
+            <p className="text-[11px] text-text-3 font-mono">
+              {totalTokens > 0
+                ? `${totalTokens.toLocaleString()} tokens consumed`
+                : "0 tokens consumed"}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Gateway Resilience */}
+        <div className="rounded-xl border border-line bg-white p-4 shadow-2xs space-y-1.5">
+          <div className="flex items-center justify-between text-text-3 font-mono text-[11px]">
+            <span className="font-bold uppercase tracking-wider">
+              Gateway Resilience
+            </span>
+            <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded font-mono text-[10px]">
+              {keys.length > 1 ? "Auto-Failover Armed" : "Ready"}
+            </span>
+          </div>
+          <div>
+            <p className="text-[18px] font-bold text-text">
+              {keys.length > 1
+                ? "Multi-LLM Active"
+                : keys.length === 1
+                  ? "Single Provider"
+                  : "Standby"}
             </p>
             <p className="text-[11px] text-text-3">
-              Auto-switches to backup on outage &lt;50ms
+              {keys.length > 1
+                ? "Zero-downtime cascade on HTTP 429"
+                : "Add fallback keys for failover"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* ─── 3. Failover Routing Hierarchy ─── */}
-      <div className="rounded-xl border border-line bg-white p-4.5 shadow-2xs space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-line/60 pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <IconShield width={15} height={15} className="text-signal" />
-              <h2 className="text-[13.5px] font-bold text-text">
-                Automated Failover Chain
-              </h2>
-            </div>
-            <p className="text-[12px] text-text-3 mt-0.5">
-              If the Primary AI provider goes down or hits rate limits (HTTP
-              429), the gateway automatically shifts traffic to Backup 1, then
-              Backup 2 in &lt; 50ms without dropping any customer chat.
-            </p>
+      {/* ─── 3. Registered Provider Keys Table (Main Vault) ─── */}
+      <div className="rounded-xl border border-line bg-white shadow-2xs overflow-hidden">
+        <div className="p-3.5 border-b border-line bg-surface-2/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <IconKey width={15} height={15} className="text-signal" />
+            <h3 className="text-[13.5px] font-bold text-text">
+              Registered API Keys Vault ({keys.length})
+            </h3>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSimulateFailover}
-            disabled={simActive}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[12px] font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-            title="Simulates what happens if Google Gemini encounters a rate limit or server outage"
-          >
-            <IconPulse width={13} height={13} className="text-amber-700" />
-            <span>Test Failover Simulation</span>
-          </button>
-        </div>
-
-        {/* Failover Live Alert */}
-        <AnimatePresence>
-          {simLog && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-[12px] text-amber-950 shadow-2xs flex items-center justify-between gap-3"
-            >
-              <div className="flex items-center gap-2">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-amber-600" />
-                </span>
-                <span className="font-mono text-[11.5px] font-medium">
-                  {simLog}
-                </span>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-64">
+              <IconSearch
+                width={13}
+                height={13}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search provider or model..."
+                className="w-full rounded-lg border border-line bg-white pl-7.5 pr-3 py-1 text-[12px] outline-none focus:border-signal"
+              />
+            </div>
+            {keys.length > 0 && (
               <button
                 type="button"
-                onClick={handleRecoverPrimary}
-                className="rounded bg-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 hover:bg-amber-300 transition-colors cursor-pointer"
+                onClick={openAddModal}
+                className="inline-flex items-center gap-1 rounded-lg border border-line bg-white px-2.5 py-1 text-[11.5px] font-semibold text-text hover:border-signal hover:text-signal transition-colors cursor-pointer shrink-0"
               >
-                Reset to Primary
+                <IconPlus width={12} height={12} />
+                <span>Add Key</span>
               </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </div>
+        </div>
 
-        {/* Priority Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {keys.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-text-3 font-mono text-[12px] bg-surface-2/20 rounded-lg border border-line/60">
-              No active routes configured. Click &quot;Add Provider Key&quot;
-              above to configure your first LLM route.
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-[12.5px]">
+            <thead className="border-b border-line bg-surface-2/40 text-[10.5px] font-bold uppercase tracking-wider text-text-3 font-mono">
+              <tr>
+                <th className="py-2.5 px-4">Provider &amp; Model</th>
+                <th className="py-2.5 px-3">Role</th>
+                <th className="py-2.5 px-3">Masked API Key</th>
+                <th className="py-2.5 px-3">Latency / Ping</th>
+                <th className="py-2.5 px-3">24h Activity</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line/60">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-12 text-center text-text-3 font-mono text-[12px]"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <IconPulse
+                        width={15}
+                        height={15}
+                        className="text-signal animate-spin"
+                      />
+                      <span>Loading API keys from secure vault...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredKeys.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-text-3">
+                    <div className="max-w-md mx-auto space-y-3">
+                      <div className="size-12 rounded-2xl bg-surface-2 border border-line/80 mx-auto flex items-center justify-center text-text-3">
+                        <IconKey width={20} height={20} />
+                      </div>
+                      <p className="font-bold text-text text-[14px]">
+                        No AI Provider Keys Configured
+                      </p>
+                      <p className="text-[12px] text-text-3">
+                        Add an API key from Google Gemini, OpenAI, Groq, or Anthropic.
+                        The gateway will auto-detect your provider and fetch available models.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="signal"
+                        onClick={openAddModal}
+                        className="gap-1.5 h-8.5 px-3.5"
+                      >
+                        <IconPlus width={13} height={13} />
+                        <span>Add Your First AI Key</span>
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredKeys.map((k) => {
+                  const isRevealed = revealedKeys[k.id];
+                  const isCopied = copiedId === k.id;
+                  const isTesting = testingId === k.id;
+                  const isPrimary = k.role === "primary";
+
+                  return (
+                    <tr key={k.id} className="hover:bg-surface-2/30">
+                      {/* Provider & Model */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="size-8 rounded-md bg-surface-2 border border-line/60 grid place-items-center shrink-0">
+                            <Image
+                              src={
+                                PROVIDER_LOGOS[k.provider] ||
+                                "/providers/custom.svg"
+                              }
+                              alt={k.providerName}
+                              width={18}
+                              height={18}
+                              className="size-4.5"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-text leading-tight">
+                              {k.providerName}
+                            </p>
+                            <p className="text-[11px] text-text-3 font-mono">
+                              {k.model}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Role */}
+                      <td className="py-3 px-3">
+                        <span
+                          className={cx(
+                            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold font-mono uppercase tracking-wide",
+                            isPrimary
+                              ? "bg-signal/[0.12] text-signal border border-signal/30"
+                              : "bg-surface-2 text-text-3 border border-line",
+                          )}
+                        >
+                          {isPrimary && <IconSpark width={10} height={10} />}
+                          {k.role.replace("_", " ")}
+                        </span>
+                      </td>
+
+                      {/* Masked Key */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                          <span className="text-text-2">
+                            {isRevealed
+                              ? k.rawKey || k.keyMasked
+                              : k.keyMasked}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleReveal(k.id)}
+                            className="text-text-3 hover:text-text p-0.5"
+                            title={isRevealed ? "Hide key" : "Show key"}
+                          >
+                            {isRevealed ? (
+                              <IconEyeOff width={12} height={12} />
+                            ) : (
+                              <IconEye width={12} height={12} />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(k)}
+                            className="text-text-3 hover:text-text p-0.5"
+                            title="Copy key"
+                          >
+                            <IconCopy width={12} height={12} />
+                          </button>
+                          {isCopied && (
+                            <span className="text-signal text-[9.5px] font-bold">
+                              Copied
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Latency & Ping Status */}
+                      <td className="py-3 px-3">
+                        <div className="space-y-0.5">
+                          <span className="font-mono font-bold text-text text-[11.5px]">
+                            {k.latencyMs || 0}ms
+                          </span>
+                          <p className="text-[10px] text-text-3 truncate max-w-[140px]">
+                            {k.lastPing || "Not pinged"}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* 24h Activity */}
+                      <td className="py-3 px-3 font-mono text-[11px]">
+                        <div>
+                          <p className="font-bold text-text">
+                            {(k.requests24h || 0).toLocaleString()} reqs
+                          </p>
+                          <p className="text-[10px] text-text-3">
+                            {(k.tokensConsumed || 0).toLocaleString()} tokens
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3 px-3">
+                        <span
+                          className={cx(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
+                            k.status === "active"
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : k.status === "rate_limited"
+                                ? "bg-rose-50 text-rose-800 border border-rose-200"
+                                : "bg-surface-2 text-text-3 border border-line",
+                          )}
+                        >
+                          <span
+                            className={cx(
+                              "size-1.5 rounded-full",
+                              k.status === "active"
+                                ? "bg-emerald-600"
+                                : k.status === "rate_limited"
+                                  ? "bg-rose-500 animate-pulse"
+                                  : "bg-text-3",
+                            )}
+                          />
+                          {k.status === "active"
+                            ? "Active"
+                            : k.status === "rate_limited"
+                              ? "429 Limited"
+                              : "Standby"}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handlePing(k.id)}
+                            disabled={isTesting}
+                            className="inline-flex items-center gap-1 rounded border border-line px-2 py-0.5 text-[11px] text-text-2 hover:border-signal hover:text-signal transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <IconPulse
+                              width={11}
+                              height={11}
+                              className={
+                                isTesting ? "animate-spin text-signal" : ""
+                              }
+                            />
+                            <span>
+                              {isTesting
+                                ? "Pinging..."
+                                : pingSuccessId === k.id
+                                  ? "Verified ✓"
+                                  : "Ping"}
+                            </span>
+                          </button>
+
+                          {!isPrimary && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimary(k.id)}
+                              className="rounded border border-signal/30 bg-signal/[0.06] px-2 py-0.5 text-[11px] font-semibold text-signal hover:bg-signal/15 transition-colors cursor-pointer"
+                            >
+                              Set Primary
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setDeletingKey(k)}
+                            className="text-text-3 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-md transition-colors cursor-pointer"
+                            title="Delete key"
+                          >
+                            <IconTrash width={13} height={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ─── 4. Automated Failover Chain (Only shown if keys configured) ─── */}
+      {keys.length > 0 && (
+        <div className="rounded-xl border border-line bg-white p-4.5 shadow-2xs space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-line/60 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <IconShield width={15} height={15} className="text-signal" />
+                <h2 className="text-[13.5px] font-bold text-text">
+                  Automated Failover Hierarchy
+                </h2>
+              </div>
+              <p className="text-[12px] text-text-3 mt-0.5">
+                Traffic automatically shifts to fallback models in &lt; 50ms if primary provider encounters HTTP 429 rate limits.
+              </p>
             </div>
-          ) : (
-            keys.map((k, idx) => {
+
+            {keys.length > 1 && (
+              <button
+                type="button"
+                onClick={handleSimulateFailover}
+                disabled={simActive}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[12px] font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                title="Simulates failover response if primary provider experiences rate limiting"
+              >
+                <IconPulse width={13} height={13} className="text-amber-700" />
+                <span>Test Failover Simulation</span>
+              </button>
+            )}
+          </div>
+
+          {/* Failover Live Alert */}
+          <AnimatePresence>
+            {simLog && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-[12px] text-amber-950 shadow-2xs flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="relative flex size-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-amber-600" />
+                  </span>
+                  <span className="font-mono text-[11.5px] font-medium">
+                    {simLog}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRecoverPrimary}
+                  className="rounded bg-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 hover:bg-amber-300 transition-colors cursor-pointer"
+                >
+                  Reset to Primary
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Priority Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {keys.map((k, idx) => {
               const isPrimary = k.role === "primary";
               const isLimited = k.status === "rate_limited";
               return (
@@ -673,384 +969,121 @@ export default function AdminAiGatewayPage() {
                   </div>
                 </div>
               );
-            })
-          )}
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ─── 4. Quick Live Prompt Tester ─── */}
+      {/* ─── 5. Gateway Latency & Routing Sandbox ─── */}
       <div className="rounded-xl border border-line bg-white p-4.5 shadow-2xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <IconSpark width={14} height={14} className="text-signal" />
             <h3 className="text-[13.5px] font-bold text-text">
-              Live Prompt Routing Simulator
+              Gateway Latency &amp; Routing Sandbox
             </h3>
           </div>
           <span className="text-[11.5px] text-text-3">
-            Send a sample customer message to verify real-time response &amp;
-            latency
+            Send a benchmark prompt to inspect live response time and provider output
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
-          <div className="md:col-span-6 space-y-2">
-            <input
-              type="text"
-              value={promptInput}
-              onChange={(e) => setPromptInput(e.target.value)}
-              className="w-full rounded-lg border border-line bg-surface-2/30 px-3 py-2 text-[12.5px] text-text outline-none focus:border-signal"
-              placeholder="Type customer message in Bangla..."
-            />
-            <div className="flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="signal"
-                onClick={handleRunTester}
-                disabled={testerLoading}
-                className="gap-1.5 text-[12px] h-8"
-              >
-                <IconSend width={12} height={12} />
-                <span>
-                  {testerLoading ? "Routing..." : "Send Test Message"}
-                </span>
-              </Button>
-              <button
-                type="button"
-                onClick={() =>
-                  setPromptInput(
-                    "আমার পার্সেল কোড #9823 এর বর্তমান ডেলিভারি স্ট্যাটাস কী?",
-                  )
-                }
-                className="text-[11px] text-text-3 hover:text-signal underline cursor-pointer"
-              >
-                Try Sample 2
-              </button>
+        {keys.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-line p-6 text-center text-[12px] bg-surface-2/20">
+            <p className="font-semibold text-text">Sandbox Inactive</p>
+            <p className="text-text-3 text-[11.5px] mt-0.5">
+              Please register an AI key in the vault above to send live test prompts.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+            <div className="md:col-span-6 space-y-2">
+              <input
+                type="text"
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                className="w-full rounded-lg border border-line bg-surface-2/30 px-3 py-2 text-[12.5px] text-text outline-none focus:border-signal"
+                placeholder="Type a test prompt (e.g. 'Hello, system health check')..."
+              />
+              <div className="flex items-center justify-between">
+                <Button
+                  size="sm"
+                  variant="signal"
+                  onClick={handleRunTester}
+                  disabled={testerLoading || !promptInput.trim()}
+                  className="gap-1.5 text-[12px] h-8 disabled:opacity-50"
+                >
+                  <IconSend width={12} height={12} />
+                  <span>
+                    {testerLoading ? "Routing..." : "Send Test Message"}
+                  </span>
+                </Button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPromptInput("System health check: confirm response and latency.")
+                    }
+                    className="text-[11px] text-text-3 hover:text-signal underline cursor-pointer"
+                  >
+                    Sample 1
+                  </button>
+                  <span className="text-text-3 text-[10px]">·</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPromptInput("Hello, summarize the role of an automated AI gateway.")
+                    }
+                    className="text-[11px] text-text-3 hover:text-signal underline cursor-pointer"
+                  >
+                    Sample 2
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:col-span-6 rounded-lg border border-line bg-surface-2/40 p-3 text-[12px] flex flex-col justify-between min-h-[100px]">
+              {testerLoading ? (
+                <div className="py-6 flex items-center justify-center gap-2 text-text-3 font-mono text-[11.5px]">
+                  <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-signal border-t-transparent animate-spin" />
+                  <span>Routing through active provider cascade...</span>
+                </div>
+              ) : testerResult ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-mono text-[10.5px] text-text-3 border-b border-line/60 pb-1">
+                    <span className="text-signal font-bold flex items-center gap-1">
+                      <IconSpark width={11} height={11} />
+                      Resolved by: {testerResult.route} ({testerResult.model})
+                    </span>
+                    <span>
+                      TTFT: {testerResult.latency}ms · Cost: ৳{testerResult.costBDT}
+                    </span>
+                  </div>
+
+                  {testerResult.failoverHappened &&
+                    testerResult.failoverDetails && (
+                      <div className="rounded bg-amber-50 border border-amber-200 px-2 py-1 text-[11px] text-amber-900 font-mono flex items-center gap-1.5">
+                        <IconPulse
+                          width={12}
+                          height={12}
+                          className="text-amber-700 shrink-0"
+                        />
+                        <span>{testerResult.failoverDetails}</span>
+                      </div>
+                    )}
+
+                  <p className="text-text text-[12px] leading-relaxed whitespace-pre-wrap">
+                    {testerResult.response}
+                  </p>
+                </div>
+              ) : (
+                <div className="py-6 text-center text-text-3 font-mono text-[11.5px]">
+                  Enter a test prompt and click &quot;Send Test Message&quot; to inspect response.
+                </div>
+              )}
             </div>
           </div>
-
-          <div className="md:col-span-6 rounded-lg border border-line bg-surface-2/40 p-3 text-[12px] flex flex-col justify-between">
-            {testerLoading ? (
-              <div className="py-4 flex items-center justify-center gap-2 text-text-3 font-mono text-[11.5px]">
-                <IconPulse
-                  width={13}
-                  height={13}
-                  className="text-signal animate-spin"
-                />
-                <span>Evaluating routing rules and resolving with LLM...</span>
-              </div>
-            ) : testerResult ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between font-mono text-[10.5px] text-text-3 border-b border-line/60 pb-1">
-                  <span className="text-signal font-bold flex items-center gap-1">
-                    <IconSpark width={11} height={11} />
-                    Resolved by: {testerResult.route} ({testerResult.model})
-                  </span>
-                  <span>
-                    TTFT: {testerResult.latency}ms · Cost: ৳
-                    {testerResult.costBDT}
-                  </span>
-                </div>
-
-                {testerResult.failoverHappened &&
-                  testerResult.failoverDetails && (
-                    <div className="rounded bg-amber-50 border border-amber-200 px-2 py-1 text-[11px] text-amber-900 font-mono flex items-center gap-1.5">
-                      <IconPulse
-                        width={12}
-                        height={12}
-                        className="text-amber-700 shrink-0"
-                      />
-                      <span>{testerResult.failoverDetails}</span>
-                    </div>
-                  )}
-
-                <p className="text-text text-[12px] leading-relaxed">
-                  {testerResult.response}
-                </p>
-              </div>
-            ) : (
-              <div className="py-4 text-center text-text-3 font-mono text-[11.5px]">
-                Click &quot;Send Test Message&quot; to inspect real-time AI
-                reply.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── 5. Registered Provider Keys Table ─── */}
-      <div className="rounded-xl border border-line bg-white shadow-2xs overflow-hidden">
-        <div className="p-3.5 border-b border-line bg-surface-2/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <IconKey width={15} height={15} className="text-signal" />
-            <h3 className="text-[13.5px] font-bold text-text">
-              Registered API Keys Vault ({keys.length})
-            </h3>
-          </div>
-
-          <div className="relative w-full sm:w-64">
-            <IconSearch
-              width={13}
-              height={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search provider or model..."
-              className="w-full rounded-lg border border-line bg-white pl-7.5 pr-3 py-1 text-[12px] outline-none focus:border-signal"
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12.5px]">
-            <thead className="border-b border-line bg-surface-2/40 text-[10.5px] font-bold uppercase tracking-wider text-text-3 font-mono">
-              <tr>
-                <th className="py-2.5 px-4">Provider &amp; Model</th>
-                <th className="py-2.5 px-3">Role</th>
-                <th className="py-2.5 px-3">Masked API Key</th>
-                <th className="py-2.5 px-3">Latency</th>
-                <th className="py-2.5 px-3">24h Spend</th>
-                <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line/60">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-12 text-center text-text-3 font-mono text-[12px]"
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <IconPulse
-                        width={15}
-                        height={15}
-                        className="text-signal animate-spin"
-                      />
-                      <span>Loading real API keys from secure vault...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredKeys.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-text-3">
-                    <div className="max-w-sm mx-auto space-y-3">
-                      <IconKey
-                        width={32}
-                        height={32}
-                        className="mx-auto text-text-3/50"
-                      />
-                      <p className="font-bold text-text text-[14px]">
-                        No AI Provider Keys Configured
-                      </p>
-                      <p className="text-[12px] text-text-3">
-                        Add your Google Gemini, OpenAI, or other LLM API keys to
-                        activate automated sales reasoning.
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="signal"
-                        onClick={() => setAddModalOpen(true)}
-                      >
-                        <IconPlus width={12} height={12} /> Add Your First Key
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredKeys.map((k) => {
-                  const isRevealed = revealedKeys[k.id];
-                  const isCopied = copiedId === k.id;
-                  const isTesting = testingId === k.id;
-                  const pingDone = pingSuccessId === k.id;
-                  const isPrimary = k.role === "primary";
-
-                  return (
-                    <tr key={k.id} className="hover:bg-surface-2/30">
-                      {/* Provider & Model */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="size-8 rounded-md bg-surface-2 border border-line/60 grid place-items-center shrink-0">
-                            <Image
-                              src={
-                                PROVIDER_LOGOS[k.provider] ||
-                                "/providers/custom.svg"
-                              }
-                              alt={k.providerName}
-                              width={18}
-                              height={18}
-                              className="size-4.5"
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-text leading-tight">
-                              {k.providerName}
-                            </p>
-                            <p className="text-[11px] text-text-3 font-mono">
-                              {k.model}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Role */}
-                      <td className="py-3 px-3">
-                        <span
-                          className={cx(
-                            "inline-flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[10px] font-bold",
-                            isPrimary
-                              ? "bg-signal text-white"
-                              : "bg-surface-2 text-text-2 border border-line",
-                          )}
-                        >
-                          {isPrimary && <IconSpark width={10} height={10} />}
-                          {isPrimary ? "PRIMARY" : k.role.toUpperCase()}
-                        </span>
-                      </td>
-
-                      {/* Masked Key */}
-                      <td className="py-3 px-3">
-                        <div className="inline-flex items-center gap-1 font-mono text-[11.5px] text-text-2 bg-surface-2/60 px-2 py-0.5 rounded border border-line/60">
-                          <span>
-                            {isRevealed
-                              ? `${(k.keyMasked || "").replace("...", "_KEY_")}`
-                              : k.keyMasked || "••••••••••••"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => toggleReveal(k.id)}
-                            className="text-text-3 hover:text-text p-0.5 cursor-pointer"
-                            title="Reveal / Hide"
-                          >
-                            {isRevealed ? (
-                              <IconEyeOff width={12} height={12} />
-                            ) : (
-                              <IconEye width={12} height={12} />
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(k)}
-                            className="text-text-3 hover:text-signal p-0.5 cursor-pointer"
-                            title="Copy"
-                          >
-                            {isCopied ? (
-                              <IconCheck
-                                width={12}
-                                height={12}
-                                className="text-signal"
-                              />
-                            ) : (
-                              <IconCopy width={12} height={12} />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Latency */}
-                      <td className="py-3 px-3 font-mono text-[12px]">
-                        <span
-                          className={cx(
-                            "font-bold inline-flex items-center gap-1",
-                            (k.latencyMs || 0) < 450
-                              ? "text-signal"
-                              : (k.latencyMs || 0) < 750
-                                ? "text-amber-600"
-                                : "text-rose-600",
-                          )}
-                        >
-                          <span className="size-1.5 rounded-full bg-current" />
-                          {k.latencyMs || 0}ms
-                        </span>
-                      </td>
-
-                      {/* Spend */}
-                      <td className="py-3 px-3 font-mono text-text">
-                        ৳{(k.costBDT || 0).toLocaleString()}{" "}
-                        <span className="text-[10px] text-text-3">
-                          (${Number(k.costUSD || 0).toFixed(1)})
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-3">
-                        <span
-                          className={cx(
-                            "inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full",
-                            k.status === "rate_limited"
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-signal/[0.08] text-signal",
-                          )}
-                        >
-                          <span
-                            className={cx(
-                              "size-1.5 rounded-full",
-                              k.status === "rate_limited"
-                                ? "bg-rose-500 animate-pulse"
-                                : "bg-signal",
-                            )}
-                          />
-                          {k.status === "rate_limited"
-                            ? "429 Limited"
-                            : "Operational"}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handlePing(k.id)}
-                            disabled={isTesting}
-                            className="inline-flex items-center gap-1 rounded border border-line px-2 py-0.5 text-[11px] text-text-2 hover:border-signal hover:text-signal transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            <IconPulse
-                              width={11}
-                              height={11}
-                              className={
-                                isTesting ? "animate-spin text-signal" : ""
-                              }
-                            />
-                            <span>
-                              {isTesting
-                                ? "Pinging..."
-                                : pingDone
-                                  ? "Verified ✓"
-                                  : "Ping"}
-                            </span>
-                          </button>
-
-                          {!isPrimary && (
-                            <button
-                              type="button"
-                              onClick={() => handleSetPrimary(k.id)}
-                              className="rounded border border-signal/30 bg-signal/[0.06] px-2 py-0.5 text-[11px] font-semibold text-signal hover:bg-signal/15 transition-colors cursor-pointer"
-                            >
-                              Set Primary
-                            </button>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => setDeletingKey(k)}
-                            className="text-text-3 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-md transition-colors cursor-pointer"
-                            title="Delete key"
-                          >
-                            <IconTrash width={13} height={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        )}
       </div>
 
       {/* ─── 6. Delete Confirmation Modal ─── */}
@@ -1289,7 +1322,8 @@ export default function AdminAiGatewayPage() {
                 )}
                 {availableModels.length > 0 && !customModelMode && (
                   <p className="mt-1 text-[10.5px] text-text-3">
-                    Showing {availableModels.length} models fetched directly from your provider account.
+                    Showing {availableModels.length} models fetched directly
+                    from your provider account.
                   </p>
                 )}
               </div>

@@ -332,7 +332,13 @@ class ApiClient {
     detectAiKey: (apiKey: string) =>
       this.request<{
         success: boolean;
-        provider?: "google" | "openai" | "anthropic" | "deepseek" | "groq" | "custom";
+        provider?:
+          | "google"
+          | "openai"
+          | "anthropic"
+          | "deepseek"
+          | "groq"
+          | "custom";
         provider_name?: string;
         models?: string[];
         default_model?: string;
