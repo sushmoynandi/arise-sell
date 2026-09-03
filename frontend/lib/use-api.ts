@@ -36,7 +36,7 @@ import {
   LIVE_ACTIVITY_FEED as MOCK_ACTIVITY,
   INITIAL_BACKUPS as MOCK_BACKUPS,
 } from "@/data/admin";
-import type { Thread, Product, Order, PipelineCard, Campaign, CommentRule, CapiEvent } from "@/data/types";
+import type { Thread, Product, Order, PipelineCard, Campaign, CapiEvent } from "@/data/types";
 
 // ==========================================
 // 1. Live Inbox & Threads Hook
@@ -279,7 +279,7 @@ export function useBrain() {
 
   const updatePersona = async (data: typeof MOCK_PERSONA) => {
     try {
-      const res = await api.brain.updatePersona(data);
+      const res = await api.brain.updatePersona({ voice: data.voice, signature: data.signature, reply_window: data.replyWindow, emoji_budget: data.emojiBudget });
       setPersona(res as typeof MOCK_PERSONA);
       return true;
     } catch {

@@ -51,10 +51,10 @@ class ExecutionResult:
 async def _call_gemini_api(prompt: str, system_prompt: str | None, api_key: str) -> tuple[str, str] | None:
     """Call Google Gemini API with automatic model failover."""
     models_to_try = [
+        "gemini-3.6-flash",
+        "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash-exp",
         "gemini-flash-latest",
         "gemini-pro-latest",
     ]

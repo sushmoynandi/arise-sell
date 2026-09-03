@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+node_modules/
 /node_modules
 /.pnp
 .pnp.*
@@ -12,13 +13,24 @@
 
 # testing
 /coverage
+.coverage
+.pytest_cache/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
 
 # next.js
+.next/
 /.next/
 /out/
+out/
 
 # production
 /build
+build/
 
 # misc
 .DS_Store

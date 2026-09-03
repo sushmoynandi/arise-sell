@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         return;
       }
-      const me = (await api.auth.me()) as UserProfile;
+      const me = (await api.auth.me()) as unknown as UserProfile;
       setUser(me);
     } catch {
       // Fallback for demo mode

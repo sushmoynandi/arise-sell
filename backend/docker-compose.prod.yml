@@ -41,7 +41,14 @@ services:
       - redisdata:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_pass_2026}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secure_pass_2026}", "ping"]
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "-a",
+          "${REDIS_PASSWORD:-redis_secure_pass_2026}",
+          "ping",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -101,8 +108,8 @@ services:
 
   frontend:
     build:
-      context: ..
-      dockerfile: Dockerfile.frontend
+      context: ../frontend
+      dockerfile: Dockerfile
     container_name: nextproduct-frontend
     restart: always
     environment:

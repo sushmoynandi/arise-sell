@@ -1,0 +1,74 @@
+services:
+  # ─── PostgreSQL 16 with pgvector extension ───
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: arise-sell-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nextproduct
+      POSTGRES_PASSWORD: nextproduct
+      POSTGRES_DB: nextproduct
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextproduct"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis 7 (Cache, Sessions, Celery Broker) ───
+  redis:
+    image: redis:7-alpine
+    container_name: arise-sell-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── FastAPI Application Server ───
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: arise-sell-backend
+    restart: unless-stopped
+    env_file:
+      - backend/env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ─── Next.js Frontend Application ───
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: arise-sell-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
