@@ -54,9 +54,43 @@ backend/data/
 *.tsbuildinfo
 next-env.d.ts
 
-# ShipStudio metadata
-.shipstudio/
-nazmulp.md
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
+# virtual environments
+.venv/
+.venv-next/
+venv/
+ENV/
+env/
+
+# database & caches
+*.sqlite
+*.sqlite3
+*.db
+celerybeat-schedule
+celerybeat.pid
+
+# misc
 /Untracked
+nazmulp.md
 
