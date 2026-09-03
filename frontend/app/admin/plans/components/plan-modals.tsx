@@ -32,7 +32,10 @@ export function PlanModals({
   onCreatePlan,
 }: PlanModalsProps) {
   // Bidirectional calculation helpers
-  const calcYearlyFromDiscount = (monthly: number, discountPct: number): number => {
+  const calcYearlyFromDiscount = (
+    monthly: number,
+    discountPct: number,
+  ): number => {
     if (monthly <= 0) return 0;
     const annualFull = monthly * 12;
     const safeDiscount = Math.max(0, Math.min(100, discountPct));
@@ -59,7 +62,8 @@ export function PlanModals({
   const [tagline, setTagline] = useState("");
   const [priceBDT, setPriceBDT] = useState<number>(0);
   const [yearlyPriceBDT, setYearlyPriceBDT] = useState<number>(0);
-  const [yearlyDiscountPercent, setYearlyDiscountPercent] = useState<number>(17);
+  const [yearlyDiscountPercent, setYearlyDiscountPercent] =
+    useState<number>(17);
   const [billingPeriod, setBillingPeriod] = useState<PlanBillingPeriod>("both");
   const [messageLimit, setMessageLimit] = useState<number>(200);
   const [catalogLimit, setCatalogLimit] = useState<number>(250);
@@ -118,9 +122,10 @@ export function PlanModals({
         yearlyDiscountPercent: 0,
       });
     } else {
-      const discount = (localEdit.yearlyDiscountPercent && localEdit.yearlyDiscountPercent > 0)
-        ? localEdit.yearlyDiscountPercent
-        : 17;
+      const discount =
+        localEdit.yearlyDiscountPercent && localEdit.yearlyDiscountPercent > 0
+          ? localEdit.yearlyDiscountPercent
+          : 17;
       const yearly = calcYearlyFromDiscount(monthly, discount);
       setLocalEdit({
         ...localEdit,
@@ -134,9 +139,10 @@ export function PlanModals({
   const handleEditYearlyPriceChange = (newYearly: number) => {
     if (!localEdit) return;
     const yearly = Math.max(0, newYearly);
-    const discount = localEdit.priceBDT > 0
-      ? calcDiscountFromYearly(localEdit.priceBDT, yearly)
-      : (localEdit.yearlyDiscountPercent ?? 0);
+    const discount =
+      localEdit.priceBDT > 0
+        ? calcDiscountFromYearly(localEdit.priceBDT, yearly)
+        : (localEdit.yearlyDiscountPercent ?? 0);
     setLocalEdit({
       ...localEdit,
       yearlyPriceBDT: yearly,
@@ -147,9 +153,10 @@ export function PlanModals({
   const handleEditDiscountPercentChange = (val: number) => {
     if (!localEdit) return;
     const safeDiscount = Math.max(0, Math.min(100, val));
-    const yearly = localEdit.priceBDT > 0
-      ? calcYearlyFromDiscount(localEdit.priceBDT, safeDiscount)
-      : (localEdit.yearlyPriceBDT ?? 0);
+    const yearly =
+      localEdit.priceBDT > 0
+        ? calcYearlyFromDiscount(localEdit.priceBDT, safeDiscount)
+        : (localEdit.yearlyPriceBDT ?? 0);
     setLocalEdit({
       ...localEdit,
       yearlyPriceBDT: yearly,
@@ -242,9 +249,9 @@ export function PlanModals({
           }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
         >
-          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-line bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
-              <h3 className="text-[15.5px] font-bold text-text">
+              <h3 className="text-[16px] font-bold text-text">
                 Edit Tier: {localEdit.name}
               </h3>
               <button
@@ -260,16 +267,46 @@ export function PlanModals({
               onSubmit={handleEditSubmit}
               className="space-y-3.5 text-[13px]"
             >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Plan Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={localEdit.name}
+                    onChange={(e) =>
+                      setLocalEdit({ ...localEdit, name: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Bengali Name
+                  </label>
+                  <input
+                    type="text"
+                    value={localEdit.nameBn || ""}
+                    onChange={(e) =>
+                      setLocalEdit({ ...localEdit, nameBn: e.target.value })
+                    }
+                    placeholder="e.g. গ্রোথ"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-text mb-1">
-                  Plan Name
+                  Tagline
                 </label>
                 <input
                   type="text"
-                  required
-                  value={localEdit.name}
+                  value={localEdit.tagline || ""}
                   onChange={(e) =>
-                    setLocalEdit({ ...localEdit, name: e.target.value })
+                    setLocalEdit({ ...localEdit, tagline: e.target.value })
                   }
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
                 />
@@ -287,7 +324,9 @@ export function PlanModals({
                       required
                       min={0}
                       value={localEdit.priceBDT}
-                      onChange={(e) => handleEditMonthlyChange(Number(e.target.value))}
+                      onChange={(e) =>
+                        handleEditMonthlyChange(Number(e.target.value))
+                      }
                       className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
                     />
                   </div>
@@ -310,7 +349,9 @@ export function PlanModals({
                       type="number"
                       min={0}
                       value={localEdit.yearlyPriceBDT ?? 0}
-                      onChange={(e) => handleEditYearlyPriceChange(Number(e.target.value))}
+                      onChange={(e) =>
+                        handleEditYearlyPriceChange(Number(e.target.value))
+                      }
                       className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
                     />
                   </div>
@@ -330,7 +371,11 @@ export function PlanModals({
                         min={0}
                         max={100}
                         value={localEdit.yearlyDiscountPercent ?? 0}
-                        onChange={(e) => handleEditDiscountPercentChange(Number(e.target.value))}
+                        onChange={(e) =>
+                          handleEditDiscountPercentChange(
+                            Number(e.target.value),
+                          )
+                        }
                         className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px]"
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[12px] font-mono pointer-events-none">
@@ -340,19 +385,30 @@ export function PlanModals({
                   </div>
                 </div>
 
-                {localEdit.priceBDT > 0 && (localEdit.yearlyPriceBDT ?? 0) > 0 && (
-                  <div className="text-[11.5px] text-signal bg-signal/[0.07] border border-signal/20 rounded-xl px-3 py-1.5 font-mono flex items-center justify-between">
-                    <span>
-                      ৳{(localEdit.yearlyPriceBDT ?? 0).toLocaleString()}/yr ≈ ৳{Math.round((localEdit.yearlyPriceBDT ?? 0) / 12).toLocaleString()}/mo
-                    </span>
-                    <span className="font-bold">
-                      Save {localEdit.yearlyDiscountPercent ?? 0}% (৳{(localEdit.priceBDT * 12 - (localEdit.yearlyPriceBDT ?? 0)).toLocaleString()} saved)
-                    </span>
-                  </div>
-                )}
+                {localEdit.priceBDT > 0 &&
+                  (localEdit.yearlyPriceBDT ?? 0) > 0 && (
+                    <div className="text-[11.5px] text-signal bg-signal/[0.07] border border-signal/20 rounded-xl px-3 py-1.5 font-mono flex items-center justify-between">
+                      <span>
+                        ৳{(localEdit.yearlyPriceBDT ?? 0).toLocaleString()}/yr ≈
+                        ৳
+                        {Math.round(
+                          (localEdit.yearlyPriceBDT ?? 0) / 12,
+                        ).toLocaleString()}
+                        /mo
+                      </span>
+                      <span className="font-bold">
+                        Save {localEdit.yearlyDiscountPercent ?? 0}% (৳
+                        {(
+                          localEdit.priceBDT * 12 -
+                          (localEdit.yearlyPriceBDT ?? 0)
+                        ).toLocaleString()}{" "}
+                        saved)
+                      </span>
+                    </div>
+                  )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
                     Monthly Messages Quota
@@ -392,33 +448,56 @@ export function PlanModals({
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-text mb-1">
-                  Tagline
-                </label>
-                <input
-                  type="text"
-                  value={localEdit.tagline || ""}
-                  onChange={(e) =>
-                    setLocalEdit({ ...localEdit, tagline: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
-                />
-              </div>
+              {/* Catalog SKUs, Courier Channels, Badge Tag in the same row */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Catalog SKUs
+                  </label>
+                  <input
+                    type="number"
+                    value={localEdit.catalogLimit ?? 250}
+                    onChange={(e) =>
+                      setLocalEdit({
+                        ...localEdit,
+                        catalogLimit: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                  />
+                </div>
 
-              <div>
-                <label className="block font-bold text-text mb-1">
-                  Badge Tag
-                </label>
-                <input
-                  type="text"
-                  value={localEdit.badge || ""}
-                  onChange={(e) =>
-                    setLocalEdit({ ...localEdit, badge: e.target.value })
-                  }
-                  placeholder="e.g. Most Popular"
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
-                />
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Courier Channels
+                  </label>
+                  <input
+                    type="number"
+                    value={localEdit.courierChannels ?? 2}
+                    onChange={(e) =>
+                      setLocalEdit({
+                        ...localEdit,
+                        courierChannels: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Badge Tag (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={localEdit.badge || ""}
+                    onChange={(e) =>
+                      setLocalEdit({ ...localEdit, badge: e.target.value })
+                    }
+                    placeholder="e.g. Most Popular"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none text-[13px]"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
@@ -506,9 +585,9 @@ export function PlanModals({
           }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
         >
-          <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-line bg-white p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
-              <h3 className="text-[15.5px] font-bold text-text">
+              <h3 className="text-[16px] font-bold text-text">
                 Create Custom Commercial Tier
               </h3>
               <button
@@ -577,7 +656,9 @@ export function PlanModals({
                       required
                       min={0}
                       value={priceBDT}
-                      onChange={(e) => handleMonthlyChange(Number(e.target.value))}
+                      onChange={(e) =>
+                        handleMonthlyChange(Number(e.target.value))
+                      }
                       className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
                     />
                   </div>
@@ -600,7 +681,9 @@ export function PlanModals({
                       type="number"
                       min={0}
                       value={yearlyPriceBDT}
-                      onChange={(e) => handleYearlyPriceChange(Number(e.target.value))}
+                      onChange={(e) =>
+                        handleYearlyPriceChange(Number(e.target.value))
+                      }
                       className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
                     />
                   </div>
@@ -620,7 +703,9 @@ export function PlanModals({
                         min={0}
                         max={100}
                         value={yearlyDiscountPercent}
-                        onChange={(e) => handleDiscountPercentChange(Number(e.target.value))}
+                        onChange={(e) =>
+                          handleDiscountPercentChange(Number(e.target.value))
+                        }
                         className="w-full rounded-xl border border-line bg-white px-3 py-2 pr-7 text-text focus:border-signal outline-none font-mono text-[13px]"
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[12px] font-mono pointer-events-none">
@@ -633,10 +718,12 @@ export function PlanModals({
                 {priceBDT > 0 && yearlyPriceBDT > 0 && (
                   <div className="text-[11.5px] text-signal bg-signal/[0.07] border border-signal/20 rounded-xl px-3 py-1.5 font-mono flex items-center justify-between">
                     <span>
-                      ৳{yearlyPriceBDT.toLocaleString()}/yr ≈ ৳{Math.round(yearlyPriceBDT / 12).toLocaleString()}/mo
+                      ৳{yearlyPriceBDT.toLocaleString()}/yr ≈ ৳
+                      {Math.round(yearlyPriceBDT / 12).toLocaleString()}/mo
                     </span>
                     <span className="font-bold">
-                      Save {yearlyDiscountPercent}% (৳{(priceBDT * 12 - yearlyPriceBDT).toLocaleString()} saved)
+                      Save {yearlyDiscountPercent}% (৳
+                      {(priceBDT * 12 - yearlyPriceBDT).toLocaleString()} saved)
                     </span>
                   </div>
                 )}
@@ -674,7 +761,8 @@ export function PlanModals({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              {/* Catalog SKUs, Courier Channels, Badge Tag in the same row */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
                     Catalog SKUs
@@ -683,7 +771,7 @@ export function PlanModals({
                     type="number"
                     value={catalogLimit}
                     onChange={(e) => setCatalogLimit(Number(e.target.value))}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
                   />
                 </div>
 
@@ -695,22 +783,22 @@ export function PlanModals({
                     type="number"
                     value={courierChannels}
                     onChange={(e) => setCourierChannels(Number(e.target.value))}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px]"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block font-bold text-text mb-1">
-                  Badge Tag (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={badge}
-                  onChange={(e) => setBadge(e.target.value)}
-                  placeholder="e.g. VIP Recommended"
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
-                />
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Badge Tag (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={badge}
+                    onChange={(e) => setBadge(e.target.value)}
+                    placeholder="e.g. VIP Recommended"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none text-[13px]"
+                  />
+                </div>
               </div>
 
               <div>
