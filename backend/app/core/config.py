@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
 
     # ── Google OAuth ──
-    GOOGLE_CLIENT_ID: str = ""
-    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_CLIENT_ID: str = "800991434441-8tl7rr6qp1ko6frqe7c1ovr964jtt18g.apps.googleusercontent.com"
+    GOOGLE_CLIENT_SECRET: str = "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"
 
     # ── Email ──
     SENDGRID_API_KEY: str = ""
