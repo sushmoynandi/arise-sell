@@ -4,7 +4,8 @@
  * Handles JWT auth headers, token refresh, and typed request methods.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -30,7 +31,7 @@ class ApiClient {
 
   public async request<T = unknown>(
     endpoint: string,
-    options: FetchOptions = {}
+    options: FetchOptions = {},
   ): Promise<T> {
     const { params, headers, ...customConfig } = options;
     let url = `${API_BASE}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
@@ -70,7 +71,10 @@ class ApiClient {
               const data = await refreshRes.json();
               this.setTokens(data.access);
               reqHeaders["Authorization"] = `Bearer ${data.access}`;
-              const retryRes = await fetch(url, { ...customConfig, headers: reqHeaders });
+              const retryRes = await fetch(url, {
+                ...customConfig,
+                headers: reqHeaders,
+              });
               return (await retryRes.json()) as T;
             }
           } catch {
@@ -80,13 +84,18 @@ class ApiClient {
       }
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ detail: res.statusText }));
+        const errorData = await res
+          .json()
+          .catch(() => ({ detail: res.statusText }));
         throw new Error(errorData.detail || "API request failed");
       }
 
       return (await res.json()) as T;
     } catch (err: unknown) {
-      console.warn(`[ApiClient] ${options.method || "GET"} ${endpoint} warning:`, err);
+      console.warn(
+        `[ApiClient] ${options.method || "GET"} ${endpoint} warning:`,
+        err,
+      );
       throw err;
     }
   }
@@ -94,12 +103,26 @@ class ApiClient {
   // --- Auth ---
   public auth = {
     login: (body: { email: string; password: string }) =>
-      this.request<{ access: string; refresh: string; user: Record<string, unknown> }>("/auth/login", {
+      this.request<{
+        access: string;
+        refresh: string;
+        user: Record<string, unknown>;
+      }>("/auth/login", {
         method: "POST",
         body: JSON.stringify(body),
       }),
-    register: (body: { email: string; password: string; password2: string; first_name: string; last_name: string }) =>
-      this.request<{ access: string; refresh: string; user: Record<string, unknown> }>("/auth/register", {
+    register: (body: {
+      email: string;
+      password: string;
+      password2: string;
+      first_name: string;
+      last_name: string;
+    }) =>
+      this.request<{
+        access: string;
+        refresh: string;
+        user: Record<string, unknown>;
+      }>("/auth/register", {
         method: "POST",
         body: JSON.stringify(body),
       }),
@@ -108,13 +131,21 @@ class ApiClient {
 
   // --- Live Threads & Inbox ---
   public threads = {
-    list: (filter?: string) => this.request<unknown[]>("/threads", { params: { filter } }),
+    list: (filter?: string) =>
+      this.request<unknown[]>("/threads", { params: { filter } }),
     get: (id: string) => this.request<unknown>(`/threads/${id}`),
     send: (id: string, body: string) =>
-      this.request(`/threads/${id}/send`, { method: "POST", body: JSON.stringify({ body }) }),
+      this.request(`/threads/${id}/send`, {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      }),
     takeover: (id: string, mode: "ai" | "human") =>
-      this.request(`/threads/${id}/takeover`, { method: "PATCH", body: JSON.stringify({ mode }) }),
-    resolve: (id: string) => this.request(`/threads/${id}/resolve`, { method: "PATCH" }),
+      this.request(`/threads/${id}/takeover`, {
+        method: "PATCH",
+        body: JSON.stringify({ mode }),
+      }),
+    resolve: (id: string) =>
+      this.request(`/threads/${id}/resolve`, { method: "PATCH" }),
   };
 
   // --- Orders & Fulfilment ---
@@ -123,7 +154,10 @@ class ApiClient {
     create: (order: Record<string, unknown>) =>
       this.request("/orders", { method: "POST", body: JSON.stringify(order) }),
     bookCourier: (id: string, provider: string, note?: string) =>
-      this.request(`/orders/${id}/book-courier`, { method: "POST", body: JSON.stringify({ provider, note }) }),
+      this.request(`/orders/${id}/book-courier`, {
+        method: "POST",
+        body: JSON.stringify({ provider, note }),
+      }),
     getInvoiceUrl: (id: string) => `${API_BASE}/orders/${id}/invoice-pdf`,
   };
 
@@ -136,15 +170,25 @@ class ApiClient {
   // --- Comments ---
   public comments = {
     listRules: () => this.request<unknown[]>("/comments/rules"),
-    createRule: (rule: { trigger: string; reply: string; dm_template?: string }) =>
-      this.request("/comments/rules", { method: "POST", body: JSON.stringify(rule) }),
+    createRule: (rule: {
+      trigger: string;
+      reply: string;
+      dm_template?: string;
+    }) =>
+      this.request("/comments/rules", {
+        method: "POST",
+        body: JSON.stringify(rule),
+      }),
   };
 
   // --- Pipeline ---
   public pipeline = {
     list: () => this.request<unknown[]>("/pipeline"),
     updateStage: (id: string, stage: string, confirmed: boolean) =>
-      this.request(`/pipeline/${id}/stage`, { method: "PATCH", body: JSON.stringify({ stage, confirmed }) }),
+      this.request(`/pipeline/${id}/stage`, {
+        method: "PATCH",
+        body: JSON.stringify({ stage, confirmed }),
+      }),
   };
 
   // --- Campaigns & Reach ---
@@ -162,26 +206,47 @@ class ApiClient {
   // --- AI Brain & Knowledge ---
   public brain = {
     getPersona: () => this.request<unknown>("/brain/persona"),
-    updatePersona: (persona: { voice: string; signature: string; reply_window: string; emoji_budget: string }) =>
-      this.request("/brain/persona", { method: "POST", body: JSON.stringify(persona) }),
+    updatePersona: (persona: {
+      voice: string;
+      signature: string;
+      reply_window: string;
+      emoji_budget: string;
+    }) =>
+      this.request("/brain/persona", {
+        method: "POST",
+        body: JSON.stringify(persona),
+      }),
     getGuardrails: () => this.request<unknown[]>("/brain/guardrails"),
     getKnowledge: () => this.request<unknown[]>("/brain/knowledge"),
-    addKnowledge: (entry: { topic: string; content: string; sample?: string }) =>
-      this.request("/brain/knowledge", { method: "POST", body: JSON.stringify(entry) }),
+    addKnowledge: (entry: {
+      topic: string;
+      content: string;
+      sample?: string;
+    }) =>
+      this.request("/brain/knowledge", {
+        method: "POST",
+        body: JSON.stringify(entry),
+      }),
     getEvals: () => this.request<unknown>("/brain/evals"),
   };
 
   // --- AI Playground ---
   public playground = {
     testChat: (message: string) =>
-      this.request("/ai/test-chat", { method: "POST", body: JSON.stringify({ message }) }),
+      this.request("/ai/test-chat", {
+        method: "POST",
+        body: JSON.stringify({ message }),
+      }),
   };
 
   // --- Merchant Settings ---
   public merchants = {
     getProfile: () => this.request<unknown>("/merchants/profile"),
     updateSettings: (settings: Record<string, unknown>) =>
-      this.request("/merchants/settings", { method: "PATCH", body: JSON.stringify(settings) }),
+      this.request("/merchants/settings", {
+        method: "PATCH",
+        body: JSON.stringify(settings),
+      }),
     getTeam: () => this.request<unknown[]>("/merchants/team"),
   };
 
@@ -190,7 +255,10 @@ class ApiClient {
     listPlans: () => this.request<unknown[]>("/billing/plans"),
     listInvoices: () => this.request<unknown[]>("/billing/invoices"),
     createTopup: (pack: string, payment_method: string) =>
-      this.request("/billing/topup", { method: "POST", body: JSON.stringify({ pack, payment_method }) }),
+      this.request("/billing/topup", {
+        method: "POST",
+        body: JSON.stringify({ pack, payment_method }),
+      }),
   };
 
   // --- Analytics ---
@@ -201,34 +269,59 @@ class ApiClient {
   // --- Admin Super-Console ---
   public admin = {
     login: (body: { email: string; password: string }) =>
-      this.request<{ access: string; refresh: string; requires_2fa: boolean; user: Record<string, unknown> }>(
-        "/admin/auth/login",
-        { method: "POST", body: JSON.stringify(body) }
-      ),
+      this.request<{
+        access: string;
+        refresh: string;
+        requires_2fa: boolean;
+        user: Record<string, unknown>;
+      }>("/admin/auth/login", { method: "POST", body: JSON.stringify(body) }),
     verify2FA: (body: { email: string; totp_code: string }) =>
-      this.request<{ access: string; refresh: string; requires_2fa: boolean; user: Record<string, unknown> }>(
-        "/admin/auth/verify-2fa",
-        { method: "POST", body: JSON.stringify(body) }
-      ),
+      this.request<{
+        access: string;
+        refresh: string;
+        requires_2fa: boolean;
+        user: Record<string, unknown>;
+      }>("/admin/auth/verify-2fa", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     getDashboard: () => this.request<unknown>("/admin/dashboard"),
     getActivity: () => this.request<unknown[]>("/admin/dashboard/activity"),
     listMerchants: (params?: { search?: string; status?: string }) =>
       this.request<unknown[]>("/admin/merchants", { params }),
     updateMerchantPlan: (id: string, plan: string) =>
-      this.request(`/admin/merchants/${id}/plan`, { method: "PATCH", body: JSON.stringify({ plan }) }),
-    listInvoices: () => this.request<unknown[]>("/admin/subscriptions/invoices"),
+      this.request(`/admin/merchants/${id}/plan`, {
+        method: "PATCH",
+        body: JSON.stringify({ plan }),
+      }),
+    listInvoices: () =>
+      this.request<unknown[]>("/admin/subscriptions/invoices"),
     refundInvoice: (id: string) =>
-      this.request(`/admin/subscriptions/invoices/${id}/refund`, { method: "POST" }),
+      this.request(`/admin/subscriptions/invoices/${id}/refund`, {
+        method: "POST",
+      }),
     listPlans: () => this.request<unknown[]>("/admin/plans"),
     createPlan: (plan: Record<string, unknown>) =>
-      this.request("/admin/plans", { method: "POST", body: JSON.stringify(plan) }),
+      this.request("/admin/plans", {
+        method: "POST",
+        body: JSON.stringify(plan),
+      }),
     listAiKeys: () => this.request<unknown[]>("/admin/ai-gateway/keys"),
     addAiKey: (key: Record<string, unknown>) =>
-      this.request("/admin/ai-gateway/keys", { method: "POST", body: JSON.stringify(key) }),
+      this.request("/admin/ai-gateway/keys", {
+        method: "POST",
+        body: JSON.stringify(key),
+      }),
     testAiCascade: (prompt: string) =>
-      this.request("/admin/ai-gateway/test-cascade", { method: "POST", body: JSON.stringify({ prompt }) }),
+      this.request("/admin/ai-gateway/test-cascade", {
+        method: "POST",
+        body: JSON.stringify({ prompt }),
+      }),
     testCascade: (prompt: string) =>
-      this.request("/admin/ai-gateway/test-cascade", { method: "POST", body: JSON.stringify({ prompt }) }),
+      this.request("/admin/ai-gateway/test-cascade", {
+        method: "POST",
+        body: JSON.stringify({ prompt }),
+      }),
     listCouriers: () => this.request<unknown[]>("/admin/couriers"),
     pingCourier: (id: string) =>
       this.request(`/admin/couriers/${id}/ping`, { method: "POST" }),
@@ -237,22 +330,38 @@ class ApiClient {
       this.request(`/admin/meta-apps/${id}/test-handshake`, { method: "POST" }),
     listSupportTickets: () => this.request<unknown[]>("/admin/support/tickets"),
     replySupportTicket: (id: string, message: string) =>
-      this.request(`/admin/support/tickets/${id}/reply`, { method: "POST", body: JSON.stringify({ message }) }),
+      this.request(`/admin/support/tickets/${id}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ message }),
+      }),
     patchAiRule: (id: string, suggested_rule: string) =>
-      this.request(`/admin/support/tickets/${id}/patch-ai-rule`, { method: "POST", body: JSON.stringify({ suggested_rule }) }),
+      this.request(`/admin/support/tickets/${id}/patch-ai-rule`, {
+        method: "POST",
+        body: JSON.stringify({ suggested_rule }),
+      }),
     getSystemHealth: () => this.request<unknown>("/admin/system/health"),
     broadcastAlert: (title: string, message: string, severity?: string) =>
-      this.request("/admin/system/broadcast-alert", { method: "POST", body: JSON.stringify({ title, message, severity }) }),
+      this.request("/admin/system/broadcast-alert", {
+        method: "POST",
+        body: JSON.stringify({ title, message, severity }),
+      }),
     listBackups: () => this.request<unknown[]>("/admin/backups"),
     getSettings: () => this.request<unknown>("/admin/settings"),
     toggleKillSwitch: (active: boolean, reason?: string) =>
-      this.request("/admin/settings/kill-switch", { method: "POST", body: JSON.stringify({ active, reason }) }),
+      this.request("/admin/settings/kill-switch", {
+        method: "POST",
+        body: JSON.stringify({ active, reason }),
+      }),
     listFraudBlacklist: () => this.request<unknown>("/admin/fraud/blacklist"),
     addFraudBlacklist: (phone: string, reason: string) =>
-      this.request("/admin/fraud/blacklist", { method: "POST", body: JSON.stringify({ phone, reason }) }),
+      this.request("/admin/fraud/blacklist", {
+        method: "POST",
+        body: JSON.stringify({ phone, reason }),
+      }),
     toggleMerchantStatus: (id: string) =>
       this.request(`/admin/merchants/${id}/toggle-status`, { method: "POST" }),
-    getMerchantsExportUrl: () => `${API_BASE}/admin/backups/export/merchants-csv`,
+    getMerchantsExportUrl: () =>
+      `${API_BASE}/admin/backups/export/merchants-csv`,
   };
 }
 

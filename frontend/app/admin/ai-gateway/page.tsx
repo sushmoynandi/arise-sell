@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { INITIAL_AI_KEYS, type AiProviderKey } from "@/data/admin";
+import api from "@/lib/api-client";
+import { type AiProviderKey } from "@/data/admin";
 import {
   IconCheck,
   IconClose,
@@ -33,7 +34,8 @@ const PROVIDER_LOGOS: Record<string, string> = {
 };
 
 export default function AdminAiGatewayPage() {
-  const [keys, setKeys] = useState<AiProviderKey[]>(INITIAL_AI_KEYS);
+  const [keys, setKeys] = useState<AiProviderKey[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [deletingKey, setDeletingKey] = useState<AiProviderKey | null>(null);
@@ -69,7 +71,7 @@ export default function AdminAiGatewayPage() {
   // Form state
   const [newProvider, setNewProvider] =
     useState<AiProviderKey["provider"]>("google");
-  const [newModel, setNewModel] = useState("gemini-2.0-flash");
+  const [newModel, setNewModel] = useState("gemini-3.6-flash");
   const [newKey, setNewKey] = useState("");
   const [newRole, setNewRole] = useState<AiProviderKey["role"]>("standby");
 
@@ -81,31 +83,63 @@ export default function AdminAiGatewayPage() {
     msg: string;
   } | null>(null);
 
+  // Fetch real keys from backend API
+  const fetchKeys = async () => {
+    try {
+      setLoading(true);
+      const res = await api.admin.listAiKeys();
+      if (Array.isArray(res)) {
+        setKeys(res);
+      }
+    } catch (err) {
+      console.error("Failed to fetch AI keys:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKeys();
+  }, []);
+
   // Live ping test in table
-  const handlePing = (id: string) => {
+  const handlePing = async (id: string) => {
     setTestingId(id);
-    setTimeout(() => {
-      const latency = Math.floor(Math.random() * 120) + 180;
-      setKeys((prev) =>
-        prev.map((k) =>
-          k.id === id
-            ? {
-                ...k,
-                latencyMs: latency,
-                lastPing: `Just now (${latency}ms · 200 OK)`,
-                status: k.status === "rate_limited" ? "active" : k.status,
-              }
-            : k,
-        ),
-      );
+    try {
+      const res = (await api.admin.pingAiKey(id)) as {
+        success: boolean;
+        latency?: number;
+        msg?: string;
+        error?: string;
+      };
+      if (res && res.success) {
+        const latency = res.latency || 120;
+        setKeys((prev) =>
+          prev.map((k) =>
+            k.id === id
+              ? {
+                  ...k,
+                  latencyMs: latency,
+                  lastPing: `Just now (${latency}ms · 200 OK)`,
+                  status: k.status === "rate_limited" ? "active" : k.status,
+                }
+              : k,
+          ),
+        );
+        setPingSuccessId(id);
+        setTimeout(() => setPingSuccessId(null), 3000);
+      } else {
+        alert(res?.msg || res?.error || "Ping check failed");
+      }
+    } catch (err: any) {
+      alert(`Ping error: ${err.message || "Failed to reach backend"}`);
+    } finally {
       setTestingId(null);
-      setPingSuccessId(id);
-      setTimeout(() => setPingSuccessId(null), 3000);
-    }, 600);
+    }
   };
 
   // Live test API key inside Modal
-  const handleModalTest = () => {
+  const handleModalTest = async () => {
     if (!newKey.trim()) {
       setModalTestResult({
         success: false,
@@ -118,15 +152,22 @@ export default function AdminAiGatewayPage() {
     setModalTesting(true);
     setModalTestResult(null);
 
-    setTimeout(() => {
-      const latency = Math.floor(Math.random() * 110) + 190;
-      setModalTesting(false);
-      setModalTestResult({
-        success: true,
-        latency,
-        msg: `Connection verified (${latency}ms) · Status: 200 OK · ${newProvider.toUpperCase()} Handshake Successful`,
+    try {
+      const res = await api.admin.testAiKey({
+        provider: newProvider,
+        model: newModel,
+        api_key: newKey.trim(),
       });
-    }, 600);
+      setModalTestResult(res);
+    } catch (err: any) {
+      setModalTestResult({
+        success: false,
+        latency: 0,
+        msg: `Connection test failed: ${err.message || "Unknown error"}`,
+      });
+    } finally {
+      setModalTesting(false);
+    }
   };
 
   // Toggle reveal
@@ -142,22 +183,25 @@ export default function AdminAiGatewayPage() {
   };
 
   // Set primary
-  const handleSetPrimary = (id: string) => {
-    setKeys((prev) =>
-      prev.map((k) => {
-        if (k.id === id) return { ...k, role: "primary", status: "active" };
-        if (k.role === "primary")
-          return { ...k, role: "fallback_1", status: "standby" };
-        return k;
-      }),
-    );
+  const handleSetPrimary = async (id: string) => {
+    try {
+      await api.admin.setPrimaryAiKey(id);
+      await fetchKeys();
+    } catch (err: any) {
+      alert(`Failed to set primary: ${err.message || "Unknown error"}`);
+    }
   };
 
   // Confirm delete key
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deletingKey) {
-      setKeys((prev) => prev.filter((k) => k.id !== deletingKey.id));
-      setDeletingKey(null);
+      try {
+        await api.admin.deleteAiKey(deletingKey.id);
+        setDeletingKey(null);
+        await fetchKeys();
+      } catch (err: any) {
+        alert(`Failed to delete key: ${err.message || "Unknown error"}`);
+      }
     }
   };
 
@@ -213,6 +257,7 @@ export default function AdminAiGatewayPage() {
       setTesterResult({
         route: res.provider || (isPrimaryBlocked ? "OpenAI" : "Google Gemini"),
         model: res.model || (isPrimaryBlocked ? "gpt-4o-mini" : "gemini-2.0-flash"),
+        model: res.model || (isPrimaryBlocked ? "gpt-4o-mini" : "gemini-3.6-flash"),
         latency: res.latency_ms || (isPrimaryBlocked ? 640 : 380),
         tokens: 112,
         costBDT: "০.০৩",
@@ -233,14 +278,14 @@ export default function AdminAiGatewayPage() {
         : primaryKey || keys[0];
 
       setTesterResult({
-        route: active.providerName,
-        model: active.model,
-        latency: active.latencyMs + Math.floor(Math.random() * 20),
+        route: active?.providerName || "Google Gemini",
+        model: active?.model || "gemini-3.6-flash",
+        latency: (active?.latencyMs || 200) + Math.floor(Math.random() * 20),
         tokens: 112,
         costBDT: "০.০৩",
         failoverHappened: isPrimaryBlocked,
         failoverDetails: isPrimaryBlocked
-          ? `Primary (Google Gemini) returned HTTP 429 Rate Limit ➔ Instant failover to Backup 1 (${active.providerName} ${active.model}) in 38ms.`
+          ? `Primary returned HTTP 429 Rate Limit ➔ Instant failover to Backup 1 in 38ms.`
           : undefined,
         response:
           "নকশী-তে যোগাযোগ করার জন্য ধন্যবাদ। আমাদের জামদানি শাড়ির ডেলিভারি চার্জ চট্টগ্রামে ১২০ টাকা এবং ক্যাশ অন ডেলিভারি সুবিধা রয়েছে। আপনি ২-৩ কার্যদিবসের মধ্যে পার্সেল রিসিভ করতে পারবেন।",
@@ -251,49 +296,25 @@ export default function AdminAiGatewayPage() {
   };
 
   // Add Key Form Submit
-  const handleAddKey = (e: React.FormEvent) => {
+  const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKey.trim()) return;
 
-    const names: Record<string, string> = {
-      google: "Google Gemini",
-      openai: "OpenAI",
-      anthropic: "Anthropic Claude",
-      deepseek: "DeepSeek",
-      groq: "Groq Cloud",
-      custom: "Custom LLM",
-    };
+    try {
+      await api.admin.addAiKey({
+        provider: newProvider,
+        model: newModel,
+        api_key: newKey.trim(),
+        role: newRole,
+      });
 
-    const newEntry: AiProviderKey = {
-      id: `ai-key-${Date.now()}`,
-      provider: newProvider,
-      providerName: names[newProvider] || "Custom Provider",
-      model: newModel,
-      keyMasked: `${newKey.slice(0, 7)}...${newKey.slice(-4)}`,
-      role: newRole,
-      status: newRole === "primary" ? "active" : "standby",
-      latencyMs: modalTestResult?.latency || 290,
-      requests24h: 0,
-      tokensConsumed: 0,
-      costUSD: 0,
-      costBDT: 0,
-      lastPing: "Just added (Verified Ready)",
-    };
-
-    if (newRole === "primary") {
-      setKeys((prev) =>
-        prev.map((k) =>
-          k.role === "primary"
-            ? { ...k, role: "fallback_1", status: "standby" }
-            : k,
-        ),
-      );
+      setNewKey("");
+      setModalTestResult(null);
+      setAddModalOpen(false);
+      await fetchKeys();
+    } catch (err: any) {
+      alert(`Failed to add key: ${err.message || "Unknown error"}`);
     }
-
-    setKeys((prev) => [newEntry, ...prev]);
-    setNewKey("");
-    setModalTestResult(null);
-    setAddModalOpen(false);
   };
 
   const primary = keys.find((k) => k.role === "primary");
@@ -734,7 +755,32 @@ export default function AdminAiGatewayPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line/60">
-              {filteredKeys.map((k) => {
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-text-3 font-mono text-[12px]">
+                    <div className="flex items-center justify-center gap-2">
+                      <IconPulse width={15} height={15} className="text-signal animate-spin" />
+                      <span>Loading real API keys from secure vault...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredKeys.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-text-3">
+                    <div className="max-w-sm mx-auto space-y-3">
+                      <IconKey width={32} height={32} className="mx-auto text-text-3/50" />
+                      <p className="font-bold text-text text-[14px]">No AI Provider Keys Configured</p>
+                      <p className="text-[12px] text-text-3">
+                        Add your Google Gemini, OpenAI, or other LLM API keys to activate automated sales reasoning.
+                      </p>
+                      <Button size="sm" variant="signal" onClick={() => setAddModalOpen(true)}>
+                        <IconPlus width={12} height={12} /> Add Your First Key
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredKeys.map((k) => {
                 const isRevealed = revealedKeys[k.id];
                 const isCopied = copiedId === k.id;
                 const isTesting = testingId === k.id;
@@ -919,7 +965,8 @@ export default function AdminAiGatewayPage() {
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
           </table>
         </div>
@@ -1005,6 +1052,7 @@ export default function AdminAiGatewayPage() {
                     setNewProvider(p);
                     setModalTestResult(null);
                     if (p === "google") setNewModel("gemini-2.0-flash");
+                    if (p === "google") setNewModel("gemini-3.6-flash");
                     else if (p === "openai") setNewModel("gpt-4o-mini");
                     else if (p === "anthropic")
                       setNewModel("claude-3-5-haiku-20241022");

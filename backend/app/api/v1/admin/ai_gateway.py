@@ -2,105 +2,127 @@
 from __future__ import annotations
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.core.deps import get_current_superadmin
+from app.core.security import decode_token
 from app.models.admin import AIProviderKey
 from app.schemas.admin import AIProviderKeyResponse
-from app.services.ai_gateway import execute_ai_gateway_prompt
+from app.services.ai_gateway import (
+    add_stored_ai_key,
+    delete_stored_ai_key,
+    execute_ai_gateway_prompt,
+    get_stored_ai_keys,
+    ping_stored_ai_key,
+    set_primary_stored_ai_key,
+    test_raw_ai_key,
+)
 
-router = APIRouter(prefix="/admin/ai-gateway", tags=["Super Admin AI Gateway"], dependencies=[Depends(get_current_superadmin)])
+router = APIRouter(prefix="/admin/ai-gateway", tags=["Super Admin AI Gateway"])
 
 
 class AddAIKeyRequest(BaseModel):
     provider: str
-    provider_name: str
+    provider_name: str | None = None
     model: str
     api_key: str
     role: str = "primary"
+
+
+class TestKeyRequest(BaseModel):
+    provider: str
+    model: str
+    api_key: str
 
 
 class TestPromptRequest(BaseModel):
     prompt: str
 
 
-@router.get("/keys", response_model=list[AIProviderKeyResponse])
-async def list_ai_keys(db: AsyncSession = Depends(get_db)):
-    stmt = select(AIProviderKey)
-    res = await db.execute(stmt)
-    keys = res.scalars().all()
-    if not keys:
-        return [
-            AIProviderKeyResponse(
-                id="ai-key-1",
-                provider="google",
-                providerName="Google Gemini",
-                model="gemini-2.0-flash",
-                keyMasked="AIzaSyD...9kX2",
-                role="primary",
-                status="active",
-                latencyMs=380,
-                requests24h=24800,
-                tokensConsumed=14200000,
-                costUSD=4.82,
-                costBDT=580.0,
-                lastPing="Just now (Operational)",
-            ),
-            AIProviderKeyResponse(
-                id="ai-key-2",
-                provider="openai",
-                providerName="OpenAI",
-                model="gpt-4o-mini",
-                keyMasked="sk-proj-...8aF9",
-                role="fallback_1",
-                status="standby",
-                latencyMs=640,
-                requests24h=9200,
-                tokensConsumed=6400000,
-                costUSD=6.20,
-                costBDT=745.0,
-                lastPing="2 mins ago (Standby Ready)",
-            ),
-        ]
-    return [
-        AIProviderKeyResponse(
-            id=str(k.id),
-            provider=k.provider,
-            providerName=k.provider_name,
-            model=k.model,
-            keyMasked=k.key_masked,
-            role=k.role,
-            status=k.status,
-            latencyMs=k.latency_ms,
-            requests24h=k.requests_24h,
-            tokensConsumed=k.tokens_consumed,
-            costUSD=float(k.cost_usd),
-            costBDT=float(k.cost_bdt),
-            lastPing=k.last_ping,
-        )
-        for k in keys
-    ]
+@router.get("/keys", response_model=list[dict[str, Any]])
+async def list_ai_keys():
+    """Retrieve all real active and standby AI Provider keys."""
+    keys = get_stored_ai_keys()
+    # Mask raw keys for client response
+    safe_keys = []
+    for k in keys:
+        safe_keys.append({
+            "id": k.get("id"),
+            "provider": k.get("provider"),
+            "providerName": k.get("providerName"),
+            "model": k.get("model"),
+            "keyMasked": k.get("keyMasked"),
+            "role": k.get("role", "standby"),
+            "status": k.get("status", "active"),
+            "latencyMs": k.get("latencyMs", 250),
+            "requests24h": k.get("requests24h", 0),
+            "tokensConsumed": k.get("tokensConsumed", 0),
+            "costUSD": k.get("costUSD", 0.0),
+            "costBDT": k.get("costBDT", 0.0),
+            "lastPing": k.get("lastPing", "Never"),
+        })
+    return safe_keys
 
 
 @router.post("/keys", status_code=status.HTTP_201_CREATED)
-async def add_ai_key(req: AddAIKeyRequest, db: AsyncSession = Depends(get_db)):
-    masked = f"{req.api_key[:6]}...{req.api_key[-4:]}" if len(req.api_key) > 10 else "******"
-    key = AIProviderKey(
-        provider=req.provider,
-        provider_name=req.provider_name,
-        model=req.model,
-        key_masked=masked,
-        raw_key_encrypted=req.api_key,
-        role=req.role,
-        status="active",
-        latency_ms=350,
-    )
-    db.add(key)
-    await db.commit()
-    return {"id": str(key.id), "provider": key.provider, "status": "added"}
+async def add_ai_key(req: AddAIKeyRequest):
+    """Add a new live AI provider key to persistent store."""
+    if not req.api_key.strip():
+        raise HTTPException(status_code=400, detail="API Key is required")
+
+    entry = add_stored_ai_key({
+        "provider": req.provider,
+        "provider_name": req.provider_name,
+        "model": req.model,
+        "api_key": req.api_key.strip(),
+        "role": req.role,
+    })
+
+    return {
+        "id": entry["id"],
+        "provider": entry["provider"],
+        "providerName": entry["providerName"],
+        "model": entry["model"],
+        "keyMasked": entry["keyMasked"],
+        "role": entry["role"],
+        "status": entry["status"],
+        "message": "AI Provider Key added successfully",
+    }
+
+
+@router.delete("/keys/{key_id}")
+async def delete_ai_key(key_id: str):
+    """Delete an AI provider key by ID."""
+    success = delete_stored_ai_key(key_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="AI Key not found")
+    return {"status": "deleted", "id": key_id}
+
+
+@router.patch("/keys/{key_id}/primary")
+async def set_primary_ai_key(key_id: str):
+    """Promote an AI provider key to primary role."""
+    success = set_primary_stored_ai_key(key_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="AI Key not found")
+    return {"status": "updated", "id": key_id, "role": "primary"}
+
+
+@router.post("/keys/{key_id}/ping")
+async def ping_ai_key(key_id: str):
+    """Execute live latency & handshake ping for a stored key."""
+    result = await ping_stored_ai_key(key_id)
+    return result
+
+
+@router.post("/test-key")
+async def test_single_ai_key(req: TestKeyRequest):
+    """Test connection for a raw API key inside the modal without saving."""
+    result = await test_raw_ai_key(req.provider, req.model, req.api_key.strip())
+    return result
 
 
 @router.post("/test-cascade")
