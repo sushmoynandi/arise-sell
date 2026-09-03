@@ -51,9 +51,13 @@ export function PlanModals({
 
   // Local edit state
   const [localEdit, setLocalEdit] = useState<AdminPlan | null>(editingPlan);
+  const [editFeaturesStr, setEditFeaturesStr] = useState("");
 
   useEffect(() => {
     setLocalEdit(editingPlan);
+    setEditFeaturesStr(
+      editingPlan?.features ? editingPlan.features.join("\n") : "",
+    );
   }, [editingPlan]);
 
   // Create Form State (Clean empty defaults, placeholders only)
@@ -186,9 +190,17 @@ export function PlanModals({
     e.preventDefault();
     if (!localEdit || isSubmitting) return;
 
+    const parsedFeatures = editFeaturesStr
+      .split("\n")
+      .map((f) => f.trim())
+      .filter(Boolean);
+
     try {
       setIsSubmitting(true);
-      await onSaveEdit(localEdit);
+      await onSaveEdit({
+        ...localEdit,
+        features: parsedFeatures,
+      });
       onCloseEdit();
     } finally {
       setIsSubmitting(false);
@@ -474,6 +486,19 @@ export function PlanModals({
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none text-[13px]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Features (One per line)
+                </label>
+                <textarea
+                  rows={3}
+                  value={editFeaturesStr}
+                  onChange={(e) => setEditFeaturesStr(e.target.value)}
+                  placeholder="e.g. 200 Messages / month (Comment + Inbox)&#10;WhatsApp & Messenger integration"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none text-[12.5px]"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
