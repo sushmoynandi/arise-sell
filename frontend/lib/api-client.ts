@@ -179,30 +179,6 @@ class ApiClient {
       }).finally(() => this.clearTokens()),
   };
 
-  // --- Admin Auth ---
-  public admin = {
-    login: (body: { email: string; password: string }) =>
-      this.request<{
-        access: string;
-        refresh: string;
-        requires_2fa: boolean;
-        user: Record<string, unknown>;
-      }>("/admin/auth/login", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-    verify2FA: (body: { email: string; totp_code: string }) =>
-      this.request<{
-        access: string;
-        refresh: string;
-        requires_2fa: boolean;
-        user: Record<string, unknown>;
-      }>("/admin/auth/verify-2fa", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-  };
-
   // --- Live Threads & Inbox ---
   public threads = {
     list: (filter?: string) =>
