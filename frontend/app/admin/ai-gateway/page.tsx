@@ -437,10 +437,7 @@ export default function AdminAiGatewayPage() {
 
   const primary = keys.find((k) => k.role === "primary");
   const totalRequests = keys.reduce((acc, k) => acc + (k.requests24h || 0), 0);
-  const totalTokens = keys.reduce(
-    (acc, k) => acc + (k.tokensConsumed || 0),
-    0,
-  );
+  const totalTokens = keys.reduce((acc, k) => acc + (k.tokensConsumed || 0), 0);
 
   const filteredKeys = keys.filter((k) => {
     const q = (searchQuery || "").toLowerCase();
@@ -1091,7 +1088,11 @@ export default function AdminAiGatewayPage() {
                   {/* Flow Arrow Connector between nodes */}
                   {idx < sortedCascadeKeys.length - 1 && (
                     <div className="hidden lg:flex flex-col items-center justify-center px-1 text-text-3/60">
-                      <IconArrow width={18} height={18} className="text-text-3" />
+                      <IconArrow
+                        width={18}
+                        height={18}
+                        className="text-text-3"
+                      />
                       <span className="text-[9px] font-mono text-text-3 font-semibold mt-0.5 uppercase">
                         Failover
                       </span>
@@ -1140,7 +1141,9 @@ export default function AdminAiGatewayPage() {
             <div className="size-10 rounded-full bg-surface border border-line grid place-items-center mx-auto text-text-3">
               <IconKey width={18} height={18} />
             </div>
-            <p className="font-bold text-text text-[13.5px]">Sandbox Inactive</p>
+            <p className="font-bold text-text text-[13.5px]">
+              Sandbox Inactive
+            </p>
             <p className="text-text-3 text-[12px] max-w-sm mx-auto">
               Please register an AI key in the vault above to activate latency
               benchmarking and live gateway routing.
