@@ -17,117 +17,7 @@ FESTIVAL_OFFERS_FILE = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "data", "festival_offers.json")
 )
 
-DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
-    {
-        "id": "plan-free",
-        "name": "Free Trial",
-        "nameBn": "ফ্রি শুরু",
-        "tagline": "Prove it on your own catalog before paying anything",
-        "priceBDT": 0,
-        "yearlyPriceBDT": 0,
-        "yearlyDiscountPercent": 0,
-        "billingPeriod": "both",
-        "messageLimit": 40,
-        "catalogLimit": 50,
-        "courierChannels": 1,
-        "features": [
-            "40 Messages / month (Comment + Inbox)",
-            "1 channel (Messenger or WhatsApp)",
-            "Bangla · Banglish · English AI agent",
-            "Photo → product vision matching",
-            "In-chat automated order taking",
-        ],
-        "badge": None,
-        "popular": False,
-        "activeMerchants": 0,
-        "monthlySubscribers": 0,
-        "yearlySubscribers": 0,
-        "status": "active",
-    },
-    {
-        "id": "plan-growth",
-        "name": "Growth",
-        "nameBn": "গ্রোথ",
-        "tagline": "For growing Facebook & WhatsApp shops with daily customer messages",
-        "priceBDT": 200,
-        "yearlyPriceBDT": 2000,
-        "yearlyDiscountPercent": 17,
-        "billingPeriod": "both",
-        "messageLimit": 200,
-        "catalogLimit": 250,
-        "courierChannels": 2,
-        "badge": "Best for Starters",
-        "popular": False,
-        "features": [
-            "200 Messages / month (Comment + Inbox)",
-            "WhatsApp & Facebook Messenger connected",
-            "Steadfast & Pathao 1-click booking",
-            "Branded Bangla digital invoices",
-            "Comment → DM auto-reply",
-            "2 team member seats",
-        ],
-        "activeMerchants": 0,
-        "monthlySubscribers": 0,
-        "yearlySubscribers": 0,
-        "status": "active",
-    },
-    {
-        "id": "plan-business",
-        "name": "Business Pro",
-        "nameBn": "বিজনেস প্রো",
-        "tagline": "Full social-commerce automation with automated fraud detection",
-        "priceBDT": 700,
-        "yearlyPriceBDT": 7000,
-        "yearlyDiscountPercent": 17,
-        "billingPeriod": "both",
-        "messageLimit": 600,
-        "catalogLimit": 800,
-        "courierChannels": 4,
-        "badge": "Most Popular",
-        "popular": True,
-        "features": [
-            "600 Messages / month (Comment + Inbox)",
-            "Omnichannel: Messenger + WhatsApp + Instagram",
-            "Courier fraud blacklist auto-check",
-            "AI negotiations up to discount threshold",
-            "Abandoned cart recovery flows",
-            "5 team member seats",
-            "Live human takeover alerts",
-        ],
-        "activeMerchants": 0,
-        "monthlySubscribers": 0,
-        "yearlySubscribers": 0,
-        "status": "active",
-    },
-    {
-        "id": "plan-vip-scale",
-        "name": "VIP Scale",
-        "nameBn": "ভিআইপি স্কেল",
-        "tagline": "For top Facebook & boutique brands running high volume campaigns",
-        "priceBDT": 2500,
-        "yearlyPriceBDT": 25000,
-        "yearlyDiscountPercent": 17,
-        "billingPeriod": "both",
-        "messageLimit": 2000,
-        "catalogLimit": 3000,
-        "courierChannels": 4,
-        "badge": "Enterprise Scale",
-        "popular": False,
-        "features": [
-            "2,000 Messages / month (Comment + Inbox)",
-            "All channels & couriers unlocked",
-            "Custom LLM fine-tuning on shop history",
-            "Priority VIP server cluster (low latency)",
-            "Unlimited team seats",
-            "Dedicated WhatsApp account manager",
-            "Custom ERP & accounting webhooks",
-        ],
-        "activeMerchants": 0,
-        "monthlySubscribers": 0,
-        "yearlySubscribers": 0,
-        "status": "active",
-    },
-]
+DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = []
 
 DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = []
 
@@ -151,17 +41,17 @@ async def _get_pg_conn() -> asyncpg.Connection | None:
 def _get_json_plans() -> list[dict[str, Any]]:
     _ensure_data_dir()
     if not os.path.exists(PLANS_FILE):
-        _save_json_plans(DEFAULT_INITIAL_PLANS)
-        return DEFAULT_INITIAL_PLANS
+        _save_json_plans([])
+        return []
 
     try:
         with open(PLANS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if isinstance(data, list) and len(data) > 0:
+            if isinstance(data, list):
                 return data
     except Exception:
         pass
-    return DEFAULT_INITIAL_PLANS
+    return []
 
 
 def _save_json_plans(plans: list[dict[str, Any]]) -> None:
@@ -205,30 +95,29 @@ async def get_stored_plans() -> list[dict[str, Any]]:
                 FROM subscription_plans
                 ORDER BY price_bdt ASC;
             """)
-            if rows:
-                plans: list[dict[str, Any]] = []
-                for r in rows:
-                    feats = json.loads(r["features"]) if isinstance(r["features"], str) else (r["features"] or [])
-                    plans.append({
-                        "id": r["plan_code"],
-                        "name": r["name"],
-                        "nameBn": r["name_bn"] or r["name"],
-                        "tagline": r["tagline"] or "",
-                        "priceBDT": float(r["price_bdt"]),
-                        "yearlyPriceBDT": float(r["yearly_price_bdt"]) if r["yearly_price_bdt"] is not None else float(r["price_bdt"]) * 10,
-                        "yearlyDiscountPercent": r["yearly_discount_percent"],
-                        "billingPeriod": r["billing_period"],
-                        "messageLimit": r["message_limit"],
-                        "catalogLimit": r["catalog_limit"],
-                        "courierChannels": r["courier_channels"],
-                        "features": feats,
-                        "badge": r["badge"],
-                        "popular": bool(r["popular"]),
-                        "activeMerchants": r["active_merchants"],
-                        "status": r["status"],
-                    })
-                _save_json_plans(plans)
-                return plans
+            plans: list[dict[str, Any]] = []
+            for r in rows:
+                feats = json.loads(r["features"]) if isinstance(r["features"], str) else (r["features"] or [])
+                plans.append({
+                    "id": r["plan_code"],
+                    "name": r["name"],
+                    "nameBn": r["name_bn"] or r["name"],
+                    "tagline": r["tagline"] or "",
+                    "priceBDT": float(r["price_bdt"]),
+                    "yearlyPriceBDT": float(r["yearly_price_bdt"]) if r["yearly_price_bdt"] is not None else float(r["price_bdt"]) * 10,
+                    "yearlyDiscountPercent": r["yearly_discount_percent"],
+                    "billingPeriod": r["billing_period"],
+                    "messageLimit": r["message_limit"],
+                    "catalogLimit": r["catalog_limit"],
+                    "courierChannels": r["courier_channels"],
+                    "features": feats,
+                    "badge": r["badge"],
+                    "popular": bool(r["popular"]),
+                    "activeMerchants": r["active_merchants"],
+                    "status": r["status"],
+                })
+            _save_json_plans(plans)
+            return plans
         except Exception as e:
             print("Postgres read failed, falling back to JSON:", e)
         finally:

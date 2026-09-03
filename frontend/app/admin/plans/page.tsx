@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/api-client";
 import { cx } from "@/lib/format";
+import { IconPlus, IconTag } from "@/components/ui/icons";
+import { Button } from "@/components/ui/primitives";
 import { AdminPlan, FestivalOffer } from "./types";
 import { PlansHeader } from "./components/plans-header";
 import { FestivalTable } from "./components/festival-table";
@@ -316,13 +318,27 @@ export default function AdminPlansPage() {
             ))}
           </div>
         ) : plans.length === 0 ? (
-          <div className="rounded-2xl border border-line bg-white p-12 text-center space-y-3">
+          <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center space-y-3 shadow-2xs">
+            <div className="size-12 rounded-2xl bg-signal/[0.08] text-signal grid place-items-center mx-auto mb-2">
+              <IconTag width={22} height={22} />
+            </div>
             <h3 className="font-bold text-text text-base">
               No Subscription Plans Found
             </h3>
             <p className="text-text-3 text-sm max-w-sm mx-auto">
-              You haven&apos;t published any commercial subscription tiers yet.
+              You haven&apos;t created any commercial subscription plans in the database yet. Click below to add your first plan.
             </p>
+            <div className="pt-2">
+              <Button
+                variant="signal"
+                size="sm"
+                onClick={() => setCreateModalOpen(true)}
+                className="gap-1.5 font-semibold text-[13px] h-9 px-4 cursor-pointer shadow-xs"
+              >
+                <IconPlus width={14} height={14} />
+                <span>Create Your First Plan</span>
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 lg:grid-cols-4">

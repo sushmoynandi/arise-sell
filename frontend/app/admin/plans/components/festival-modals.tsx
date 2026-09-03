@@ -46,7 +46,9 @@ export function FestivalModals({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit Local State
-  const [editState, setEditState] = useState<FestivalOffer | null>(editingOffer);
+  const [editState, setEditState] = useState<FestivalOffer | null>(
+    editingOffer,
+  );
 
   React.useEffect(() => {
     setEditState(editingOffer);
@@ -120,7 +122,9 @@ export function FestivalModals({
 
             <form onSubmit={handleEditSave} className="space-y-3.5 text-[13px]">
               <div>
-                <label className="block font-bold text-text mb-1">Offer Name</label>
+                <label className="block font-bold text-text mb-1">
+                  Offer Name
+                </label>
                 <input
                   type="text"
                   required
@@ -134,7 +138,9 @@ export function FestivalModals({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Coupon Code</label>
+                  <label className="block font-bold text-text mb-1">
+                    Coupon Code
+                  </label>
                   <input
                     type="text"
                     required
@@ -146,7 +152,9 @@ export function FestivalModals({
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-text mb-1">Discount (%)</label>
+                  <label className="block font-bold text-text mb-1">
+                    Discount (%)
+                  </label>
                   <input
                     type="number"
                     required
@@ -165,7 +173,9 @@ export function FestivalModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Bonus Messages Included</label>
+                <label className="block font-bold text-text mb-1">
+                  Bonus Messages Included
+                </label>
                 <input
                   type="number"
                   value={editState.bonusMessages}
@@ -180,7 +190,9 @@ export function FestivalModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Validity Text</label>
+                <label className="block font-bold text-text mb-1">
+                  Validity Text
+                </label>
                 <input
                   type="text"
                   value={editState.validity}
@@ -192,10 +204,20 @@ export function FestivalModals({
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                <Button type="button" variant="outline" size="sm" onClick={onCloseEdit}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseEdit}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="signal" size="sm" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  variant="signal"
+                  size="sm"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
@@ -224,16 +246,24 @@ export function FestivalModals({
                   <IconWarn width={19} height={19} />
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-bold text-text">Delete Festival Offer?</h3>
+                  <h3 className="text-[15px] font-bold text-text">
+                    Delete Festival Offer?
+                  </h3>
                   <p className="text-[12.5px] text-text-3 mt-1 leading-relaxed">
                     Are you sure you want to delete coupon code{" "}
-                    <strong>{deletingOffer.couponCode}</strong>? Stores won&apos;t be able to claim it anymore.
+                    <strong>{deletingOffer.couponCode}</strong>? Stores
+                    won&apos;t be able to claim it anymore.
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                <Button type="button" variant="outline" size="sm" onClick={onCloseDelete}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseDelete}
+                >
                   Cancel
                 </Button>
                 <button
@@ -277,7 +307,9 @@ export function FestivalModals({
 
             <form onSubmit={handleCreate} className="space-y-3.5 text-[13px]">
               <div>
-                <label className="block font-bold text-text mb-1">Offer Name</label>
+                <label className="block font-bold text-text mb-1">
+                  Offer Name
+                </label>
                 <input
                   type="text"
                   required
@@ -290,7 +322,9 @@ export function FestivalModals({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Coupon Code</label>
+                  <label className="block font-bold text-text mb-1">
+                    Coupon Code
+                  </label>
                   <input
                     type="text"
                     required
@@ -301,7 +335,9 @@ export function FestivalModals({
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-text mb-1">Discount (%)</label>
+                  <label className="block font-bold text-text mb-1">
+                    Discount (%)
+                  </label>
                   <input
                     type="number"
                     required
@@ -315,7 +351,9 @@ export function FestivalModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Bonus Messages Included</label>
+                <label className="block font-bold text-text mb-1">
+                  Bonus Messages Included
+                </label>
                 <input
                   type="number"
                   value={festBonus}
@@ -326,7 +364,9 @@ export function FestivalModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Validity Text</label>
+                <label className="block font-bold text-text mb-1">
+                  Validity Text
+                </label>
                 <input
                   type="text"
                   value={festValidity}
@@ -337,10 +377,20 @@ export function FestivalModals({
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                <Button type="button" variant="outline" size="sm" onClick={onCloseAdd}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseAdd}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="signal" size="sm" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  variant="signal"
+                  size="sm"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Activating..." : "Activate Festival Offer"}
                 </Button>
               </div>
@@ -351,4 +401,3 @@ export function FestivalModals({
     </>
   );
 }
-
