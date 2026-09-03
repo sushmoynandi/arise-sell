@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useMemo, useSyncExternalStore } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ADMIN_INVOICES,
-  INITIAL_ADMIN_PLANS,
   ADMIN_MERCHANTS,
   AdminInvoice,
 } from "@/data/admin";
-import { getStoredPlans, subscribePlans } from "@/lib/plans-store";
+import { AdminPlan } from "../plans/types";
+import { api } from "@/lib/api-client";
 import {
   IconCheck,
   IconClose,
@@ -382,13 +383,135 @@ function getMerchantDetails(merchantName: string) {
   };
 }
 
+const INITIAL_STORED_PLANS: AdminPlan[] = [
+  {
+    id: "plan-1788444069645",
+    name: "Free",
+    nameBn: "Free",
+    priceBDT: 0,
+    yearlyPriceBDT: 0,
+    billingPeriod: "both",
+    messageLimit: 100,
+    catalogLimit: 100,
+    courierChannels: 2,
+    badge: undefined,
+    popular: false,
+    activeMerchants: 0,
+    status: "active",
+    showOnHome: true,
+    features: ["100 Messages / month (Comment + Inbox)"],
+  },
+  {
+    id: "plan-1788444248362",
+    name: "go",
+    nameBn: "gg",
+    priceBDT: 200,
+    yearlyPriceBDT: 2000,
+    billingPeriod: "both",
+    messageLimit: 500,
+    catalogLimit: 300,
+    courierChannels: 2,
+    badge: "Startup",
+    popular: false,
+    activeMerchants: 0,
+    status: "active",
+    showOnHome: true,
+    features: ["500 Messages / month (Comment + Inbox)"],
+  },
+  {
+    id: "plan-1788445016566",
+    name: "Pro",
+    nameBn: "Pro",
+    priceBDT: 999,
+    yearlyPriceBDT: 9999,
+    billingPeriod: "both",
+    messageLimit: 10000,
+    catalogLimit: 1000,
+    courierChannels: 3,
+    badge: "Best sale",
+    popular: true,
+    activeMerchants: 0,
+    status: "active",
+    showOnHome: true,
+    features: ["10,000 Messages / month (Comment + Inbox)"],
+  },
+  {
+    id: "plan-1788445141750",
+    name: "Business",
+    nameBn: "Business",
+    priceBDT: 2000,
+    yearlyPriceBDT: 20000,
+    billingPeriod: "both",
+    messageLimit: 10000,
+    catalogLimit: 10000,
+    courierChannels: 1,
+    badge: undefined,
+    popular: false,
+    activeMerchants: 0,
+    status: "active",
+    showOnHome: true,
+    features: ["10,000 Messages / month (Comment + Inbox)"],
+  },
+  {
+    id: "plan-1788445192952",
+    name: "Enterprize",
+    nameBn: "Enterprize",
+    priceBDT: 10000,
+    yearlyPriceBDT: 100000,
+    billingPeriod: "both",
+    messageLimit: 10000,
+    catalogLimit: 10000,
+    courierChannels: 4,
+    badge: "VIP",
+    popular: false,
+    activeMerchants: 0,
+    status: "active",
+    showOnHome: false,
+    features: ["Unlimited Messages / month (Comment + Inbox)"],
+  },
+];
+
 export default function AdminSubscriptionsPage() {
-  const plans = useSyncExternalStore(
-    subscribePlans,
-    getStoredPlans,
-    () => INITIAL_ADMIN_PLANS,
-  );
-  const [invoices] = useState<AdminInvoice[]>(ADMIN_INVOICES);
+  const [plans, setPlans] = useState<AdminPlan[]>(INITIAL_STORED_PLANS);
+  const [invoices, setInvoices] = useState<AdminInvoice[]>(ADMIN_INVOICES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [plansRes, invoicesRes] = await Promise.allSettled([
+          api.admin.listPlans(),
+          api.admin.listInvoices(),
+        ]);
+        if (
+          mounted &&
+          plansRes.status === "fulfilled" &&
+          Array.isArray(plansRes.value) &&
+          plansRes.value.length > 0
+        ) {
+          setPlans(plansRes.value as unknown as AdminPlan[]);
+        }
+        if (
+          mounted &&
+          invoicesRes.status === "fulfilled" &&
+          Array.isArray(invoicesRes.value) &&
+          invoicesRes.value.length > 0
+        ) {
+          setInvoices(invoicesRes.value as unknown as AdminInvoice[]);
+        }
+      } catch (err) {
+        console.error("Failed to load admin subscription data:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const [selectedInvoice, setSelectedInvoice] = useState<AdminInvoice | null>(
     null,
   );
@@ -426,268 +549,80 @@ export default function AdminSubscriptionsPage() {
     return ALL_MONTHS.find((m) => m.num === effectiveMonthNum) || ALL_MONTHS[8];
   }, [effectiveMonthNum]);
 
-  // Direct Cashflow Sales Model with Promo Discount Deduction (Net Revenue = Gross - Promo)
+  // Dynamic Cashflow Sales Model matching live Database Plans
   const activePeriodData = useMemo(() => {
-    const growthPlan = plans.find((p) => p.id === "plan-growth");
-    const proPlan = plans.find((p) => p.id === "plan-business");
-    const vipPlan = plans.find((p) => p.id === "plan-vip-scale");
+    const currentPlans = plans.length > 0 ? plans : INITIAL_STORED_PLANS;
+    // Sort plans by price ascending
+    const sortedPlans = [...currentPlans].sort((a, b) => a.priceBDT - b.priceBDT);
+    const paidPlans = sortedPlans.filter((p) => p.priceBDT > 0);
 
-    const growthMonthlyRate = growthPlan?.priceBDT ?? 200;
-    const growthYearlyRate = growthPlan?.yearlyPriceBDT ?? 2000;
+    const dataMap =
+      selectedYear === 2025 ? MONTHLY_DATA_2025 : MONTHLY_DATA_2026;
 
-    const proMonthlyRate = proPlan?.priceBDT ?? 700;
-    const proYearlyRate = proPlan?.yearlyPriceBDT ?? 7000;
-
-    const vipMonthlyRate = vipPlan?.priceBDT ?? 2500;
-    const vipYearlyRate = vipPlan?.yearlyPriceBDT ?? 25000;
-
-    const customMonthlyRate = 12500;
-    const customYearlyRate = 150000;
+    let totalStores = 0;
+    let freeStores = 0;
+    let totalPromoCount = 0;
+    let totalPromoDiscount = 0;
+    let periodName = "";
+    let periodNameBn = "";
+    let growthLabel = "";
 
     if (isYearly) {
-      // Aggregate all months of selected year (Sum of all 12 months)
-      const dataMap =
-        selectedYear === 2025 ? MONTHLY_DATA_2025 : MONTHLY_DATA_2026;
       const monthKeys = Object.keys(dataMap).map(Number);
-
-      let totalStoresPeak = 0;
-      let freeStoresPeak = 0;
-      let totalMonthlyGrowthSubs = 0;
-      let totalYearlyGrowthSold = 0;
-      let totalMonthlyProSubs = 0;
-      let totalYearlyProSold = 0;
-      let totalMonthlyVipSubs = 0;
-      let totalYearlyVipSold = 0;
-      let totalEnterpriseDeals = 0;
-      let totalPromoCount = 0;
-      let totalPromoDiscount = 0;
-
       for (const m of monthKeys) {
         const snap = dataMap[m];
-        if (snap.stores > totalStoresPeak) totalStoresPeak = snap.stores;
-        if (snap.freeStores > freeStoresPeak) freeStoresPeak = snap.freeStores;
-        totalMonthlyGrowthSubs += snap.growthMonthly;
-        totalYearlyGrowthSold += snap.growthYearlySold;
-        totalMonthlyProSubs += snap.proMonthly;
-        totalYearlyProSold += snap.proYearlySold;
-        totalMonthlyVipSubs += snap.vipMonthly;
-        totalYearlyVipSold += snap.vipYearlySold;
-        totalEnterpriseDeals = Math.max(
-          totalEnterpriseDeals,
-          snap.enterpriseDeals,
-        );
+        if (snap.stores > totalStores) totalStores = snap.stores;
+        if (snap.freeStores > freeStores) freeStores = snap.freeStores;
         totalPromoCount += snap.promoCount;
         totalPromoDiscount += snap.promoDiscountBDT;
       }
-
-      // Gross Revenues
-      const growthGross =
-        totalMonthlyGrowthSubs * growthMonthlyRate +
-        totalYearlyGrowthSold * growthYearlyRate;
-      const proGross =
-        totalMonthlyProSubs * proMonthlyRate +
-        totalYearlyProSold * proYearlyRate;
-      const vipGross =
-        totalMonthlyVipSubs * vipMonthlyRate +
-        totalYearlyVipSold * vipYearlyRate;
-      const enterpriseGross = totalEnterpriseDeals * customYearlyRate;
-
-      // Promo distributions
-      const growthPromos = Math.round(totalPromoCount * 0.38);
-      const proPromos = Math.round(totalPromoCount * 0.5);
-      const vipPromos = Math.max(
-        1,
-        totalPromoCount - (growthPromos + proPromos),
-      );
-
-      const growthPromoDisc = Math.round(totalPromoDiscount * 0.35);
-      const proPromoDisc = Math.round(totalPromoDiscount * 0.5);
-      const vipPromoDisc =
-        totalPromoDiscount - (growthPromoDisc + proPromoDisc);
-
-      // Net Revenues (Gross minus Promo Discount)
-      const growthRev = growthGross - growthPromoDisc;
-      const proRev = proGross - proPromoDisc;
-      const vipRev = vipGross - vipPromoDisc;
-      const enterpriseRev = enterpriseGross;
-
-      const grossRevenue = growthGross + proGross + vipGross + enterpriseGross;
-      const totalRevenue = growthRev + proRev + vipRev + enterpriseRev; // Net Revenue
-      const totalPaid = totalStoresPeak - freeStoresPeak;
-
-      const growthStoresTotal = Math.round(totalPaid * 0.35);
-      const proStoresTotal = Math.round(totalPaid * 0.44);
-      const vipStoresTotal = Math.round(totalPaid * 0.16);
-
-      const planCards = [
-        {
-          id: "plan-free",
-          name: "Free Trial",
-          nameBn: "ফ্রি শুরু",
-          badge: undefined,
-          popular: false,
-          monthlyRate: 0,
-          yearlyRate: 0,
-          ordersQuota: 40,
-          totalStores: freeStoresPeak,
-          monthlySubs: freeStoresPeak,
-          yearlySubs: 0,
-          promoUsers: 0,
-          promoDiscount: 0,
-          grossValue: 0,
-          revenueValue: 0,
-          isFree: true,
-          isCustom: false,
-        },
-        {
-          id: "plan-growth",
-          name: "Growth",
-          nameBn: "গ্রোথ",
-          badge: "Best for Starters",
-          popular: false,
-          monthlyRate: growthMonthlyRate,
-          yearlyRate: growthYearlyRate,
-          ordersQuota: 200,
-          totalStores: growthStoresTotal,
-          monthlySubs: totalMonthlyGrowthSubs,
-          yearlySubs: totalYearlyGrowthSold,
-          promoUsers: growthPromos,
-          promoDiscount: growthPromoDisc,
-          grossValue: growthGross,
-          revenueValue: growthRev,
-          isFree: false,
-          isCustom: false,
-        },
-        {
-          id: "plan-business",
-          name: "Business Pro",
-          nameBn: "বিজনেস প্রো",
-          badge: "Most Popular",
-          popular: true,
-          monthlyRate: proMonthlyRate,
-          yearlyRate: proYearlyRate,
-          ordersQuota: 800,
-          totalStores: proStoresTotal,
-          monthlySubs: totalMonthlyProSubs,
-          yearlySubs: totalYearlyProSold,
-          promoUsers: proPromos,
-          promoDiscount: proPromoDisc,
-          grossValue: proGross,
-          revenueValue: proRev,
-          isFree: false,
-          isCustom: false,
-        },
-        {
-          id: "plan-vip-scale",
-          name: "VIP Scale",
-          nameBn: "ভিআইপি স্কেল",
-          badge: "Unlimited Scale",
-          popular: false,
-          monthlyRate: vipMonthlyRate,
-          yearlyRate: vipYearlyRate,
-          ordersQuota: 3500,
-          totalStores: vipStoresTotal,
-          monthlySubs: totalMonthlyVipSubs,
-          yearlySubs: totalYearlyVipSold,
-          promoUsers: vipPromos,
-          promoDiscount: vipPromoDisc,
-          grossValue: vipGross,
-          revenueValue: vipRev,
-          isFree: false,
-          isCustom: false,
-        },
-        {
-          id: "plan-custom-enterprise",
-          name: "Custom Enterprise",
-          nameBn: "কাস্টম ডিল ও চুক্তি",
-          badge: undefined,
-          popular: false,
-          monthlyRate: customMonthlyRate,
-          yearlyRate: customYearlyRate,
-          ordersQuota: 0,
-          totalStores: totalEnterpriseDeals,
-          monthlySubs: 0,
-          yearlySubs: totalEnterpriseDeals,
-          promoUsers: 0,
-          promoDiscount: 0,
-          grossValue: enterpriseGross,
-          revenueValue: enterpriseRev,
-          isFree: false,
-          isCustom: true,
-        },
-      ];
-
-      return {
-        grossRevenue,
-        totalRevenue,
-        totalMerchants: totalStoresPeak,
-        totalPaid,
-        trialMerchants: freeStoresPeak,
-        growthLabel:
-          selectedYear === 2025 ? "Inception Year" : "+320% (4.2x Scale)",
-        promoCount: totalPromoCount,
-        promoDiscountBDT: totalPromoDiscount,
-        planCards,
-        periodName: `${selectedYear} Annual Summary`,
-        periodNameBn: `${selectedYear} বাৎসরিক সারাংশ`,
-      };
+      growthLabel =
+        selectedYear === 2025 ? "Inception Year" : "+320% (4.2x Scale)";
+      periodName = `${selectedYear} Annual Summary`;
+      periodNameBn = `${selectedYear} বাৎসরিক সারাংশ`;
     } else {
-      // Single Selected Month (Direct Cashflow: Monthly fees + Yearly packages purchased that month minus Promo Discount)
-      const dataMap =
-        selectedYear === 2025 ? MONTHLY_DATA_2025 : MONTHLY_DATA_2026;
       const snap = dataMap[effectiveMonthNum] || dataMap[9];
+      totalStores = snap.stores;
+      freeStores = snap.freeStores;
+      totalPromoCount = snap.promoCount;
+      totalPromoDiscount = snap.promoDiscountBDT;
+      growthLabel = snap.growth;
+      periodName = `${activeMonthObj.name} ${selectedYear}`;
+      periodNameBn = `${activeMonthObj.nameBn} ${selectedYear}`;
+    }
 
-      // Gross Sales
-      const growthGross =
-        snap.growthMonthly * growthMonthlyRate +
-        snap.growthYearlySold * growthYearlyRate;
-      const proGross =
-        snap.proMonthly * proMonthlyRate + snap.proYearlySold * proYearlyRate;
-      const vipGross =
-        snap.vipMonthly * vipMonthlyRate + snap.vipYearlySold * vipYearlyRate;
-      const enterpriseGross = snap.enterpriseDeals * customMonthlyRate;
+    const totalPaidStores = Math.max(0, totalStores - freeStores);
 
-      // Promo Discounts per plan
-      const growthPromos = Math.round(snap.promoCount * 0.38);
-      const proPromos = Math.round(snap.promoCount * 0.5);
-      const vipPromos = Math.max(
-        1,
-        snap.promoCount - (growthPromos + proPromos),
-      );
+    // Distribution weights for paid tiers
+    const weights = paidPlans.map((p, idx) => {
+      if (p.popular) return 0.45;
+      if (idx === 0) return 0.35; // lowest paid tier e.g. 'go'
+      if (idx === paidPlans.length - 1) return 0.06; // highest paid tier e.g. 'Enterprize'
+      return 0.20; // middle tier e.g. 'Business'
+    });
+    const weightSum = weights.reduce((a, b) => a + b, 0) || 1;
+    const normalizedWeights = weights.map((w) => w / weightSum);
 
-      const growthPromoDisc = growthPromos * 100;
-      const proPromoDisc = proPromos * 200;
-      const vipPromoDisc = Math.max(
-        0,
-        snap.promoDiscountBDT - (growthPromoDisc + proPromoDisc),
-      );
+    const planCards = sortedPlans.map((plan) => {
+      const isFree = plan.priceBDT === 0;
+      const isCustom = plan.priceBDT >= 10000;
+      const monthlyRate = plan.priceBDT;
+      const yearlyRate = plan.yearlyPriceBDT ?? plan.priceBDT * 10;
+      const messageLimit = plan.messageLimit || (isFree ? 100 : 200);
 
-      // Net Sales (Gross minus Promo Discount)
-      const growthRev = growthGross - growthPromoDisc;
-      const proRev = proGross - proPromoDisc;
-      const vipRev = vipGross - vipPromoDisc;
-      const enterpriseRev = enterpriseGross;
-
-      const grossRevenue = growthGross + proGross + vipGross + enterpriseGross;
-      const totalRevenue = growthRev + proRev + vipRev + enterpriseRev; // Net Revenue
-      const totalPaid = snap.stores - snap.freeStores;
-
-      const growthStores = snap.growthMonthly + snap.growthYearlySold;
-      const proStores = snap.proMonthly + snap.proYearlySold;
-      const vipStores = snap.vipMonthly + snap.vipYearlySold;
-
-      const planCards = [
-        {
-          id: "plan-free",
-          name: "Free Trial",
-          nameBn: "ফ্রি শুরু",
-          badge: undefined,
-          popular: false,
+      if (isFree) {
+        const stores = plan.activeMerchants || freeStores;
+        return {
+          id: plan.id,
+          name: plan.name,
+          nameBn: plan.nameBn || plan.name,
+          badge: plan.badge,
+          popular: plan.popular || false,
           monthlyRate: 0,
           yearlyRate: 0,
-          ordersQuota: 40,
-          totalStores: snap.freeStores,
-          monthlySubs: snap.freeStores,
+          messageLimit,
+          totalStores: stores,
+          monthlySubs: stores,
           yearlySubs: 0,
           promoUsers: 0,
           promoDiscount: 0,
@@ -695,99 +630,75 @@ export default function AdminSubscriptionsPage() {
           revenueValue: 0,
           isFree: true,
           isCustom: false,
-        },
-        {
-          id: "plan-growth",
-          name: "Growth",
-          nameBn: "গ্রোথ",
-          badge: "Best for Starters",
-          popular: false,
-          monthlyRate: growthMonthlyRate,
-          yearlyRate: growthYearlyRate,
-          ordersQuota: 200,
-          totalStores: growthStores,
-          monthlySubs: snap.growthMonthly,
-          yearlySubs: snap.growthYearlySold,
-          promoUsers: growthPromos,
-          promoDiscount: growthPromoDisc,
-          grossValue: growthGross,
-          revenueValue: growthRev,
-          isFree: false,
-          isCustom: false,
-        },
-        {
-          id: "plan-business",
-          name: "Business Pro",
-          nameBn: "বিজনেস প্রো",
-          badge: "Most Popular",
-          popular: true,
-          monthlyRate: proMonthlyRate,
-          yearlyRate: proYearlyRate,
-          ordersQuota: 800,
-          totalStores: proStores,
-          monthlySubs: snap.proMonthly,
-          yearlySubs: snap.proYearlySold,
-          promoUsers: proPromos,
-          promoDiscount: proPromoDisc,
-          grossValue: proGross,
-          revenueValue: proRev,
-          isFree: false,
-          isCustom: false,
-        },
-        {
-          id: "plan-vip-scale",
-          name: "VIP Scale",
-          nameBn: "ভিআইপি স্কেল",
-          badge: "Unlimited Scale",
-          popular: false,
-          monthlyRate: vipMonthlyRate,
-          yearlyRate: vipYearlyRate,
-          ordersQuota: 3500,
-          totalStores: vipStores,
-          monthlySubs: snap.vipMonthly,
-          yearlySubs: snap.vipYearlySold,
-          promoUsers: vipPromos,
-          promoDiscount: vipPromoDisc,
-          grossValue: vipGross,
-          revenueValue: vipRev,
-          isFree: false,
-          isCustom: false,
-        },
-        {
-          id: "plan-custom-enterprise",
-          name: "Custom Enterprise",
-          nameBn: "কাস্টম ডিল ও চুক্তি",
-          badge: undefined,
-          popular: false,
-          monthlyRate: customMonthlyRate,
-          yearlyRate: customYearlyRate,
-          ordersQuota: 0,
-          totalStores: snap.enterpriseDeals,
-          monthlySubs: 0,
-          yearlySubs: snap.enterpriseDeals,
-          promoUsers: 0,
-          promoDiscount: 0,
-          grossValue: enterpriseGross,
-          revenueValue: enterpriseRev,
-          isFree: false,
-          isCustom: true,
-        },
-      ];
+        };
+      }
+
+      const paidIdx = paidPlans.findIndex((p) => p.id === plan.id);
+      const weight =
+        normalizedWeights[paidIdx >= 0 ? paidIdx : 0] ||
+        1 / (paidPlans.length || 1);
+      const planStores =
+        plan.activeMerchants ||
+        Math.max(1, Math.round(totalPaidStores * weight));
+
+      let monthlySubs = 0;
+      let yearlySubs = 0;
+      if (isYearly) {
+        monthlySubs = plan.monthlySubscribers
+          ? plan.monthlySubscribers * 12
+          : Math.round(planStores * 0.75 * 12);
+        yearlySubs =
+          plan.yearlySubscribers || Math.max(1, Math.round(planStores * 0.28));
+      } else {
+        monthlySubs =
+          plan.monthlySubscribers || Math.round(planStores * 0.8);
+        yearlySubs =
+          plan.yearlySubscribers ||
+          Math.max(0, Math.round(planStores * 0.08));
+      }
+
+      const grossValue = monthlySubs * monthlyRate + yearlySubs * yearlyRate;
+      const promoUsers = Math.round(totalPromoCount * weight);
+      const promoDiscount = Math.round(totalPromoDiscount * weight);
+      const revenueValue = Math.max(0, grossValue - promoDiscount);
 
       return {
-        grossRevenue,
-        totalRevenue,
-        totalMerchants: snap.stores,
-        totalPaid,
-        trialMerchants: snap.freeStores,
-        growthLabel: snap.growth,
-        promoCount: snap.promoCount,
-        promoDiscountBDT: snap.promoDiscountBDT,
-        planCards,
-        periodName: `${activeMonthObj.name} ${selectedYear}`,
-        periodNameBn: `${activeMonthObj.nameBn} ${selectedYear}`,
+        id: plan.id,
+        name: plan.name,
+        nameBn: plan.nameBn || plan.name,
+        badge: plan.badge,
+        popular: plan.popular || false,
+        monthlyRate,
+        yearlyRate,
+        messageLimit,
+        totalStores: planStores,
+        monthlySubs,
+        yearlySubs,
+        promoUsers,
+        promoDiscount,
+        grossValue,
+        revenueValue,
+        isFree: false,
+        isCustom,
       };
-    }
+    });
+
+    const grossRevenue = planCards.reduce((sum, c) => sum + c.grossValue, 0);
+    const totalRevenue = planCards.reduce((sum, c) => sum + c.revenueValue, 0);
+
+    return {
+      grossRevenue,
+      totalRevenue,
+      totalMerchants: totalStores,
+      totalPaid: totalPaidStores,
+      trialMerchants: freeStores,
+      growthLabel,
+      promoCount: totalPromoCount,
+      promoDiscountBDT: totalPromoDiscount,
+      planCards,
+      periodName,
+      periodNameBn,
+    };
   }, [isYearly, selectedYear, effectiveMonthNum, activeMonthObj, plans]);
 
   const filteredInvoices = useMemo(() => {
@@ -1259,8 +1170,14 @@ export default function AdminSubscriptionsPage() {
       {/* ─── 1. Header ─── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-line pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-text font-(family-name:--font-bricolage) tracking-tight">
-            Subscriptions &amp; Billing Revenue
+          <h1 className="text-2xl font-bold text-text font-(family-name:--font-bricolage) tracking-tight flex items-center gap-2">
+            <span>Subscriptions &amp; Billing Revenue</span>
+            {loading && (
+              <span
+                className="size-2 rounded-full bg-signal animate-pulse"
+                title="Syncing..."
+              />
+            )}
           </h1>
           <p className="text-[13.5px] text-text-3 mt-0.5">
             Platform recurring revenue analytics, promo discounts, timeline
@@ -1269,6 +1186,12 @@ export default function AdminSubscriptionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/admin/plans"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white hover:bg-surface-2 px-3.5 py-1.5 text-[12.5px] font-semibold text-text shadow-2xs transition-colors h-9 cursor-pointer"
+          >
+            <span>⚙️ Manage Plans</span>
+          </Link>
           <Button
             variant="signal"
             size="sm"
@@ -1527,7 +1450,7 @@ export default function AdminSubscriptionsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {activePeriodData.planCards.map((plan) => {
             const storeShare = (
               (plan.totalStores / activePeriodData.totalMerchants) *
@@ -1589,33 +1512,8 @@ export default function AdminSubscriptionsPage() {
                             Free Forever
                           </span>
                         </div>
-                        <span className="text-[11px] text-text-3 block">
-                          40 orders quota
-                        </span>
-                      </div>
-                    ) : plan.isCustom ? (
-                      <div>
-                        <div className="flex items-baseline justify-between">
-                          <div className="flex items-baseline gap-1">
-                            <span className="font-bold text-text text-[16px] font-(family-name:--font-bricolage)">
-                              {formatTaka(plan.monthlyRate)}
-                            </span>
-                            <span className="text-[10.5px] text-text-3 font-mono">
-                              / mo
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-semibold text-text-2 text-[11.5px] font-mono">
-                              {formatTaka(plan.yearlyRate)}
-                            </span>
-                            <span className="text-[9.5px] text-text-3 font-mono">
-                              {" "}
-                              / yr
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-[11px] text-text-3 block">
-                          Unlimited orders · Dedicated SLA
+                        <span className="text-[11px] text-text-3 block font-mono">
+                          {plan.messageLimit?.toLocaleString()} Messages / mo
                         </span>
                       </div>
                     ) : (
@@ -1639,8 +1537,8 @@ export default function AdminSubscriptionsPage() {
                             </span>
                           </div>
                         </div>
-                        <span className="text-[11px] text-text-3 block">
-                          {plan.ordersQuota.toLocaleString()} orders quota
+                        <span className="text-[11px] text-text-3 block font-mono">
+                          {plan.messageLimit?.toLocaleString()} Messages / mo
                         </span>
                       </div>
                     )}
@@ -1663,22 +1561,12 @@ export default function AdminSubscriptionsPage() {
                           <span>Free Quota Given:</span>
                           <span className="font-semibold font-mono text-text">
                             {(
-                              plan.totalStores * plan.ordersQuota
+                              plan.totalStores * plan.messageLimit
                             ).toLocaleString()}{" "}
-                            Orders
+                            Messages
                           </span>
                         </div>
                       </>
-                    ) : plan.isCustom ? (
-                      <div className="flex items-center justify-between text-text">
-                        <span className="text-text-3">Custom Deals:</span>
-                        <span className="font-bold font-(family-name:--font-bricolage) text-[13px] text-text">
-                          {plan.totalStores}{" "}
-                          <span className="text-[10.5px] text-text-3 font-normal">
-                            Brands
-                          </span>
-                        </span>
-                      </div>
                     ) : (
                       <>
                         <div className="flex items-center justify-between text-text">
