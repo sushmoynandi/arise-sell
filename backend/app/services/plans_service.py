@@ -27,6 +27,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "catalogLimit": 50,
         "courierChannels": 1,
         "features": [
+            "40 closed orders / month",
             "40 AI replies / month (Comment + Inbox)",
             "1 channel (Messenger or WhatsApp)",
             "Bangla · Banglish · English AI agent",
@@ -44,6 +45,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "id": "plan-growth",
         "name": "Growth",
         "nameBn": "গ্রোথ",
+        "tagline": "For growing Facebook & WhatsApp shops with daily orders",
         "tagline": "For growing Facebook & WhatsApp shops with daily customer messages",
         "priceBDT": 200,
         "yearlyPriceBDT": 2000,
@@ -55,6 +57,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "badge": "Best for Starters",
         "popular": False,
         "features": [
+            "200 closed orders / month",
             "200 AI replies / month (Comment + Inbox)",
             "WhatsApp & Facebook Messenger connected",
             "Steadfast & Pathao 1-click booking",
@@ -82,6 +85,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "badge": "Most Popular",
         "popular": True,
         "features": [
+            "600 closed orders / month",
             "600 AI replies / month (Comment + Inbox)",
             "Omnichannel: Messenger + WhatsApp + Instagram",
             "Courier fraud blacklist auto-check",
@@ -110,6 +114,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
         "badge": "Enterprise Scale",
         "popular": False,
         "features": [
+            "2,000 closed orders / month",
             "2,000 AI replies / month (Comment + Inbox)",
             "All channels & couriers unlocked",
             "Custom LLM fine-tuning on shop history",
@@ -133,7 +138,6 @@ DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
         "couponCode": "EID2026",
         "discountPercent": 25,
         "bonusMessages": 500,
-        "bonusOrders": 500,
         "validity": "Valid till Eid Night",
         "active": True,
     },
@@ -144,7 +148,6 @@ DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
         "couponCode": "PUJA2026",
         "discountPercent": 20,
         "bonusMessages": 300,
-        "bonusOrders": 300,
         "validity": "Valid till Dashami",
         "active": False,
     },
@@ -155,7 +158,6 @@ DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
         "couponCode": "BOISHAKH1433",
         "discountPercent": 15,
         "bonusMessages": 250,
-        "bonusOrders": 250,
         "validity": "Valid in Baishakh",
         "active": False,
     },
@@ -293,7 +295,7 @@ def create_stored_festival_offer(data: dict[str, Any]) -> dict[str, Any]:
     offers = get_stored_festival_offers()
     offer_id = data.get("id") or f"fest-{int(time.time() * 1000)}"
 
-    bonus_count = int(data.get("bonusMessages") or data.get("bonusOrders") or 0)
+    bonus_count = int(data.get("bonusMessages", 0))
     new_offer: dict[str, Any] = {
         "id": offer_id,
         "festivalName": data.get("festivalName", ""),
@@ -301,7 +303,6 @@ def create_stored_festival_offer(data: dict[str, Any]) -> dict[str, Any]:
         "couponCode": str(data.get("couponCode", "")).upper().replace(" ", ""),
         "discountPercent": int(data.get("discountPercent", 20)),
         "bonusMessages": bonus_count,
-        "bonusOrders": bonus_count,
         "validity": data.get("validity", "Limited Time Offer"),
         "active": bool(data.get("active", True)),
     }

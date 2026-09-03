@@ -282,7 +282,7 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     catalogLimit: 50,
     courierChannels: 1,
     features: [
-      "40 AI replies / month (Comment + Inbox)",
+      "40 closed orders / month",
       "1 channel (Messenger or WhatsApp)",
       "Bangla · Banglish · English AI agent",
       "Photo → product vision matching",
@@ -307,7 +307,7 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     courierChannels: 2,
     badge: "Best for Starters",
     features: [
-      "200 AI replies / month (Comment + Inbox)",
+      "200 closed orders / month",
       "WhatsApp & Facebook Messenger connected",
       "Steadfast & Pathao 1-click booking",
       "Branded Bangla digital invoices",
@@ -334,7 +334,7 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     popular: true,
     badge: "Most Popular",
     features: [
-      "800 AI replies / month (Comment + Inbox)",
+      "800 closed orders / month",
       "All channels: WhatsApp, Messenger, Instagram, Web",
       "Multi-courier smart auto-routing & failover",
       "WhatsApp broadcast campaigns & promos",
@@ -360,7 +360,7 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
     courierChannels: 4,
     badge: "Unlimited Scale",
     features: [
-      "3,500 AI replies / month (Comment + Inbox)",
+      "3,500 closed orders / month",
       "Unlimited pages, numbers & consoles",
       "Private custom AI model & dedicated failover",
       "Custom ERP / POS API & webhooks",

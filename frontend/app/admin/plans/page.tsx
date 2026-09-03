@@ -23,8 +23,7 @@ type FestivalOffer = {
   festivalNameBn: string;
   couponCode: string;
   discountPercent: number;
-  bonusMessages?: number;
-  bonusOrders?: number;
+  bonusMessages: number;
   validity: string;
   active: boolean;
 };
@@ -69,7 +68,7 @@ export default function AdminPlansPage() {
   const [courierChannels, setCourierChannels] = useState(2);
   const [badge, setBadge] = useState("");
   const [featuresStr, setFeaturesStr] = useState(
-    "200 AI replies / month\nWhatsApp & Facebook Messenger\nSteadfast & Pathao 1-click booking\n2 team member seats",
+    "200 closed orders / month\nWhatsApp & Facebook Messenger\nSteadfast & Pathao 1-click booking\n2 team member seats",
   );
 
   // Form State for new Festival Offer
@@ -151,7 +150,6 @@ export default function AdminPlansPage() {
       couponCode: festCode.toUpperCase().replace(/\s+/g, ""),
       discountPercent: Number(festDiscount),
       bonusMessages: Number(festBonus),
-      bonusOrders: Number(festBonus),
       validity: festValidity,
       active: true,
     };
@@ -414,7 +412,8 @@ export default function AdminPlansPage() {
                 Seasonal &amp; Festival Promo Campaigns
               </h2>
               <p className="text-[12px] text-text-3">
-                Manage promotional coupon codes, discounts, and bonus AI reply credits.
+                Manage promotional coupon codes, discounts, and order
+                allowances.
               </p>
             </div>
           </div>
@@ -436,7 +435,7 @@ export default function AdminPlansPage() {
               <tr>
                 <th className="py-3 px-4.5">Campaign &amp; Coupon</th>
                 <th className="py-3 px-4">Discount</th>
-                <th className="py-3 px-4">Bonus AI Replies</th>
+                <th className="py-3 px-4">Bonus Orders</th>
                 <th className="py-3 px-4">Validity</th>
                 <th className="py-3 px-4">Live Status</th>
                 <th className="py-3 px-4.5 text-right">Actions</th>
@@ -488,7 +487,7 @@ export default function AdminPlansPage() {
                     </td>
 
                     <td className="py-3.5 px-4 font-mono font-semibold text-text">
-                      +{(offer.bonusMessages ?? offer.bonusOrders ?? 0).toLocaleString()} AI replies
+                      +{offer.bonusMessages.toLocaleString()} AI replies
                     </td>
 
                     <td className="py-3.5 px-4 text-text-3 font-mono text-[12px]">
@@ -659,7 +658,7 @@ export default function AdminPlansPage() {
                     )}
 
                     <p className="text-[12.5px] text-signal font-semibold pt-0.5">
-                      {p.messageLimit.toLocaleString()} AI replies / mo
+                      {p.messageLimit.toLocaleString()} orders included
                     </p>
                   </div>
 
@@ -809,16 +808,11 @@ export default function AdminPlansPage() {
                 </label>
                 <input
                   type="number"
-                  value={
-                    editingFestivalOffer.bonusMessages ??
-                    editingFestivalOffer.bonusOrders ??
-                    0
-                  }
+                  value={editingFestivalOffer.bonusMessages}
                   onChange={(e) =>
                     setEditingFestivalOffer({
                       ...editingFestivalOffer,
                       bonusMessages: Number(e.target.value),
-                      bonusOrders: Number(e.target.value),
                     })
                   }
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
@@ -979,13 +973,13 @@ export default function AdminPlansPage() {
 
               <div>
                 <label className="block font-bold text-text mb-1">
-                  Bonus AI Replies Included
+                  Bonus Orders Included
                 </label>
                 <input
                   type="number"
                   value={festBonus}
                   onChange={(e) => setFestBonus(Number(e.target.value))}
-                  placeholder="e.g. 500 (bonus reply credits)"
+                  placeholder="e.g. 500"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
                 />
               </div>
@@ -1356,7 +1350,7 @@ export default function AdminPlansPage() {
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-text mb-1">
-                    AI Reply Quota / mo
+                    Order Quota / mo
                   </label>
                   <input
                     type="number"

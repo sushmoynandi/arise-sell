@@ -50,8 +50,7 @@ class FestivalOfferRequest(BaseModel):
     festivalNameBn: str | None = None
     couponCode: str
     discountPercent: int = 20
-    bonusMessages: int | None = None
-    bonusOrders: int | None = None
+    bonusMessages: int = 0
     validity: str = "Limited Time Offer"
     active: bool = True
 
