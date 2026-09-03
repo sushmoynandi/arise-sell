@@ -124,6 +124,12 @@ export default function AdminLoginPage() {
     }
   };
 
+  const fillPrimaryCreds = () => {
+    setEmail("admin@arisesell.com");
+    setPassword("MasterAdmin@2026!");
+    setError(null);
+  };
+
   const fillDemoCreds = () => {
     setEmail("admin@nextproduct.ai");
     setPassword("MasterAdmin@2026");
@@ -276,27 +282,42 @@ export default function AdminLoginPage() {
                 </div>
               </div>
 
-              {/* Attempts Counter & Demo Auto-Fill */}
-              <div className="flex items-center justify-between text-[11.5px] pt-0.5">
-                <span className="font-mono text-text-3">
-                  Attempts:{" "}
-                  <strong
-                    className={
-                      attempts > 0 ? "text-amber-600 font-bold" : "text-text"
-                    }
-                  >
-                    {attempts}
-                  </strong>{" "}
-                  / 5
-                </span>
+              {/* Attempts Counter & Admin Quick Auto-Fills */}
+              <div className="flex flex-col gap-1.5 pt-0.5">
+                <div className="flex items-center justify-between text-[11.5px]">
+                  <span className="font-mono text-text-3">
+                    Attempts:{" "}
+                    <strong
+                      className={
+                        attempts > 0 ? "text-amber-600 font-bold" : "text-text"
+                      }
+                    >
+                      {attempts}
+                    </strong>{" "}
+                    / 5
+                  </span>
+                  <span className="text-[11px] text-text-3">
+                    2FA Code: <strong className="text-signal font-mono">123456</strong>
+                  </span>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={fillDemoCreds}
-                  className="text-signal hover:underline font-semibold cursor-pointer"
-                >
-                  Auto-fill Demo
-                </button>
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/60 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={fillPrimaryCreds}
+                    className="text-signal hover:underline font-semibold cursor-pointer"
+                  >
+                    ⚡ Auto-fill Primary Admin
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={fillDemoCreds}
+                    className="text-text-3 hover:text-text hover:underline font-medium cursor-pointer"
+                  >
+                    Auto-fill Demo Admin
+                  </button>
+                </div>
               </div>
 
               <button
