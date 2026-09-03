@@ -40,9 +40,9 @@ export function FestivalModals({
   // Form State for new Festival Offer
   const [festName, setFestName] = useState("");
   const [festCode, setFestCode] = useState("");
-  const [festDiscount, setFestDiscount] = useState(25);
-  const [festBonus, setFestBonus] = useState(500);
-  const [festValidity, setFestValidity] = useState("Limited Time Festival Offer");
+  const [festDiscount, setFestDiscount] = useState(10);
+  const [festBonus, setFestBonus] = useState(0);
+  const [festValidity, setFestValidity] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit Local State
@@ -63,10 +63,12 @@ export function FestivalModals({
         couponCode: festCode.toUpperCase().replace(/\s+/g, ""),
         discountPercent: Number(festDiscount),
         bonusMessages: Number(festBonus),
-        validity: festValidity,
+        validity: festValidity || "Limited Time Offer",
       });
       setFestName("");
       setFestCode("");
+      setFestBonus(0);
+      setFestValidity("");
       onCloseAdd();
     } finally {
       setIsSubmitting(false);
@@ -93,7 +95,12 @@ export function FestivalModals({
     <>
       {/* ─── 1. Edit Festival Offer Modal ─── */}
       {editState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onCloseEdit();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+        >
           <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
               <div className="flex items-center gap-2">
@@ -200,7 +207,12 @@ export function FestivalModals({
       {/* ─── 2. Delete Festival Offer Dialog ─── */}
       <AnimatePresence>
         {deletingOffer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div
+            onClick={(e) => {
+              if (e.target === e.currentTarget) onCloseDelete();
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -240,7 +252,12 @@ export function FestivalModals({
 
       {/* ─── 3. Add Festival Coupon Modal ─── */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onCloseAdd();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+        >
           <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
               <div className="flex items-center gap-2">
@@ -334,3 +351,4 @@ export function FestivalModals({
     </>
   );
 }
+

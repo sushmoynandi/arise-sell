@@ -119,7 +119,12 @@ export function PlanModals({
     <>
       {/* ─── 1. Edit Plan Modal ─── */}
       {localEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onCloseEdit();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+        >
           <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
               <h3 className="text-[15.5px] font-bold text-text">
@@ -134,9 +139,14 @@ export function PlanModals({
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="space-y-3.5 text-[13px]">
+            <form
+              onSubmit={handleEditSubmit}
+              className="space-y-3.5 text-[13px]"
+            >
               <div>
-                <label className="block font-bold text-text mb-1">Plan Name</label>
+                <label className="block font-bold text-text mb-1">
+                  Plan Name
+                </label>
                 <input
                   type="text"
                   required
@@ -244,7 +254,9 @@ export function PlanModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Tagline</label>
+                <label className="block font-bold text-text mb-1">
+                  Tagline
+                </label>
                 <input
                   type="text"
                   value={localEdit.tagline || ""}
@@ -256,7 +268,9 @@ export function PlanModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Badge Tag</label>
+                <label className="block font-bold text-text mb-1">
+                  Badge Tag
+                </label>
                 <input
                   type="text"
                   value={localEdit.badge || ""}
@@ -269,10 +283,20 @@ export function PlanModals({
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                <Button type="button" variant="outline" size="sm" onClick={onCloseEdit}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseEdit}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="signal" size="sm" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  variant="signal"
+                  size="sm"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
@@ -284,7 +308,12 @@ export function PlanModals({
       {/* ─── 2. Delete Plan Dialog ─── */}
       <AnimatePresence>
         {deletingPlan && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div
+            onClick={(e) => {
+              if (e.target === e.currentTarget) onCloseDelete();
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -296,15 +325,24 @@ export function PlanModals({
                   <IconWarn width={19} height={19} />
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-bold text-text">Delete Pricing Tier?</h3>
+                  <h3 className="text-[15px] font-bold text-text">
+                    Delete Pricing Tier?
+                  </h3>
                   <p className="text-[12.5px] text-text-3 mt-1 leading-relaxed">
-                    Are you sure you want to remove <strong>{deletingPlan.name}</strong>? Existing stores will remain active until billing renewal.
+                    Are you sure you want to remove{" "}
+                    <strong>{deletingPlan.name}</strong>? Existing stores will
+                    remain active until billing renewal.
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                <Button type="button" variant="outline" size="sm" onClick={onCloseDelete}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseDelete}
+                >
                   Cancel
                 </Button>
                 <button
@@ -323,7 +361,12 @@ export function PlanModals({
 
       {/* ─── 3. Create Custom Plan Modal ─── */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onCloseCreate();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+        >
           <div className="w-full max-w-md rounded-2xl border border-line bg-white p-5.5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-2.5">
               <h3 className="text-[15.5px] font-bold text-text">
@@ -338,10 +381,15 @@ export function PlanModals({
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-3.5 text-[13px]">
+            <form
+              onSubmit={handleCreateSubmit}
+              className="space-y-3.5 text-[13px]"
+            >
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Plan Name</label>
+                  <label className="block font-bold text-text mb-1">
+                    Plan Name
+                  </label>
                   <input
                     type="text"
                     required
@@ -352,7 +400,9 @@ export function PlanModals({
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-text mb-1">Bengali Name</label>
+                  <label className="block font-bold text-text mb-1">
+                    Bengali Name
+                  </label>
                   <input
                     type="text"
                     value={nameBn}
@@ -364,7 +414,9 @@ export function PlanModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Tagline</label>
+                <label className="block font-bold text-text mb-1">
+                  Tagline
+                </label>
                 <input
                   type="text"
                   value={tagline}
@@ -449,7 +501,9 @@ export function PlanModals({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">Catalog SKUs</label>
+                  <label className="block font-bold text-text mb-1">
+                    Catalog SKUs
+                  </label>
                   <input
                     type="number"
                     value={catalogLimit}
@@ -459,7 +513,9 @@ export function PlanModals({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-text mb-1">Courier Channels</label>
+                  <label className="block font-bold text-text mb-1">
+                    Courier Channels
+                  </label>
                   <input
                     type="number"
                     value={courierChannels}
@@ -470,7 +526,9 @@ export function PlanModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Badge Tag (Optional)</label>
+                <label className="block font-bold text-text mb-1">
+                  Badge Tag (Optional)
+                </label>
                 <input
                   type="text"
                   value={badge}
@@ -481,7 +539,9 @@ export function PlanModals({
               </div>
 
               <div>
-                <label className="block font-bold text-text mb-1">Features (One per line)</label>
+                <label className="block font-bold text-text mb-1">
+                  Features (One per line)
+                </label>
                 <textarea
                   rows={3}
                   value={featuresStr}
@@ -492,10 +552,20 @@ export function PlanModals({
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                <Button type="button" variant="outline" size="sm" onClick={onCloseCreate}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseCreate}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="signal" size="sm" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  variant="signal"
+                  size="sm"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Publishing..." : "Publish Plan"}
                 </Button>
               </div>

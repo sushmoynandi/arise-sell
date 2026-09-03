@@ -16,7 +16,9 @@ export default function AdminPlansPage() {
   const [loading, setLoading] = useState(true);
 
   // Billing view toggle on the cards: "monthly" vs "yearly"
-  const [billingView, setBillingView] = useState<"monthly" | "yearly">("monthly");
+  const [billingView, setBillingView] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
   const isYearlyView = billingView === "yearly";
 
   // Modals state for Plans
@@ -26,8 +28,10 @@ export default function AdminPlansPage() {
 
   // Modals state for Festival Offers
   const [addFestivalModalOpen, setAddFestivalModalOpen] = useState(false);
-  const [editingFestivalOffer, setEditingFestivalOffer] = useState<FestivalOffer | null>(null);
-  const [deletingFestivalOffer, setDeletingFestivalOffer] = useState<FestivalOffer | null>(null);
+  const [editingFestivalOffer, setEditingFestivalOffer] =
+    useState<FestivalOffer | null>(null);
+  const [deletingFestivalOffer, setDeletingFestivalOffer] =
+    useState<FestivalOffer | null>(null);
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -106,7 +110,9 @@ export default function AdminPlansPage() {
         payload as unknown as Record<string, unknown>,
       )) as unknown as FestivalOffer;
       setFestivalOffers((prev) => [created, ...prev]);
-      showNotification(`Festival campaign "${created.festivalName}" activated!`);
+      showNotification(
+        `Festival campaign "${created.festivalName}" activated!`,
+      );
     } catch (err) {
       console.error("Failed to create festival offer on backend:", err);
       setFestivalOffers((prev) => [payload, ...prev]);
@@ -256,7 +262,8 @@ export default function AdminPlansPage() {
               Commercial Storefront Plans ({plans.length})
             </h2>
             <p className="text-[12px] text-text-3">
-              Auto-synchronized with storefront checkout and Subscriptions billing.
+              Auto-synchronized with storefront checkout and Subscriptions
+              billing.
             </p>
           </div>
 
@@ -285,7 +292,7 @@ export default function AdminPlansPage() {
               )}
             >
               <span>Yearly (বাৎসরিক)</span>
-              <span className="rounded-md bg-signal/[0.12] text-signal px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-md bg-signal/12 text-signal px-1.5 py-0.2 text-[10px] font-bold">
                 Save 17%
               </span>
             </button>
@@ -310,7 +317,9 @@ export default function AdminPlansPage() {
           </div>
         ) : plans.length === 0 ? (
           <div className="rounded-2xl border border-line bg-white p-12 text-center space-y-3">
-            <h3 className="font-bold text-text text-base">No Subscription Plans Found</h3>
+            <h3 className="font-bold text-text text-base">
+              No Subscription Plans Found
+            </h3>
             <p className="text-text-3 text-sm max-w-sm mx-auto">
               You haven&apos;t published any commercial subscription tiers yet.
             </p>

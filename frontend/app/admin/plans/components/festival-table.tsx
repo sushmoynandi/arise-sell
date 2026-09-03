@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { IconCheck, IconCopy, IconPlus, IconTag, IconTrash } from "@/components/ui/icons";
+import {
+  IconCheck,
+  IconCopy,
+  IconPlus,
+  IconTag,
+  IconTrash,
+} from "@/components/ui/icons";
 import { Button } from "@/components/ui/primitives";
 import { cx } from "@/lib/format";
 import { FestivalOffer } from "../types";
@@ -39,7 +45,8 @@ export function FestivalTable({
               Seasonal &amp; Festival Promo Campaigns
             </h2>
             <p className="text-[12px] text-text-3">
-              Manage promotional coupon codes, discounts, and bonus message credits.
+              Manage promotional coupon codes, discounts, and bonus message
+              credits.
             </p>
           </div>
         </div>
@@ -70,15 +77,22 @@ export function FestivalTable({
           <tbody className="divide-y divide-line/60">
             {festivalOffers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-text-3 text-[13px]">
-                  No festival campaigns currently configured. Click &quot;Add Festival Coupon&quot; to create one.
+                <td
+                  colSpan={6}
+                  className="py-8 text-center text-text-3 text-[13px]"
+                >
+                  No festival campaigns currently configured. Click &quot;Add
+                  Festival Coupon&quot; to create one.
                 </td>
               </tr>
             ) : (
               festivalOffers.map((offer) => {
                 const isCopied = copiedCode === offer.couponCode;
                 return (
-                  <tr key={offer.id} className="hover:bg-surface-2/30 transition-colors">
+                  <tr
+                    key={offer.id}
+                    className="hover:bg-surface-2/30 transition-colors"
+                  >
                     <td className="py-3.5 px-4.5">
                       <div className="flex items-center gap-2.5">
                         <div>
@@ -96,7 +110,11 @@ export function FestivalTable({
                               title="Copy coupon code"
                             >
                               {isCopied ? (
-                                <IconCheck width={12} height={12} className="text-signal" />
+                                <IconCheck
+                                  width={12}
+                                  height={12}
+                                  className="text-signal"
+                                />
                               ) : (
                                 <IconCopy width={12} height={12} />
                               )}

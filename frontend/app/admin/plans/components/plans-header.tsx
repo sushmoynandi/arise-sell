@@ -27,9 +27,11 @@ export function PlansHeader({
           <h1 className="text-2xl font-bold text-text font-(family-name:--font-bricolage) tracking-tight">
             Subscription Plans &amp; Pricing
           </h1>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-signal/[0.08] px-3 py-0.5 text-[12px] font-bold text-signal">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-signal/8 px-3 py-0.5 text-[12px] font-bold text-signal">
             <span className="size-1.5 rounded-full bg-signal animate-pulse" />
-            {loading ? "Syncing Live Tiers..." : `${activePlansCount} Live Plans`}
+            {loading
+              ? "Syncing Live Tiers..."
+              : `${activePlansCount} Live Plans`}
           </span>
         </div>
 
@@ -54,7 +56,11 @@ export function PlansHeader({
             className="rounded-xl border border-signal/30 bg-signal/[0.07] p-3.5 text-[13px] font-medium text-signal shadow-2xs flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-2.5">
-              <IconCheck width={16} height={16} className="shrink-0 text-signal" />
+              <IconCheck
+                width={16}
+                height={16}
+                className="shrink-0 text-signal"
+              />
               <span>{successMsg}</span>
             </div>
             <button

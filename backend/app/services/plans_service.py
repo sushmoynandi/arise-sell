@@ -129,38 +129,7 @@ DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = [
     },
 ]
 
-DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = [
-    {
-        "id": "fest-eid",
-        "festivalName": "Eid Shopping Blitz",
-        "festivalNameBn": "ঈদ শপিং ধামাকা অফার",
-        "couponCode": "EID2026",
-        "discountPercent": 25,
-        "bonusMessages": 500,
-        "validity": "Valid till Eid Night",
-        "active": True,
-    },
-    {
-        "id": "fest-puja",
-        "festivalName": "Durga Puja Special",
-        "festivalNameBn": "শারদীয় দুর্গাপূজা স্পেশাল",
-        "couponCode": "PUJA2026",
-        "discountPercent": 20,
-        "bonusMessages": 300,
-        "validity": "Valid till Dashami",
-        "active": False,
-    },
-    {
-        "id": "fest-boishakh",
-        "festivalName": "Pahela Baishakh Offer",
-        "festivalNameBn": "পহেলা বৈশাখ বোশেখ অফার",
-        "couponCode": "BOISHAKH1433",
-        "discountPercent": 15,
-        "bonusMessages": 250,
-        "validity": "Valid in Baishakh",
-        "active": False,
-    },
-]
+DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = []
 
 
 def _ensure_data_dir() -> None:
@@ -204,17 +173,17 @@ def _save_json_plans(plans: list[dict[str, Any]]) -> None:
 def _get_json_offers() -> list[dict[str, Any]]:
     _ensure_data_dir()
     if not os.path.exists(FESTIVAL_OFFERS_FILE):
-        _save_json_offers(DEFAULT_INITIAL_OFFERS)
-        return DEFAULT_INITIAL_OFFERS
+        _save_json_offers([])
+        return []
 
     try:
         with open(FESTIVAL_OFFERS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if isinstance(data, list) and len(data) > 0:
+            if isinstance(data, list):
                 return data
     except Exception:
         pass
-    return DEFAULT_INITIAL_OFFERS
+    return []
 
 
 def _save_json_offers(offers: list[dict[str, Any]]) -> None:
@@ -271,7 +240,8 @@ async def get_stored_plans() -> list[dict[str, Any]]:
 async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
     plan_id = data.get("id") or f"plan-{int(time.time() * 1000)}"
     price_bdt = float(data.get("priceBDT", 0))
-    yearly_price = float(data.get("yearlyPriceBDT", price_bdt * 10))
+    yearly_raw = data.get("yearlyPriceBDT")
+    yearly_price = float(yearly_raw) if yearly_raw is not None else float(price_bdt * 10)
     yearly_discount = data.get("yearlyDiscountPercent")
     if yearly_discount is None and price_bdt > 0:
         yearly_discount = round(((price_bdt * 12 - yearly_price) / (price_bdt * 12)) * 100)
@@ -372,10 +342,13 @@ async def toggle_stored_plan_status(plan_id: str) -> dict[str, Any] | None:
 
 
 async def delete_stored_plan(plan_id: str) -> bool:
+    deleted = False
     conn = await _get_pg_conn()
     if conn:
         try:
-            await conn.execute("DELETE FROM subscription_plans WHERE plan_code = $1;", plan_id)
+            res = await conn.execute("DELETE FROM subscription_plans WHERE plan_code = $1;", plan_id)
+            if res and res != "DELETE 0":
+                deleted = True
         except Exception as e:
             print("Postgres delete failed:", e)
         finally:
@@ -384,9 +357,9 @@ async def delete_stored_plan(plan_id: str) -> bool:
     plans = _get_json_plans()
     new_plans = [p for p in plans if p.get("id") != plan_id]
     if len(new_plans) != len(plans):
+        deleted = True
         _save_json_plans(new_plans)
-        return True
-    return False
+    return deleted
 
 
 # ─── Festival Offers Operations (PostgreSQL + JSON Mirror) ────
@@ -401,21 +374,20 @@ async def get_stored_festival_offers() -> list[dict[str, Any]]:
                 FROM festival_offers
                 ORDER BY created_at DESC;
             """)
-            if rows:
-                offers: list[dict[str, Any]] = []
-                for r in rows:
-                    offers.append({
-                        "id": r["id"],
-                        "festivalName": r["festival_name"],
-                        "festivalNameBn": r["festival_name_bn"] or r["festival_name"],
-                        "couponCode": r["coupon_code"],
-                        "discountPercent": r["discount_percent"],
-                        "bonusMessages": r["bonus_messages"],
-                        "validity": r["validity"],
-                        "active": r["active"],
-                    })
-                _save_json_offers(offers)
-                return offers
+            offers: list[dict[str, Any]] = []
+            for r in rows:
+                offers.append({
+                    "id": r["id"],
+                    "festivalName": r["festival_name"],
+                    "festivalNameBn": r["festival_name_bn"] or r["festival_name"],
+                    "couponCode": r["coupon_code"],
+                    "discountPercent": r["discount_percent"],
+                    "bonusMessages": r["bonus_messages"],
+                    "validity": r["validity"],
+                    "active": r["active"],
+                })
+            _save_json_offers(offers)
+            return offers
         except Exception as e:
             print("Postgres festival offers read failed:", e)
         finally:
@@ -501,10 +473,13 @@ async def toggle_stored_festival_offer(offer_id: str) -> dict[str, Any] | None:
 
 
 async def delete_stored_festival_offer(offer_id: str) -> bool:
+    deleted = False
     conn = await _get_pg_conn()
     if conn:
         try:
-            await conn.execute("DELETE FROM festival_offers WHERE id = $1;", offer_id)
+            res = await conn.execute("DELETE FROM festival_offers WHERE id = $1;", offer_id)
+            if res and res != "DELETE 0":
+                deleted = True
         except Exception as e:
             print("Postgres festival delete failed:", e)
         finally:
@@ -513,6 +488,6 @@ async def delete_stored_festival_offer(offer_id: str) -> bool:
     offers = _get_json_offers()
     new_offers = [o for o in offers if o.get("id") != offer_id]
     if len(new_offers) != len(offers):
+        deleted = True
         _save_json_offers(new_offers)
-        return True
-    return False
+    return deleted
