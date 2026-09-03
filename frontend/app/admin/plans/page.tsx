@@ -181,6 +181,18 @@ export default function AdminPlansPage() {
   };
 
   const handleSaveEditPlan = async (updated: AdminPlan) => {
+    if (updated.showOnHome) {
+      const otherHomePlans = plans.filter(
+        (p) => p.id !== updated.id && p.showOnHome && p.status === "active",
+      );
+      if (otherHomePlans.length >= 4) {
+        alert(
+          "হোমপেজে সর্বোচ্চ ৪টি প্ল্যান রাখা যাবে। অনুগ্রহ করে অন্য একটি প্ল্যানের 'Show on Public Homepage' আনচেক করে এটি চালু করুন।",
+        );
+        return;
+      }
+    }
+
     try {
       const res = (await api.admin.updatePlan(
         updated.id,
@@ -214,36 +226,6 @@ export default function AdminPlansPage() {
             : p,
         ),
       );
-    }
-  };
-
-  const handleTogglePlanHome = async (id: string) => {
-    const targetPlan = plans.find((p) => p.id === id);
-    if (!targetPlan) return;
-
-    const currentHomePlans = plans.filter(
-      (p) => p.showOnHome && p.status === "active",
-    );
-    if (!targetPlan.showOnHome && currentHomePlans.length >= 4) {
-      alert(
-        "হোমপেজে সর্বোচ্চ ৪টি প্ল্যান রাখা যাবে। অনুগ্রহ করে অন্য একটি প্ল্যানের 'On Home' বন্ধ করে এটি চালু করুন।",
-      );
-      return;
-    }
-
-    try {
-      const res = await api.admin.togglePlanHome(id);
-      const updated = res as unknown as AdminPlan;
-      setPlans((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, showOnHome: updated.showOnHome } : p,
-        ),
-      );
-      showNotification(
-        `Plan "${targetPlan.name}" is now ${updated.showOnHome ? "VISIBLE on homepage" : "HIDDEN from homepage"}!`,
-      );
-    } catch (err) {
-      console.error("Failed to toggle plan home status on backend:", err);
     }
   };
 
@@ -388,7 +370,6 @@ export default function AdminPlansPage() {
                 isYearlyView={isYearlyView}
                 onEdit={(plan) => setEditingPlan(plan)}
                 onToggleStatus={handleTogglePlanStatus}
-                onToggleHome={handleTogglePlanHome}
                 onDelete={(plan) => setDeletingPlan(plan)}
               />
             ))}

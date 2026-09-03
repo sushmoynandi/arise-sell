@@ -10,7 +10,6 @@ interface PlanCardProps {
   isYearlyView: boolean;
   onEdit: (plan: AdminPlan) => void;
   onToggleStatus: (planId: string) => void;
-  onToggleHome?: (planId: string) => void;
   onDelete: (plan: AdminPlan) => void;
 }
 
@@ -19,7 +18,6 @@ export function PlanCard({
   isYearlyView,
   onEdit,
   onToggleStatus,
-  onToggleHome,
   onDelete,
 }: PlanCardProps) {
   const isFree = p.priceBDT === 0;
@@ -53,28 +51,18 @@ export function PlanCard({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {p.showOnHome && (
-              <span
-                className="rounded-md px-1.5 py-0.5 text-[10px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200"
-                title="Visible on public homepage"
-              >
-                🌐 Home
-              </span>
-            )}
-            {p.badge && (
-              <span
-                className={cx(
-                  "rounded-md px-2 py-0.5 text-[10.5px] font-bold font-mono",
-                  p.popular
-                    ? "bg-signal text-white"
-                    : "bg-surface-2 text-text-2 border border-line",
-                )}
-              >
-                {p.badge}
-              </span>
-            )}
-          </div>
+          {p.badge && (
+            <span
+              className={cx(
+                "rounded-md px-2 py-0.5 text-[10.5px] font-bold font-mono",
+                p.popular
+                  ? "bg-signal text-white"
+                  : "bg-surface-2 text-text-2 border border-line",
+              )}
+            >
+              {p.badge}
+            </span>
+          )}
         </div>
 
         {/* Price */}
@@ -126,23 +114,21 @@ export function PlanCard({
 
       {/* Card Footer Actions */}
       <div className="pt-4 border-t border-line/60 mt-5 flex items-center justify-between text-[12px]">
-        <button
-          type="button"
-          onClick={() => onToggleHome?.(p.id)}
-          className={cx(
-            "px-2 py-0.5 rounded-md font-medium text-[11px] transition-colors border cursor-pointer",
-            p.showOnHome
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-              : "bg-surface-2 text-text-3 border-line hover:bg-surface-3 hover:text-text",
-          )}
-          title={
-            p.showOnHome
-              ? "Displayed on Public Homepage (Click to hide)"
-              : "Hidden from Homepage (Click to show)"
-          }
-        >
-          {p.showOnHome ? "🌐 On Home" : "🌐 Off Home"}
-        </button>
+        {p.showOnHome ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-medium text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 select-none"
+            title="Visible on public homepage (Change in Edit mode)"
+          >
+            🌐 On Home
+          </span>
+        ) : (
+          <span
+            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-medium text-[11px] bg-surface-2 text-text-3 border border-line select-none"
+            title="Hidden from homepage (Change in Edit mode)"
+          >
+            🌐 Off Home
+          </span>
+        )}
 
         <div className="flex items-center gap-2">
           <button
