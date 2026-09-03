@@ -69,7 +69,7 @@ async def generate_production_ai_response(
     customer_name: str,
     customer_msg: str,
     channel: str,
-    business_id: Any,
+    business_id: Any = None,
     db: AsyncSession | None = None,
     image_url: str | None = None,
     persona_voice: str | None = None,

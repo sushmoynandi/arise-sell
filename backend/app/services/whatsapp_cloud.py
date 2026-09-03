@@ -15,8 +15,10 @@ async def send_whatsapp_text(
     access_token: str | None = None,
 ) -> dict[str, Any]:
     """Send direct WhatsApp message via Cloud API."""
-    p_id = phone_number_id or settings.WHATSAPP_PHONE_NUMBER_ID
-    token = access_token or settings.META_PAGE_ACCESS_TOKEN
+    valid_token = access_token if (access_token and not access_token.startswith(("EAAG_SANDBOX_", "EAAG_WABA_", "EAAG_LINKED_"))) else None
+    token = valid_token or settings.META_PAGE_ACCESS_TOKEN
+    clean_p_id = phone_number_id if (phone_number_id and str(phone_number_id).isdigit() and len(str(phone_number_id)) >= 10) else None
+    p_id = clean_p_id or settings.WHATSAPP_PHONE_NUMBER_ID
     clean_phone = "".join(filter(str.isdigit, str(to_phone)))
 
     if not p_id or not token:

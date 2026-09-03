@@ -71,15 +71,5 @@ async def receive_meta_webhook(
     except Exception:
         raise HTTPException(status_code=400, detail="Malformed JSON webhook payload")
 
-    # Resilient task queuing: Celery first, then FastAPI background tasks
-    celery_success = False
-    try:
-        process_meta_webhook_event.delay(payload)
-        celery_success = True
-    except Exception:
-        pass
-
-    if not celery_success:
-        background_tasks.add_task(handle_meta_message_async, payload)
-
+    background_tasks.add_task(handle_meta_message_async, payload)
     return {"status": "received"}
