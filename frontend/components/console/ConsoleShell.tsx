@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useState, useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
 import { Avatar, Wordmark } from "@/components/ui/primitives";
+import { useAuth } from "@/lib/auth-context";
 import {
   CHANNEL_ICON,
   NAV_ICON,
@@ -315,9 +316,18 @@ function getQuotaTone(pct: number) {
 }
 
 function ConsoleShellInner({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { lang } = useLang();
+  const { user, loading, isAuthenticated, logout } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push(`/login?from=${encodeURIComponent(pathname)}`);
+    }
+  }, [loading, isAuthenticated, router, pathname]);
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -610,7 +620,9 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                           : "text-text group-hover:text-signal",
                       )}
                     >
-                      Farhana Rahman
+                      {user?.first_name
+                        ? `${user.first_name} ${user.last_name || ""}`.trim()
+                        : "Farhana Rahman"}
                     </p>
                     <p className="truncate text-[11px] font-mono mt-0.5 font-semibold text-signal">
                       {TENANT.plan} Plan
@@ -654,14 +666,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     <div className="flex items-center justify-between pb-1.5 border-b border-line/60">
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-bold text-text truncate leading-tight">
-                          Farhana Rahman
+                          {user?.first_name
+                            ? `${user.first_name} ${user.last_name || ""}`.trim()
+                            : "Farhana Rahman"}
                         </p>
                         <p className="text-[10.5px] text-text-3 font-mono truncate mt-0.5">
-                          farhana@nokshi.co
+                          {user?.email || "farhana@nokshi.co"}
                         </p>
                       </div>
-                      <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-signal">
-                        Owner
+                      <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-signal capitalize">
+                        {user?.role || "Owner"}
                       </span>
                     </div>
 
@@ -747,9 +761,14 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
 
                     {/* Sign Out (Sleek Clean Action) */}
                     <div className="pt-1 border-t border-line/60">
-                      <Link
-                        href="/login"
-                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-[12px] font-medium text-rose-600 hover:bg-rose-50/80 transition-colors cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          logout();
+                          router.push("/login");
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-[12px] font-medium text-rose-600 hover:bg-rose-50/80 transition-colors cursor-pointer"
                       >
                         <IconLogOut
                           width={14}
@@ -757,7 +776,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                           className="text-rose-500"
                         />
                         <span>Sign Out</span>
-                      </Link>
+                      </button>
                     </div>
                   </motion.div>
                 </>

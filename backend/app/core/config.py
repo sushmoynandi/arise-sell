@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
 
+    # ── Google OAuth ──
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+
     # ── Email ──
     SENDGRID_API_KEY: str = ""
     FROM_EMAIL: str = "noreply@alapai.app"

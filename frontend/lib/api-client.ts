@@ -4,6 +4,8 @@
  * Handles JWT auth headers, token refresh, and typed request methods.
  */
 
+import { setCookie, deleteCookie } from "./cookies";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -17,16 +19,24 @@ class ApiClient {
     return localStorage.getItem("np_access_token");
   }
 
-  private setTokens(access: string, refresh?: string) {
+  public setTokens(access: string, refresh?: string, days: number = 7) {
     if (typeof window === "undefined") return;
     localStorage.setItem("np_access_token", access);
-    if (refresh) localStorage.setItem("np_refresh_token", refresh);
+    setCookie("np_access_token", access, days);
+    if (refresh) {
+      localStorage.setItem("np_refresh_token", refresh);
+      setCookie("np_refresh_token", refresh, days);
+    }
   }
 
-  private clearTokens() {
+  public clearTokens() {
     if (typeof window === "undefined") return;
     localStorage.removeItem("np_access_token");
     localStorage.removeItem("np_refresh_token");
+    deleteCookie("np_access_token");
+    deleteCookie("np_refresh_token");
+    deleteCookie("np_role");
+    deleteCookie("np_is_superadmin");
   }
 
   public async request<T = unknown>(
@@ -125,6 +135,39 @@ class ApiClient {
         refresh: string;
         user: Record<string, unknown>;
       }>("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    forgotPassword: (email: string) =>
+      this.request<{ success: boolean; message: string; reset_token?: string }>(
+        "/auth/forgot-password",
+        {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        },
+      ),
+    resetPassword: (body: {
+      token: string;
+      new_password: string;
+      confirm_password?: string;
+    }) =>
+      this.request<{ success: boolean; message: string }>(
+        "/auth/reset-password",
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+        },
+      ),
+    logout: () =>
+      this.request<{ success: boolean; message: string }>("/auth/logout", {
+        method: "POST",
+      }).finally(() => this.clearTokens()),
+    google: (body: { credential?: string; access_token?: string }) =>
+      this.request<{
+        access: string;
+        refresh: string;
+        user: Record<string, unknown>;
+      }>("/auth/google", {
         method: "POST",
         body: JSON.stringify(body),
       }),

@@ -51,7 +51,9 @@ export default function AdminLoginPage() {
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
-        setError(res.error || `Invalid credentials. Attempt ${nextAttempt} of 5.`);
+        setError(
+          res.error || `Invalid credentials. Attempt ${nextAttempt} of 5.`,
+        );
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Authentication failed");
@@ -123,7 +125,7 @@ export default function AdminLoginPage() {
 
       {/* Main Center Auth Card */}
       <div className="w-full max-w-100 mx-auto my-auto py-4">
-        <div className="rounded-2xl border border-line bg-white p-7 sm:p-8 shadow-xl shadow-black/[0.03] space-y-6">
+        <div className="rounded-2xl border border-line bg-white p-7 sm:p-8 shadow-xl shadow-black/3 space-y-6">
           {/* Brand Logo & Header */}
           <div className="text-center space-y-2">
             <div className="flex justify-center pb-1">

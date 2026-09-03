@@ -17,25 +17,32 @@ import {
 } from "@/components/ui/icons";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import { useGoogleAuth } from "@/lib/use-google-auth";
 
 export default function LoginForm() {
   const router = useRouter();
   const { t } = useLang();
-  const { login } = useAuth();
+  const { login, forgotPassword } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { triggerGoogleLogin: handleGoogleLogin, googleLoading } =
+    useGoogleAuth({
+      redirectPath: "/login",
+      onError: (errMsg) => setError(errMsg),
+    });
 
   // Forgot password modal state
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +60,7 @@ export default function LoginForm() {
 
     setLoading(true);
     try {
-      const res = await login(email.trim(), password);
+      const res = await login(email.trim(), password, rememberMe);
       if (res.success) {
         if (rememberMe) {
           localStorage.setItem("np_remember_7d", "true");
@@ -81,27 +88,24 @@ export default function LoginForm() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    setGoogleLoading(true);
-    setTimeout(() => {
-      setGoogleLoading(false);
-      setError(
-        t(
-          "Google OAuth is currently in verification mode. Please sign in with email.",
-          "গুগল অথেন্টিকেশন বর্তমানে যাচাইকরণে রয়েছে। অনুগ্রহ করে ইমেইল দিয়ে লগইন করুন।",
-        ),
-      );
-    }, 600);
-  };
-
-  const handleForgotSubmit = (e: React.FormEvent) => {
+  const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
     setForgotLoading(true);
-    setTimeout(() => {
+    setForgotMsg(null);
+    try {
+      const res = await forgotPassword(forgotEmail.trim());
+      if (res.success) {
+        setForgotSent(true);
+        if (res.message) setForgotMsg(res.message);
+      } else {
+        setError(res.error || "Password reset request failed");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Password reset failed");
+    } finally {
       setForgotLoading(false);
-      setForgotSent(true);
-    }, 800);
+    }
   };
 
   return (
@@ -145,7 +149,7 @@ export default function LoginForm() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={googleLoading || loading}
-            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-black/8 bg-white px-4 text-[13.5px] font-medium text-text shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] transition-all duration-200 hover:border-black/[0.14] hover:bg-neutral-50/80 hover:shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="flex h-10.5 w-full items-center justify-center gap-2.5 rounded-xl border border-black/8 bg-white px-4 text-[13.5px] font-medium text-text shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] transition-all duration-200 hover:border-black/[0.14] hover:bg-neutral-50/80 hover:shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
             {googleLoading ? (
               <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-text-3 border-t-signal" />
@@ -278,8 +282,6 @@ export default function LoginForm() {
             )}
           </button>
         </form>
-
-
 
         {/* Sign up link */}
         <div className="mt-4 text-center text-[12.5px] text-text-3">

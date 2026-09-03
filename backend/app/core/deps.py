@@ -1,4 +1,4 @@
-﻿"""FastAPI Dependency Injection for DB Sessions, Authentication, and Multi-Tenant Isolation."""
+"""FastAPI Dependency Injection for DB Sessions, Authentication, and Multi-Tenant Isolation."""
 from __future__ import annotations
 
 import uuid
@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import verify_token
+from app.core.security import verify_token, is_token_revoked
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -19,6 +19,12 @@ async def get_current_user_payload(
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> dict:
     """Validate JWT token and return decoded payload dictionary."""
+    if is_token_revoked(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         payload = verify_token(token, expected_type="access")
         sub = payload.get("sub")

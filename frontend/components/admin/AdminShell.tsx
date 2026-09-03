@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Wordmark } from "@/components/ui/primitives";
 import { IconClose, IconMenu } from "@/components/ui/icons";
 import { cx } from "@/lib/format";
+import { useAuth } from "@/lib/auth-context";
 
 type SVGProps = {
   width?: number;
@@ -218,13 +219,33 @@ const ADMIN_NAV: { group: string; items: AdminNavItem[] }[] = [
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading, isAuthenticated, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [telemetryDropdownOpen, setTelemetryDropdownOpen] = useState(false);
 
+  useEffect(() => {
+    if (!loading && (!isAuthenticated || !user?.is_superadmin)) {
+      router.push(`/admin/login?from=${encodeURIComponent(pathname)}`);
+    }
+  }, [loading, isAuthenticated, user, router, pathname]);
+
   const currentNav = ADMIN_NAV.flatMap((g) => g.items).find(
     (i) => i.href === pathname,
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="inline-block size-6 animate-spin rounded-full border-2 border-line border-t-signal" />
+          <p className="text-xs font-mono text-text-3">
+            Verifying superadmin authorization...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-canvas text-text flex">
@@ -506,7 +527,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 className="grid size-9 place-items-center rounded-xl border border-line bg-white shadow-2xs hover:border-signal/40 transition-colors cursor-pointer select-none"
               >
                 <div className="grid size-7 place-items-center rounded-lg bg-surface-2 text-text font-bold text-[12px]">
-                  A
+                  {user?.first_name
+                    ? user.first_name.charAt(0).toUpperCase()
+                    : "A"}
                 </div>
               </button>
 
@@ -520,14 +543,18 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                   <div className="absolute right-0 mt-2 z-50 w-60 rounded-2xl border border-line bg-white p-2 shadow-2xl ring-1 ring-black/5 animate-in fade-in">
                     <div className="flex items-center gap-2.5 p-2.5 border-b border-line">
                       <div className="grid size-8 place-items-center rounded-lg bg-surface-2 border border-line text-text font-bold text-[12px] shrink-0">
-                        A
+                        {user?.first_name
+                          ? user.first_name.charAt(0).toUpperCase()
+                          : "A"}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-bold text-text leading-tight truncate">
-                          Platform Admin
+                          {user?.first_name
+                            ? `${user.first_name} ${user.last_name || ""}`.trim()
+                            : "Platform Admin"}
                         </p>
                         <p className="text-[11px] text-text-3 font-mono truncate mt-0.5">
-                          admin@nextproduct.ai
+                          {user?.email || "admin@nextproduct.ai"}
                         </p>
                       </div>
                     </div>
@@ -558,11 +585,14 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                     </div>
 
                     <div className="pt-1 border-t border-line">
-                      <Link
-                        href="/admin/login"
-                        prefetch={true}
-                        onClick={() => setProfileDropdownOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] font-medium text-text-2 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          logout();
+                          router.push("/admin/login");
+                        }}
+                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] font-medium text-text-2 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
                       >
                         <svg
                           width={15}
@@ -578,7 +608,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
                         </svg>
                         <span>Log Out</span>
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 </>

@@ -11,12 +11,14 @@ import {
   IconLock,
   IconEye,
   IconEyeOff,
+  IconShield,
   IconCheck,
 } from "@/components/ui/icons";
 import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
 
 import { useAuth } from "@/lib/auth-context";
+import { useGoogleAuth } from "@/lib/use-google-auth";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -32,16 +34,21 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { triggerGoogleLogin: handleGoogleSignup, googleLoading } =
+    useGoogleAuth({
+      redirectPath: "/signup",
+      onError: (errMsg) => setError(errMsg),
+    });
 
   const getPasswordStrength = () => {
     if (!password) return 0;
     let score = 0;
-    if (password.length >= 6) score += 1;
     if (password.length >= 8) score += 1;
+    if (/[a-z]/.test(password)) score += 1;
     if (/[A-Z]/.test(password) || /[0-9]/.test(password)) score += 1;
-    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password) && password.length >= 10) score += 1;
     return score;
   };
 
@@ -62,18 +69,31 @@ export default function SignupForm() {
       setError(
         t(
           "Please fill in your email address and password.",
-          "অনুগ্রহ করে আপনার ইমেইল এবং পাসওয়ার্ড দিন।"
-        )
+          "অনুগ্রহ করে আপনার ইমেইল এবং পাসওয়ার্ড দিন।",
+        ),
       );
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setError(
         t(
-          "Password must be at least 6 characters long.",
-          "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।"
-        )
+          "Password must be at least 8 characters long.",
+          "পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।",
+        ),
+      );
+      return;
+    }
+
+    if (
+      !/[a-z]/.test(password) ||
+      (!/[A-Z]/.test(password) && !/[0-9]/.test(password))
+    ) {
+      setError(
+        t(
+          "Password must contain lowercase and at least one uppercase letter or number.",
+          "পাসওয়ার্ডে ছোট হাতের এবং অন্তত একটি বড় হাতের অক্ষর বা সংখ্যা থাকতে হবে।",
+        ),
       );
       return;
     }
@@ -82,8 +102,8 @@ export default function SignupForm() {
       setError(
         t(
           "Passwords do not match. Please re-check.",
-          "পাসওয়ার্ড দুটি মিলছে না। অনুগ্রহ করে চেক করুন।"
-        )
+          "পাসওয়ার্ড দুটি মিলছে না। অনুগ্রহ করে চেক করুন।",
+        ),
       );
       return;
     }
@@ -105,8 +125,8 @@ export default function SignupForm() {
           res.error ||
             t(
               "Registration failed. Please try again.",
-              "রেজিস্ট্রেশন সম্পন্ন করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
-            )
+              "রেজিস্ট্রেশন সম্পন্ন করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+            ),
         );
       }
     } catch (err: unknown) {
@@ -115,15 +135,6 @@ export default function SignupForm() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleSignup = () => {
-    setGoogleLoading(true);
-    // Google OAuth integration
-    setTimeout(() => {
-      setGoogleLoading(false);
-      setError(t("Google OAuth is currently in verification mode. Please register with email.", "গুগল অথেন্টিকেশন বর্তমানে যাচাইকরণে রয়েছে। অনুগ্রহ করে ইমেইল দিয়ে রেজিস্টার করুন।"));
-    }, 600);
   };
 
   return (
@@ -156,7 +167,7 @@ export default function SignupForm() {
           <p className="mt-0.5 text-[13px] text-text-2">
             {t(
               "Start 14-day free trial · No credit card required",
-              "১৪ দিনের ফ্রি ট্রায়াল শুরু করুন · কোনো ক্রেডিট কার্ড লাগবে না"
+              "১৪ দিনের ফ্রি ট্রায়াল শুরু করুন · কোনো ক্রেডিট কার্ড লাগবে না",
             )}
           </p>
         </div>
@@ -167,7 +178,7 @@ export default function SignupForm() {
             type="button"
             onClick={handleGoogleSignup}
             disabled={googleLoading || loading}
-            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-black/8 bg-white px-4 text-[13.5px] font-medium text-text shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] transition-all duration-200 hover:border-black/[0.14] hover:bg-neutral-50/80 hover:shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="flex h-10.5 w-full items-center justify-center gap-2.5 rounded-xl border border-black/8 bg-white px-4 text-[13.5px] font-medium text-text shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,1)] transition-all duration-200 hover:border-black/[0.14] hover:bg-neutral-50/80 hover:shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
             {googleLoading ? (
               <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-text-3 border-t-signal" />
@@ -237,7 +248,8 @@ export default function SignupForm() {
           {/* Email */}
           <div>
             <label className="block text-[12.5px] font-medium text-text">
-              {t("Email address", "ইমেইল অ্যাড্রেস")} <span className="text-red-500">*</span>
+              {t("Email address", "ইমেইল অ্যাড্রেস")}{" "}
+              <span className="text-red-500">*</span>
             </label>
             <div className="relative mt-1">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-3">
@@ -257,7 +269,8 @@ export default function SignupForm() {
           {/* Password */}
           <div>
             <label className="block text-[12.5px] font-medium text-text">
-              {t("Password", "পাসওয়ার্ড")} <span className="text-red-500">*</span>
+              {t("Password", "পাসওয়ার্ড")}{" "}
+              <span className="text-red-500">*</span>
             </label>
             <div className="relative mt-1">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-3">
@@ -295,7 +308,7 @@ export default function SignupForm() {
                       strength === 1 && "w-1/4 bg-red-500",
                       strength === 2 && "w-2/4 bg-amber-500",
                       strength === 3 && "w-3/4 bg-blue-500",
-                      strength >= 4 && "w-full bg-signal"
+                      strength >= 4 && "w-full bg-signal",
                     )}
                   />
                 </div>
@@ -313,13 +326,16 @@ export default function SignupForm() {
           <div>
             <div className="flex items-center justify-between">
               <label className="block text-[12.5px] font-medium text-text">
-                {t("Confirm password", "পাসওয়ার্ড নিশ্চিত করুন")} <span className="text-red-500">*</span>
+                {t("Confirm password", "পাসওয়ার্ড নিশ্চিত করুন")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               {confirmPassword && password && (
                 <span
                   className={cx(
                     "text-[11px] font-medium",
-                    password === confirmPassword ? "text-emerald-600" : "text-red-500"
+                    password === confirmPassword
+                      ? "text-emerald-600"
+                      : "text-red-500",
                   )}
                 >
                   {password === confirmPassword
@@ -344,7 +360,11 @@ export default function SignupForm() {
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-2.5 flex items-center text-text-3 transition-colors hover:text-text cursor-pointer"
-                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirm password"
+                    : "Show confirm password"
+                }
               >
                 {showConfirmPassword ? (
                   <IconEyeOff width={15} height={15} />

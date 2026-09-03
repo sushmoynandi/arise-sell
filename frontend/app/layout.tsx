@@ -79,8 +79,8 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <LanguageProvider>
-        <AuthProvider>{children}</AuthProvider>
-      </LanguageProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LanguageProvider>
         <AgentationProvider />
       </body>
     </html>

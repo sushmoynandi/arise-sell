@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 class RegisterRequest(BaseModel):
     """New user registration payload."""
     email: EmailStr
-    password: str = Field(..., min_length=6, description="Minimum 6 characters")
+    password: str = Field(..., min_length=8, description="Minimum 8 characters")
     password2: str | None = None
     first_name: str | None = None
     last_name: str | None = None
@@ -17,9 +17,11 @@ class RegisterRequest(BaseModel):
     store_name: str | None = None
 
     @model_validator(mode="after")
-    def check_passwords_match(self) -> RegisterRequest:
+    def check_passwords_match_and_complexity(self) -> RegisterRequest:
         if self.password2 is not None and self.password != self.password2:
             raise ValueError("Passwords do not match")
+        if len(self.password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
         return self
 
 
@@ -27,6 +29,30 @@ class LoginRequest(BaseModel):
     """Login credentials."""
     email: EmailStr
     password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Password reset request payload."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Confirm password reset payload."""
+    token: str
+    new_password: str = Field(..., min_length=8)
+    confirm_password: str | None = None
+
+    @model_validator(mode="after")
+    def check_passwords_match(self) -> ResetPasswordRequest:
+        if self.confirm_password is not None and self.new_password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
+
+
+class LogoutResponse(BaseModel):
+    """Logout confirmation."""
+    success: bool = True
+    message: str = "Logged out successfully"
 
 
 class UserBrief(BaseModel):
@@ -55,5 +81,6 @@ class RefreshRequest(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    """Google OAuth ID token."""
-    credential: str
+    """Google OAuth ID token or Access token."""
+    credential: str | None = None
+    access_token: str | None = None
