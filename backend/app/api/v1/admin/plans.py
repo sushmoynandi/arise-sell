@@ -50,7 +50,7 @@ class FestivalOfferRequest(BaseModel):
     festivalNameBn: str | None = None
     couponCode: str
     discountPercent: int = 20
-    bonusMessages: int = 0
+    bonusOrders: int = 0
     validity: str = "Limited Time Offer"
     active: bool = True
 
@@ -59,17 +59,17 @@ class FestivalOfferRequest(BaseModel):
 
 @router.get("/festival-offers")
 async def list_festival_offers():
-    return get_stored_festival_offers()
+    return await get_stored_festival_offers()
 
 
 @router.post("/festival-offers", status_code=status.HTTP_201_CREATED)
 async def create_festival_offer(req: FestivalOfferRequest):
-    return create_stored_festival_offer(req.model_dump())
+    return await create_stored_festival_offer(req.model_dump())
 
 
 @router.put("/festival-offers/{offer_id}")
 async def update_festival_offer(offer_id: str, req: FestivalOfferRequest):
-    updated = update_stored_festival_offer(offer_id, req.model_dump())
+    updated = await update_stored_festival_offer(offer_id, req.model_dump())
     if not updated:
         raise HTTPException(status_code=404, detail="Festival offer not found")
     return updated
@@ -77,7 +77,7 @@ async def update_festival_offer(offer_id: str, req: FestivalOfferRequest):
 
 @router.patch("/festival-offers/{offer_id}/toggle")
 async def toggle_festival_offer(offer_id: str):
-    toggled = toggle_stored_festival_offer(offer_id)
+    toggled = await toggle_stored_festival_offer(offer_id)
     if not toggled:
         raise HTTPException(status_code=404, detail="Festival offer not found")
     return toggled
@@ -85,7 +85,7 @@ async def toggle_festival_offer(offer_id: str):
 
 @router.delete("/festival-offers/{offer_id}")
 async def delete_festival_offer(offer_id: str):
-    success = delete_stored_festival_offer(offer_id)
+    success = await delete_stored_festival_offer(offer_id)
     if not success:
         raise HTTPException(status_code=404, detail="Festival offer not found")
     return {"success": True, "message": "Festival offer deleted"}
@@ -95,17 +95,17 @@ async def delete_festival_offer(offer_id: str):
 
 @router.get("")
 async def list_plans():
-    return get_stored_plans()
+    return await get_stored_plans()
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_plan(req: PlanRequest):
-    return create_stored_plan(req.model_dump())
+    return await create_stored_plan(req.model_dump())
 
 
 @router.put("/{plan_id}")
 async def update_plan(plan_id: str, req: PlanRequest):
-    updated = update_stored_plan(plan_id, req.model_dump())
+    updated = await update_stored_plan(plan_id, req.model_dump())
     if not updated:
         raise HTTPException(status_code=404, detail="Plan not found")
     return updated
@@ -113,7 +113,7 @@ async def update_plan(plan_id: str, req: PlanRequest):
 
 @router.patch("/{plan_id}/status")
 async def toggle_plan_status(plan_id: str):
-    toggled = toggle_stored_plan_status(plan_id)
+    toggled = await toggle_stored_plan_status(plan_id)
     if not toggled:
         raise HTTPException(status_code=404, detail="Plan not found")
     return toggled
@@ -121,7 +121,7 @@ async def toggle_plan_status(plan_id: str):
 
 @router.delete("/{plan_id}")
 async def delete_plan(plan_id: str):
-    success = delete_stored_plan(plan_id)
+    success = await delete_stored_plan(plan_id)
     if not success:
         raise HTTPException(status_code=404, detail="Plan not found")
     return {"success": True, "message": "Plan deleted"}
