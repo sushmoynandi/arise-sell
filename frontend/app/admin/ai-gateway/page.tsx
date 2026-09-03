@@ -290,7 +290,9 @@ export default function AdminAiGatewayPage() {
   const handleRunTester = async () => {
     if (!promptInput.trim()) return;
     if (keys.length === 0) {
-      alert("No AI keys configured yet. Please add a provider key in the vault above first.");
+      alert(
+        "No AI keys configured yet. Please add a provider key in the vault above first.",
+      );
       return;
     }
 
@@ -441,7 +443,9 @@ export default function AdminAiGatewayPage() {
             )}
             <div className="min-w-0">
               <p className="text-[14px] font-bold text-text truncate">
-                {primary ? primary.providerName || primary.provider : "None Configured"}
+                {primary
+                  ? primary.providerName || primary.provider
+                  : "None Configured"}
               </p>
               <p className="text-[11px] text-text-3 font-mono truncate">
                 {primary
@@ -489,7 +493,9 @@ export default function AdminAiGatewayPage() {
           <div>
             <p className="text-[18px] font-bold text-text font-mono">
               {totalRequests.toLocaleString()}{" "}
-              <span className="text-[12px] font-normal text-text-3">Requests</span>
+              <span className="text-[12px] font-normal text-text-3">
+                Requests
+              </span>
             </p>
             <p className="text-[11px] text-text-3 font-mono">
               {totalTokens > 0
@@ -605,8 +611,9 @@ export default function AdminAiGatewayPage() {
                         No AI Provider Keys Configured
                       </p>
                       <p className="text-[12px] text-text-3">
-                        Add an API key from Google Gemini, OpenAI, Groq, or Anthropic.
-                        The gateway will auto-detect your provider and fetch available models.
+                        Add an API key from Google Gemini, OpenAI, Groq, or
+                        Anthropic. The gateway will auto-detect your provider
+                        and fetch available models.
                       </p>
                       <Button
                         size="sm"
@@ -674,9 +681,7 @@ export default function AdminAiGatewayPage() {
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-1.5 font-mono text-[11px]">
                           <span className="text-text-2">
-                            {isRevealed
-                              ? k.rawKey || k.keyMasked
-                              : k.keyMasked}
+                            {isRevealed ? k.rawKey || k.keyMasked : k.keyMasked}
                           </span>
                           <button
                             type="button"
@@ -826,7 +831,8 @@ export default function AdminAiGatewayPage() {
                 </h2>
               </div>
               <p className="text-[12px] text-text-3 mt-0.5">
-                Traffic automatically shifts to fallback models in &lt; 50ms if primary provider encounters HTTP 429 rate limits.
+                Traffic automatically shifts to fallback models in &lt; 50ms if
+                primary provider encounters HTTP 429 rate limits.
               </p>
             </div>
 
@@ -984,7 +990,8 @@ export default function AdminAiGatewayPage() {
             </h3>
           </div>
           <span className="text-[11.5px] text-text-3">
-            Send a benchmark prompt to inspect live response time and provider output
+            Send a benchmark prompt to inspect live response time and provider
+            output
           </span>
         </div>
 
@@ -992,7 +999,8 @@ export default function AdminAiGatewayPage() {
           <div className="rounded-lg border border-dashed border-line p-6 text-center text-[12px] bg-surface-2/20">
             <p className="font-semibold text-text">Sandbox Inactive</p>
             <p className="text-text-3 text-[11.5px] mt-0.5">
-              Please register an AI key in the vault above to send live test prompts.
+              Please register an AI key in the vault above to send live test
+              prompts.
             </p>
           </div>
         ) : (
@@ -1022,7 +1030,9 @@ export default function AdminAiGatewayPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setPromptInput("System health check: confirm response and latency.")
+                      setPromptInput(
+                        "System health check: confirm response and latency.",
+                      )
                     }
                     className="text-[11px] text-text-3 hover:text-signal underline cursor-pointer"
                   >
@@ -1032,7 +1042,9 @@ export default function AdminAiGatewayPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setPromptInput("Hello, summarize the role of an automated AI gateway.")
+                      setPromptInput(
+                        "Hello, summarize the role of an automated AI gateway.",
+                      )
                     }
                     className="text-[11px] text-text-3 hover:text-signal underline cursor-pointer"
                   >
@@ -1056,7 +1068,8 @@ export default function AdminAiGatewayPage() {
                       Resolved by: {testerResult.route} ({testerResult.model})
                     </span>
                     <span>
-                      TTFT: {testerResult.latency}ms · Cost: ৳{testerResult.costBDT}
+                      TTFT: {testerResult.latency}ms · Cost: ৳
+                      {testerResult.costBDT}
                     </span>
                   </div>
 
@@ -1078,7 +1091,8 @@ export default function AdminAiGatewayPage() {
                 </div>
               ) : (
                 <div className="py-6 text-center text-text-3 font-mono text-[11.5px]">
-                  Enter a test prompt and click &quot;Send Test Message&quot; to inspect response.
+                  Enter a test prompt and click &quot;Send Test Message&quot; to
+                  inspect response.
                 </div>
               )}
             </div>

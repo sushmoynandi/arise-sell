@@ -140,14 +140,25 @@ def save_stored_ai_keys(keys: list[dict[str, Any]]) -> None:
 
 
 def add_stored_ai_key(
-    provider: str,
-    model: str,
-    api_key: str,
+    provider: str | dict[str, Any],
+    model: str | None = None,
+    api_key: str | None = None,
     role: str = "fallback_1",
     provider_name: str | None = None,
 ) -> dict[str, Any]:
     """Add a new AI key to persistent storage."""
+    if isinstance(provider, dict):
+        d = provider
+        provider = str(d.get("provider", "google"))
+        model = str(d.get("model", "gemini-3.5-flash-lite"))
+        api_key = str(d.get("api_key") or d.get("rawKey", ""))
+        role = str(d.get("role", "fallback_1"))
+        provider_name = d.get("provider_name") or d.get("providerName")
+
     keys = get_stored_raw_ai_keys()
+
+    model = model or "gemini-3.5-flash-lite"
+    api_key = api_key or ""
 
     if "2.0-flash" in model or "3.8-flash" in model:
         model = "gemini-3.5-flash"

@@ -78,13 +78,13 @@ async def add_ai_key(req: AddAIKeyRequest):
     if not req.api_key.strip():
         raise HTTPException(status_code=400, detail="API Key is required")
 
-    entry = add_stored_ai_key({
-        "provider": req.provider,
-        "provider_name": req.provider_name,
-        "model": req.model,
-        "api_key": req.api_key.strip(),
-        "role": req.role,
-    })
+    entry = add_stored_ai_key(
+        provider=req.provider,
+        model=req.model,
+        api_key=req.api_key.strip(),
+        role=req.role,
+        provider_name=req.provider_name,
+    )
 
     return {
         "id": entry["id"],
