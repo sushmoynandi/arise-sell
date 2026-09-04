@@ -400,11 +400,11 @@ export default function SignupForm() {
               </div>
               <span className="text-[11.5px] leading-snug text-text-2">
                 {t("I agree to NextProduct's", "আমি NextProduct-এর")}{" "}
-                <Link href="/docs" className="text-signal hover:underline">
+                <Link href="/terms" className="text-signal hover:underline">
                   {t("Terms of Service", "শর্তাবলী")}
                 </Link>{" "}
                 {t("and", "ও")}{" "}
-                <Link href="/docs" className="text-signal hover:underline">
+                <Link href="/privacy" className="text-signal hover:underline">
                   {t("Privacy Policy", "প্রাইভেসি পলিসি")}
                 </Link>
                 {t(".", " মেনে নিচ্ছি।")}

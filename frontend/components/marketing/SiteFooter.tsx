@@ -59,8 +59,8 @@ const RESOURCE_LINKS = [
     labelBn: "ডকুমেন্টেশন ও এপিআই",
     href: "/docs",
   },
-  { labelEn: "Privacy Policy", labelBn: "প্রাইভেসি পলিসি", href: "/docs" },
-  { labelEn: "Terms of Service", labelBn: "শর্তাবলী", href: "/docs" },
+  { labelEn: "Privacy Policy", labelBn: "প্রাইভেসি পলিসি", href: "/privacy" },
+  { labelEn: "Terms of Service", labelBn: "শর্তাবলী", href: "/terms" },
   { labelEn: "Contact Us", labelBn: "যোগাযোগ", href: "/contact" },
 ];
 
