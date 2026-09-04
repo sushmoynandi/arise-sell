@@ -737,17 +737,16 @@ export function TabBilling() {
               <div className="border-t border-line p-5 bg-surface-2/20">
                 {isUserOnCustom ? (
                   <div className="rounded-2xl border border-signal/30 bg-[#edf7f3]/60 p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-3 min-w-0">
-                      <div className="flex items-center gap-2 shrink-0">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
                         <span className="flex h-2 w-2 rounded-full bg-signal animate-pulse" />
-                        <h4 className="text-sm sm:text-base font-bold font-display text-text whitespace-nowrap">
+                        <h4 className="text-sm sm:text-base font-bold font-display text-text">
                           {planName}
                         </h4>
                         <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                           Active Plan
                         </span>
                       </div>
-                      <span className="text-text-3/60 hidden xl:inline">•</span>
                       <p className="text-xs text-text-2 font-mono whitespace-nowrap">
                         {ordersQuota.toLocaleString()} msgs · {maxStores} stores · {maxSeats} seats · Priority SLA
                       </p>
@@ -808,16 +807,15 @@ export function TabBilling() {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-line/80 bg-white p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-3 min-w-0">
-                      <div className="flex items-center gap-2 shrink-0">
-                        <h4 className="text-sm sm:text-base font-bold font-display text-text whitespace-nowrap">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm sm:text-base font-bold font-display text-text">
                           Custom Enterprise
                         </h4>
                         <span className="rounded-md bg-signal/15 px-2 py-0.5 text-[10px] font-bold font-mono text-signal uppercase tracking-wider">
                           Tailored
                         </span>
                       </div>
-                      <span className="text-text-3/60 hidden xl:inline">•</span>
                       <p className="text-xs text-text-3 whitespace-nowrap">
                         Tailored AI message quotas, multi-store management (3–10+), and dedicated SLA for high-volume brands.
                       </p>
