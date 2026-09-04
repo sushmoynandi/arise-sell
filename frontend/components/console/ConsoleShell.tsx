@@ -8,6 +8,7 @@ import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
 import { Avatar, Wordmark } from "@/components/ui/primitives";
 import { useAuth } from "@/lib/auth-context";
+import api from "@/lib/api-client";
 import {
   CHANNEL_ICON,
   NAV_ICON,
@@ -15,11 +16,11 @@ import {
   IconBot,
   IconChevronUp,
   IconClose,
-  IconCreditCard,
   IconLogOut,
   IconMenu,
   IconSearch,
   IconSettings,
+  IconShield,
   IconSpark,
   IconTruck,
   IconUsers,
@@ -280,8 +281,8 @@ const SECTION_TITLES_BN: Record<string, string> = {
   "/console/settings": "সেটিংস",
 };
 
-function getQuotaTone(pct: number) {
-  if (pct >= 90) {
+function getQuotaTone(remainingPct: number) {
+  if (remainingPct <= 15) {
     return {
       dot: "bg-rose-500 ring-rose-500/25",
       text: "text-rose-600 dark:text-rose-400",
@@ -289,10 +290,10 @@ function getQuotaTone(pct: number) {
         "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/20",
       border: "border-rose-500/30 hover:border-rose-500/60 bg-rose-500/[0.04]",
       bar: "bg-rose-500",
-      status: "Critical (>90%)",
+      status: "Critical (<15% left)",
     };
   }
-  if (pct >= 75) {
+  if (remainingPct <= 30) {
     return {
       dot: "bg-amber-500 ring-amber-500/25",
       text: "text-amber-600 dark:text-amber-400",
@@ -301,7 +302,7 @@ function getQuotaTone(pct: number) {
       border:
         "border-amber-500/30 hover:border-amber-500/60 bg-amber-500/[0.04]",
       bar: "bg-amber-500",
-      status: "Approaching (75-89%)",
+      status: "Low Quota (15-30% left)",
     };
   }
   return {
@@ -311,9 +312,41 @@ function getQuotaTone(pct: number) {
       "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/15",
     border: "border-line hover:border-emerald-500/40 bg-surface",
     bar: "bg-emerald-500",
-    status: "Healthy (0-74%)",
+    status: "Healthy Balance",
   };
 }
+
+interface SetupTaskItem {
+  id: string;
+  title: string;
+  hint: string;
+  href: string;
+  completed?: boolean;
+}
+
+const DEFAULT_SETUP_TASKS: SetupTaskItem[] = [
+  {
+    id: "courier",
+    title: "Connect Courier API",
+    hint: "Steadfast / Pathao for auto parcel booking",
+    href: "/console/settings?tab=courier",
+    completed: false,
+  },
+  {
+    id: "persona",
+    title: "Train AI Sales Persona",
+    hint: "Store voice, catalog FAQ & discount limits",
+    href: "/console/brain",
+    completed: false,
+  },
+  {
+    id: "business",
+    title: "Store & Contact Details",
+    hint: "Contact number, address & return policy",
+    href: "/console/settings?tab=business",
+    completed: true,
+  },
+];
 
 function ConsoleShellInner({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -322,27 +355,182 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
   const { lang } = useLang();
   const { user, loading, isAuthenticated, logout } = useAuth();
 
+  // Role-based classification
+  const rawRole = (user?.role || "admin").toLowerCase();
+  const isSuperadmin = Boolean(user?.is_superadmin || rawRole === "superadmin");
+  const isAdminOrOwner =
+    isSuperadmin || rawRole === "admin" || rawRole === "owner";
+
+  const roleLabel = isSuperadmin
+    ? "Superadmin"
+    : rawRole === "owner"
+      ? "Store Owner"
+      : rawRole === "admin"
+        ? "Administrator"
+        : rawRole === "manager"
+          ? "Store Manager"
+          : "Support Staff";
+
+  const roleBadgeColor = isSuperadmin
+    ? "bg-signal/15 text-signal"
+    : isAdminOrOwner
+      ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
+      : "bg-amber-500/15 text-amber-700 dark:text-amber-400";
+
+  // Dynamic Setup Checklist from backend
+  const [setupChecklist, setSetupChecklist] = useState<{
+    total: number;
+    completed: number;
+    is_complete: boolean;
+    tasks: SetupTaskItem[];
+  }>({
+    total: 3,
+    completed: 1,
+    is_complete: false,
+    tasks: DEFAULT_SETUP_TASKS,
+  });
+
+  const pendingSetupTasks = setupChecklist.tasks.filter((t) => !t.completed);
+
+  // Dynamic Tenant Info
+  const [tenantInfo, setTenantInfo] = useState({
+    name: "Nokshi & Co.",
+    plan: "Pro",
+    messagesUsed: 23,
+    messagesQuota: 500,
+    remainingQuota: 477,
+    remainingPercent: 95,
+  });
+
+  // Dynamic Team Members from backend
+  const [teamMembers, setTeamMembers] = useState<
+    Array<{
+      name: string;
+      role: string;
+      initials: string;
+      online: boolean;
+      hue: number;
+      platforms?: readonly string[] | string[];
+    }>
+  >([...TEAM]);
+
+  // Dynamic Notifications from backend
+  const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push(`/login?from=${encodeURIComponent(pathname)}`);
     }
   }, [loading, isAuthenticated, router, pathname]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      // 1. Fetch live Tenant Profile, Message Quota & Setup Checklist
+      api.merchants
+        .getProfile()
+        .then((res: unknown) => {
+          if (res && typeof res === "object") {
+            const raw = res as Record<string, unknown>;
+            const d = (
+              "data" in raw && raw.data && typeof raw.data === "object"
+                ? raw.data
+                : raw
+            ) as {
+              name?: string;
+              plan?: string;
+              messagesUsed?: number;
+              messagesQuota?: number;
+              ordersUsed?: number;
+              ordersQuota?: number;
+              remainingQuota?: number;
+              remainingPercent?: number;
+              setup_checklist?: {
+                total: number;
+                completed: number;
+                is_complete: boolean;
+                tasks: SetupTaskItem[];
+              };
+            };
+            const quota = d.messagesQuota || d.ordersQuota || 500;
+            const used = d.messagesUsed ?? d.ordersUsed ?? 0;
+            const remaining = d.remainingQuota ?? Math.max(0, quota - used);
+            const pct =
+              d.remainingPercent ??
+              (quota > 0 ? Math.round((remaining / quota) * 100) : 100);
+            setTenantInfo({
+              name: d.name || "Nokshi & Co.",
+              plan: d.plan || "Pro",
+              messagesUsed: used,
+              messagesQuota: quota,
+              remainingQuota: remaining,
+              remainingPercent: pct,
+            });
+
+            if (d.setup_checklist && typeof d.setup_checklist === "object") {
+              setSetupChecklist(d.setup_checklist);
+            }
+          }
+        })
+        .catch(() => {});
+
+      // 2. Fetch Live Teammates from Backend
+      api.merchants
+        .getTeam()
+        .then((res: unknown) => {
+          if (Array.isArray(res) && res.length > 0) {
+            setTeamMembers(
+              res as Array<{
+                name: string;
+                role: string;
+                initials: string;
+                online: boolean;
+                hue: number;
+                platforms?: string[];
+              }>,
+            );
+          }
+        })
+        .catch(() => {});
+
+      // 3. Fetch Real Notifications from Backend
+      api.merchants
+        .getNotifications()
+        .then((res: unknown) => {
+          if (Array.isArray(res) && res.length > 0) {
+            setNotifs(res as Notification[]);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated, pathname]);
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
+  const [quotaOpen, setQuotaOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
-  const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     () => Object.fromEntries(CONSOLE_NAV.map((group) => [group.group, true])),
   );
 
-  const online = TEAM.filter((t) => t.online);
-  const pct = Math.round((TENANT.ordersUsed / TENANT.ordersQuota) * 100);
+  const displayName = user?.first_name
+    ? `${user.first_name} ${user.last_name || ""}`.trim()
+    : user?.email?.split("@")[0] || "Admin";
+
+  const online = teamMembers.filter((t) => t.online);
+  const pct = tenantInfo.remainingPercent;
   const quotaTone = getQuotaTone(pct);
   const unreadCount = notifs.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    const unreadIds = notifs.filter((n) => n.unread).map((n) => n.id);
+    setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+    if (unreadIds.length > 0) {
+      api.merchants.markNotificationsRead(unreadIds).catch(() => {});
+    }
+  };
 
   const isComments =
     pathname === "/console/comments" ||
@@ -354,10 +542,6 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     : lang === "bn"
       ? SECTION_TITLES_BN[pathname] || "ড্যাশবোর্ড"
       : SECTION_TITLES[pathname] || "Dashboard";
-
-  const markAllAsRead = () => {
-    setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
-  };
 
   const toggleGroup = (group: string) => {
     setExpandedGroups((prev) => ({
@@ -470,6 +654,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => {
                 setStoreDropdownOpen(!storeDropdownOpen);
+                setQuotaOpen(false);
                 setProfileOpen(false);
                 setNotifOpen(false);
                 setTeamOpen(false);
@@ -665,34 +850,145 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               </kbd>
             </label>
 
-            {/* Top Navbar Dynamic Compact Quota Capsule */}
-            <Link
-              href="/console/settings?tab=billing"
-              className={cx(
-                "hidden sm:flex items-center gap-1.5 rounded-xl border h-8 px-2.5 transition-all shadow-2xs group cursor-pointer select-none",
-                quotaTone.border,
-              )}
-              title={`Monthly Closed Orders: ${TENANT.ordersUsed.toLocaleString()} of ${TENANT.ordersQuota.toLocaleString()} used (${(TENANT.ordersQuota - TENANT.ordersUsed).toLocaleString()} remaining · ${pct}%). Status: ${quotaTone.status}. Resets in 9 days.`}
-            >
-              <span
+            {/* Top Navbar Dynamic Compact Quota Capsule & Summary Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuotaOpen(!quotaOpen);
+                  setTeamOpen(false);
+                  setNotifOpen(false);
+                  setProfileOpen(false);
+                  setStoreDropdownOpen(false);
+                }}
                 className={cx(
-                  "size-1.5 rounded-full ring-2 shrink-0",
-                  quotaTone.dot,
-                  pct >= 90 ? "animate-ping" : "animate-pulse",
+                  "hidden sm:flex items-center gap-1.5 rounded-xl border h-8 px-2.5 transition-all shadow-2xs group cursor-pointer select-none",
+                  quotaOpen
+                    ? "bg-surface-2 ring-2 ring-signal/30 border-signal/40"
+                    : quotaTone.border,
                 )}
-              />
-              <span
-                className={cx(
-                  "font-mono text-[11.5px] font-bold",
-                  quotaTone.text,
-                )}
+                title={`AI Message Quota: ${tenantInfo.remainingQuota.toLocaleString()} of ${tenantInfo.messagesQuota.toLocaleString()} remaining (${tenantInfo.messagesUsed.toLocaleString()} replies used · ${pct}% left). Click to view plan summary.`}
+                aria-label="Quota and plan summary"
               >
-                {pct}%
-              </span>
-              <span className="font-mono text-[11px] text-text-3 font-medium">
-                Quota
-              </span>
-            </Link>
+                <span
+                  className={cx(
+                    "size-1.5 rounded-full ring-2 shrink-0",
+                    quotaTone.dot,
+                    pct <= 15 ? "animate-ping" : "animate-pulse",
+                  )}
+                />
+                <span
+                  className={cx(
+                    "font-mono text-[11.5px] font-bold tracking-tight",
+                    quotaTone.text,
+                  )}
+                >
+                  {tenantInfo.remainingQuota.toLocaleString()} Left
+                </span>
+                <span className="font-mono text-[11px] text-text-3 font-medium">
+                  ({pct}%)
+                </span>
+              </button>
+
+              {/* Quota & Plan Summary Popover (Compact & Professional) */}
+              <AnimatePresence>
+                {quotaOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[50]"
+                      onClick={() => setQuotaOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.12, ease: "easeOut" }}
+                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2.5 z-[60] w-[280px] rounded-2xl border border-line bg-white/98 backdrop-blur-xl p-3.5 shadow-2xl space-y-3 animate-in fade-in"
+                    >
+                      {/* Top Caret Notch (points directly to capsule) */}
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 size-3 rotate-45 border-l border-t border-line bg-white" />
+
+                      {/* Top Header Row */}
+                      <div className="relative flex items-center justify-between pb-2 border-b border-line/60">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cx(
+                              "size-2 rounded-full ring-2 shrink-0",
+                              quotaTone.dot,
+                            )}
+                          />
+                          <span className="text-[13px] font-bold text-text">
+                            {tenantInfo.plan} Plan
+                          </span>
+                        </div>
+                        <span className="text-[10.5px] font-mono text-text-3 font-medium">
+                          Resets in 9d
+                        </span>
+                      </div>
+
+                      {/* Quota Meter Block */}
+                      <div className="relative space-y-1.5">
+                        <div className="flex items-baseline justify-between text-[11.5px]">
+                          <span
+                            className={cx(
+                              "font-mono font-bold text-[14px]",
+                              quotaTone.text,
+                            )}
+                          >
+                            {tenantInfo.remainingQuota.toLocaleString()} Left
+                          </span>
+                          <span className="font-mono text-[10.5px] text-text-3">
+                            {tenantInfo.messagesUsed.toLocaleString()} /{" "}
+                            {tenantInfo.messagesQuota.toLocaleString()} used (
+                            {pct}%)
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+                          <div
+                            className={cx(
+                              "h-full rounded-full transition-all duration-300",
+                              quotaTone.bar,
+                            )}
+                            style={{
+                              width: `${Math.min(Math.max(pct, 0), 100)}%`,
+                            }}
+                          />
+                        </div>
+
+                        <p className="text-[9.5px] text-text-3 leading-tight pt-0.5">
+                          Auto-decrements per AI reply &amp; conversation.
+                        </p>
+                      </div>
+
+                      {/* Clean Actions (Same Row, Equal Height, No Arrows) */}
+                      <div className="relative pt-2 border-t border-line/60 grid grid-cols-2 gap-2">
+                        <Link
+                          href="/console/settings?tab=billing"
+                          onClick={() => setQuotaOpen(false)}
+                          className="flex h-8 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface px-2 text-[11.5px] font-semibold text-text hover:bg-surface-2 transition-colors cursor-pointer text-center"
+                        >
+                          <IconSettings
+                            width={13}
+                            height={13}
+                            className="text-text-3 shrink-0"
+                          />
+                          <span className="truncate">Billing Settings</span>
+                        </Link>
+                        <Link
+                          href="/pricing"
+                          onClick={() => setQuotaOpen(false)}
+                          className="flex h-8 items-center justify-center rounded-xl bg-signal/10 border border-signal/20 px-2 text-[11.5px] font-bold text-signal hover:bg-signal/15 transition-colors cursor-pointer text-center"
+                        >
+                          <span className="truncate">Upgrade / Top-Up</span>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* 1. Active Team Presence Button & Popover */}
             <div className="relative">
@@ -700,6 +996,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => {
                   setTeamOpen(!teamOpen);
+                  setQuotaOpen(false);
                   setNotifOpen(false);
                   setProfileOpen(false);
                   setStoreDropdownOpen(false);
@@ -724,95 +1021,109 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               </button>
 
               {/* Team Presence Popover */}
-              {teamOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-[50]"
-                    onClick={() => setTeamOpen(false)}
-                  />
-                  <div className="absolute left-1/2 -translate-x-[40%] top-full mt-2 z-[60] w-72 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in">
-                    <div className="flex items-center justify-between px-1.5 pb-2 border-b border-line/60">
-                      <div className="flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-signal animate-pulse" />
-                        <span className="text-[13px] font-bold text-text">
-                          Active Teammates
+              <AnimatePresence>
+                {teamOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[50]"
+                      onClick={() => setTeamOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.12, ease: "easeOut" }}
+                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2.5 z-[60] w-[280px] rounded-2xl border border-line bg-white/98 backdrop-blur-xl p-3.5 shadow-2xl space-y-2.5 animate-in fade-in"
+                    >
+                      {/* Top Caret Notch (points directly to team button) */}
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 size-3 rotate-45 border-l border-t border-line bg-white" />
+
+                      {/* Header */}
+                      <div className="relative flex items-center justify-between pb-2 border-b border-line/60">
+                        <div className="flex items-center gap-2">
+                          <span className="size-2 rounded-full bg-signal ring-2 ring-signal/25 shrink-0" />
+                          <span className="text-[13px] font-bold text-text">
+                            Active Teammates
+                          </span>
+                        </div>
+                        <span className="rounded-md bg-signal/15 px-2 py-0.5 font-mono text-[10px] font-bold text-signal">
+                          {online.length} Online
                         </span>
                       </div>
-                      <span className="rounded-full bg-signal/15 px-2 py-0.2 font-mono text-[10px] font-bold text-signal">
-                        {online.length} Online
-                      </span>
-                    </div>
 
-                    {/* Active Member List Only */}
-                    <div className="max-h-80 overflow-y-auto space-y-1 pr-0.5">
-                      {online.map((m) => {
-                        const platforms = "platforms" in m ? m.platforms : [];
-                        return (
-                          <div
-                            key={m.name}
-                            className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-surface-2 transition-colors group"
-                          >
-                            <div className="relative shrink-0">
-                              <Avatar name={m.name} hue={m.hue} size={30} />
-                              <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-white" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[12.5px] font-semibold text-text truncate leading-tight">
-                                {m.name}
-                              </p>
-                              {/* Role on left, Channel icons aligned on right */}
-                              <div className="flex items-center justify-between gap-1 mt-0.5">
-                                <span className="text-[11px] text-text-3 font-mono truncate">
-                                  {m.role}
-                                </span>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {platforms.map((p) => {
-                                    const ChannelIcon =
-                                      CHANNEL_ICON[
-                                        p as keyof typeof CHANNEL_ICON
-                                      ] || CHANNEL_ICON.all;
-                                    return (
-                                      <span
-                                        key={p}
-                                        className="text-text-3 group-hover:text-signal transition-colors hover:scale-110"
-                                        title={`Assigned Channel: ${p.charAt(0).toUpperCase() + p.slice(1)}`}
-                                      >
-                                        <ChannelIcon width={12} height={12} />
-                                      </span>
-                                    );
-                                  })}
+                      {/* Active Member List */}
+                      <div className="relative max-h-72 overflow-y-auto space-y-1 pr-0.5">
+                        {online.map((m) => {
+                          const platforms = m.platforms ?? [];
+                          return (
+                            <div
+                              key={m.name}
+                              className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-surface-2 transition-colors group"
+                            >
+                              <div className="relative shrink-0">
+                                <Avatar name={m.name} hue={m.hue} size={32} />
+                                <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-white" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[12.5px] font-semibold text-text truncate leading-tight">
+                                  {m.name}
+                                </p>
+                                <div className="flex items-center justify-between gap-1 mt-0.5">
+                                  <span className="text-[10.5px] text-text-3 font-mono truncate">
+                                    {m.role}
+                                  </span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {platforms.map((p) => {
+                                      const ChannelIcon =
+                                        CHANNEL_ICON[
+                                          p as keyof typeof CHANNEL_ICON
+                                        ] || CHANNEL_ICON.all;
+                                      return (
+                                        <span
+                                          key={p}
+                                          className="text-text-3 group-hover:text-signal transition-colors hover:scale-110"
+                                          title={`Channel: ${p.charAt(0).toUpperCase() + p.slice(1)}`}
+                                        >
+                                          <ChannelIcon width={12} height={12} />
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
 
-                    {/* Footer */}
-                    <div className="pt-1.5 border-t border-line/60 text-center">
-                      <Link
-                        href="/console/integrations"
-                        onClick={() => setTeamOpen(false)}
-                        className="text-[11.5px] font-semibold text-signal hover:underline"
-                      >
-                        Manage Team & Roles ➔
-                      </Link>
-                    </div>
-                  </div>
-                </>
-              )}
+                      {/* Footer Action (Clean, No Arrow) */}
+                      <div className="relative pt-2 border-t border-line/60">
+                        <Link
+                          href="/console/settings?tab=account"
+                          onClick={() => setTeamOpen(false)}
+                          className="flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-[11.5px] font-semibold text-text hover:bg-surface-2 transition-colors cursor-pointer text-center"
+                        >
+                          <IconUsers
+                            width={13}
+                            height={13}
+                            className="text-text-3 shrink-0"
+                          />
+                          <span>Manage Team &amp; Roles</span>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* 2. Middle: Official Rounded-Full Homepage Language Switcher */}
-            <LanguageToggle size="console" />
-
-            {/* 3. Right: Borderless Notification Bell */}
+            {/* Notification Bell */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => {
                   setNotifOpen(!notifOpen);
+                  setQuotaOpen(false);
                   setTeamOpen(false);
                   setProfileOpen(false);
                   setStoreDropdownOpen(false);
@@ -835,152 +1146,154 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 )}
               </button>
 
-              {/* Notification Popover Drawer (Linear / Stripe Standard) */}
-              {notifOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-[50]"
-                    onClick={() => setNotifOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-2 z-[60] w-80 sm:w-88 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in">
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-1.5 pb-2 border-b border-line/60">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-bold text-text">
-                          Notifications
-                        </span>
-                        {unreadCount > 0 && (
-                          <span className="rounded-full bg-signal/15 px-2 py-0.2 font-mono text-[10px] font-bold text-signal">
-                            {unreadCount} new
+              {/* Notification Popover Drawer (Compact & Professional) */}
+              <AnimatePresence>
+                {notifOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[50]"
+                      onClick={() => setNotifOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.12, ease: "easeOut" }}
+                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2.5 z-[60] w-[280px] sm:w-[290px] rounded-2xl border border-line bg-white/98 backdrop-blur-xl p-3.5 shadow-2xl space-y-2.5 animate-in fade-in"
+                    >
+                      {/* Top Caret Notch (points directly to Bell) */}
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 size-3 rotate-45 border-l border-t border-line bg-white" />
+
+                      {/* Header */}
+                      <div className="relative flex items-center justify-between pb-2 border-b border-line/60">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-bold text-text">
+                            Notifications
                           </span>
+                          {unreadCount > 0 && (
+                            <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[10px] font-bold text-signal">
+                              {unreadCount} new
+                            </span>
+                          )}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={markAllAsRead}
+                            className="text-[11px] font-medium text-text-3 hover:text-signal transition-colors cursor-pointer"
+                          >
+                            Mark all read
+                          </button>
                         )}
                       </div>
-                      {unreadCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={markAllAsRead}
-                          className="text-[11px] font-medium text-signal hover:underline cursor-pointer"
-                        >
-                          Mark all as read
-                        </button>
-                      )}
-                    </div>
 
-                    {/* Notification Stream */}
-                    <div className="max-h-80 overflow-y-auto space-y-1 pr-0.5">
-                      {notifs.map((n) => (
-                        <div
-                          key={n.id}
-                          className={cx(
-                            "group relative flex items-start gap-2.5 rounded-xl p-2.5 transition-all text-left cursor-pointer hover:bg-surface-2",
-                            n.unread ? "bg-signal/[0.04]" : "",
-                          )}
-                        >
-                          {/* Category Badge Icon */}
-                          <span
+                      {/* Notification Stream */}
+                      <div className="relative max-h-72 overflow-y-auto space-y-1 pr-0.5">
+                        {notifs.map((n) => (
+                          <div
+                            key={n.id}
                             className={cx(
-                              "grid size-7 shrink-0 place-items-center rounded-lg font-bold shadow-2xs mt-0.5",
-                              n.type === "admin"
-                                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                                : n.type === "courier"
-                                  ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-                                  : "bg-signal/15 text-signal",
+                              "group relative flex items-start gap-2.5 rounded-xl p-2 transition-all text-left cursor-pointer hover:bg-surface-2",
+                              n.unread ? "bg-signal/[0.04]" : "",
                             )}
                           >
-                            {n.type === "admin" ? (
-                              <IconSpark width={13} height={13} />
-                            ) : n.type === "courier" ? (
-                              <IconTruck width={13} height={13} />
-                            ) : (
-                              <IconBot width={13} height={13} />
-                            )}
-                          </span>
-
-                          {/* Content Body */}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1.5">
-                              <p className="text-[12.5px] font-semibold text-text truncate leading-tight group-hover:text-signal transition-colors">
-                                {n.title}
-                              </p>
-                              {n.unread && (
-                                <span className="size-1.5 rounded-full bg-signal shrink-0" />
+                            {/* Category Badge Icon */}
+                            <span
+                              className={cx(
+                                "grid size-7 shrink-0 place-items-center rounded-lg font-bold mt-0.5",
+                                n.type === "admin"
+                                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                  : n.type === "courier"
+                                    ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                                    : "bg-signal/15 text-signal",
                               )}
-                            </div>
-                            <p className="text-[11px] text-text-3 leading-relaxed mt-0.5 line-clamp-2">
-                              {n.body}
-                            </p>
-                            <span className="block font-mono text-[9.5px] text-text-3/60 mt-1">
-                              {n.time}
+                            >
+                              {n.type === "admin" ? (
+                                <IconSpark width={12} height={12} />
+                              ) : n.type === "courier" ? (
+                                <IconTruck width={12} height={12} />
+                              ) : (
+                                <IconBot width={12} height={12} />
+                              )}
                             </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
 
-                    {/* Footer */}
-                    <div className="pt-1.5 border-t border-line/60 text-center">
-                      <Link
-                        href="/console/automation"
-                        onClick={() => setNotifOpen(false)}
-                        className="text-[11.5px] font-semibold text-text-2 hover:text-signal transition-colors"
-                      >
-                        System Gateway Status ➔
-                      </Link>
-                    </div>
-                  </div>
-                </>
-              )}
+                            {/* Content Body */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <p className="text-[12px] font-semibold text-text truncate leading-tight group-hover:text-signal transition-colors">
+                                  {n.title}
+                                </p>
+                                {n.unread && (
+                                  <span className="size-1.5 rounded-full bg-signal shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-[10.5px] text-text-3 leading-snug mt-0.5 line-clamp-2">
+                                {n.body}
+                              </p>
+                              <span className="block font-mono text-[9px] text-text-3/60 mt-1">
+                                {n.time}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Footer Action (Clean, No Arrow) */}
+                      <div className="relative pt-2 border-t border-line/60">
+                        <Link
+                          href="/console/settings?tab=notifications"
+                          onClick={() => setNotifOpen(false)}
+                          className="flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-[11.5px] font-semibold text-text hover:bg-surface-2 transition-colors cursor-pointer text-center"
+                        >
+                          <IconBell
+                            width={13}
+                            height={13}
+                            className="text-text-3 shrink-0"
+                          />
+                          <span>Notification Settings</span>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
+            {/* Vertical Divider */}
+            <div className="h-5 w-px bg-line/60 shrink-0" />
+
+            {/* Language Switcher (Personal Preference) */}
+            <LanguageToggle size="console" />
+
             {/* 4. Far Right: User Profile Avatar & Dropdown Popover */}
-            <div className="relative border-l border-line/60 pl-2 sm:pl-2.5 ml-0.5">
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => {
                   setProfileOpen(!profileOpen);
+                  setQuotaOpen(false);
                   setNotifOpen(false);
                   setTeamOpen(false);
                   setStoreDropdownOpen(false);
                 }}
                 className={cx(
-                  "flex items-center gap-2 rounded-xl p-1 sm:pr-2 transition-all cursor-pointer select-none",
+                  "relative rounded-full p-0.5 transition-all cursor-pointer select-none",
                   profileOpen
-                    ? "bg-surface-2 ring-2 ring-signal/30"
-                    : "hover:bg-surface-2",
+                    ? "ring-2 ring-signal ring-offset-2 ring-offset-surface"
+                    : "hover:ring-2 hover:ring-signal/40 hover:ring-offset-1 hover:ring-offset-surface",
                 )}
-                title="Account & Profile"
+                title={`${displayName} · ${user?.email || "Account & Profile"}`}
                 aria-label="User profile menu"
               >
                 <div className="relative shrink-0">
                   <Avatar
-                    name={
-                      user?.first_name
-                        ? `${user.first_name} ${user.last_name || ""}`.trim()
-                        : "Farhana Rahman"
-                    }
-                    hue={155}
-                    size={28}
+                    src={user?.avatar_url}
+                    name={displayName}
+                    hue={user?.hue || 155}
+                    size={32}
                   />
-                  <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-surface" />
+                  <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-signal ring-2 ring-surface" />
                 </div>
-                <div className="hidden text-left md:block min-w-0 max-w-[100px] lg:max-w-[120px]">
-                  <p className="truncate text-[12.5px] font-semibold text-text leading-tight">
-                    {user?.first_name
-                      ? `${user.first_name} ${user.last_name || ""}`.trim()
-                      : "Farhana Rahman"}
-                  </p>
-                  <p className="truncate text-[10px] font-mono text-signal font-semibold">
-                    {user?.role || "Owner"}
-                  </p>
-                </div>
-                <IconChevronUp
-                  width={13}
-                  height={13}
-                  className={cx(
-                    "text-text-3 transition-transform duration-200",
-                    profileOpen ? "rotate-0 text-signal" : "rotate-180",
-                  )}
-                />
               </button>
 
               {/* Profile Context Dropdown (Linear / Stripe Standard) */}
@@ -996,119 +1309,175 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute right-0 top-full mt-2 z-[60] w-72 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in"
+                      className="absolute right-0 top-full mt-2.5 z-[60] w-76 rounded-2xl border border-line bg-white/98 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in"
                     >
+                      {/* Top Caret Notch (points directly to Profile Avatar) */}
+                      <div className="absolute -top-1.5 right-3.5 size-3 rotate-45 border-l border-t border-line bg-white" />
+
                       {/* Account Summary Header */}
-                      <div className="flex items-center justify-between pb-2 border-b border-line/60">
+                      <div className="flex items-center gap-2.5 pb-2 border-b border-line/60">
+                        <Avatar
+                          src={user?.avatar_url}
+                          name={displayName}
+                          hue={user?.hue || 155}
+                          size={36}
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="text-[13px] font-bold text-text truncate leading-tight">
-                            {user?.first_name
-                              ? `${user.first_name} ${user.last_name || ""}`.trim()
-                              : "Farhana Rahman"}
+                            {displayName}
                           </p>
                           <p className="text-[10.5px] text-text-3 font-mono truncate mt-0.5">
-                            {user?.email || "farhana@nokshi.co"}
+                            {user?.email || "admin@arisesell.com"}
                           </p>
                         </div>
-                        <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-signal capitalize shrink-0">
-                          {user?.role || "Owner"}
+                        <span
+                          className={cx(
+                            "rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-bold capitalize shrink-0",
+                            roleBadgeColor,
+                          )}
+                        >
+                          {roleLabel}
                         </span>
                       </div>
 
-                      {/* Quota Usage Summary (Clean Surface Card) */}
-                      <div className="p-2 rounded-xl bg-surface-2/70 border border-line/60 space-y-1.5 select-none">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-text">
-                            Orders Quota
-                          </span>
-                          <span
-                            className={cx(
-                              "rounded px-1.5 py-0.2 font-mono text-[9px] font-bold",
-                              quotaTone.badge,
-                            )}
-                          >
-                            {TENANT.plan}
-                          </span>
-                        </div>
-                        <div className="flex items-baseline justify-between font-mono text-[11.5px]">
-                          <span className={cx("font-bold", quotaTone.text)}>
-                            {TENANT.ordersUsed.toLocaleString()}
-                          </span>
-                          <span className="text-text-3">
-                            / {TENANT.ordersQuota.toLocaleString()} ({pct}%)
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
-                          <div
-                            className={cx(
-                              "h-full rounded-full transition-all duration-300",
-                              quotaTone.bar,
-                            )}
-                            style={{ width: `${Math.min(pct, 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-[9.5px] text-text-3 font-mono">
-                          <span>Resets in 9 days</span>
-                          <span className={quotaTone.text}>
-                            {quotaTone.status}
-                          </span>
-                        </div>
-                      </div>
+                      {/* 1. Account Setup Checklist (Shown for Admin/Owner, disappears when all done) */}
+                      {isAdminOrOwner &&
+                        pendingSetupTasks.length > 0 &&
+                        !setupChecklist.is_complete && (
+                          <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-2.5 space-y-2 select-none">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-amber-500 ring-2 ring-amber-500/20 animate-pulse" />
+                                <span className="text-[11.5px] font-bold text-text">
+                                  Account Setup Required
+                                </span>
+                              </div>
+                              <span className="text-[9.5px] font-mono font-bold text-amber-700 bg-amber-500/15 px-1.5 py-0.5 rounded">
+                                {setupChecklist.completed}/
+                                {setupChecklist.total} Done
+                              </span>
+                            </div>
 
-                      {/* Menu Items */}
-                      <div className="space-y-0.5 text-[12.5px] font-medium text-text-2">
-                        <Link
-                          href="/console/settings?tab=billing"
-                          onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
-                        >
-                          <IconCreditCard
-                            width={14}
-                            height={14}
-                            className="text-text-3"
-                          />
-                          <span>Billing &amp; Quota</span>
-                        </Link>
+                            {/* Progress track */}
+                            <div className="h-1 w-full overflow-hidden rounded-full bg-amber-500/20">
+                              <div
+                                className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                                style={{
+                                  width: `${(setupChecklist.completed / setupChecklist.total) * 100}%`,
+                                }}
+                              />
+                            </div>
+
+                            {/* Actionable pending setup tasks */}
+                            <div className="space-y-1">
+                              {pendingSetupTasks.map((task) => (
+                                <Link
+                                  key={task.id}
+                                  href={task.href}
+                                  onClick={() => setProfileOpen(false)}
+                                  className="flex items-center justify-between gap-2.5 rounded-lg bg-surface p-2 border border-line/60 hover:border-amber-500/40 hover:bg-amber-500/[0.03] transition-all group cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <span className="size-1.5 rounded-full bg-amber-500 shrink-0 ring-2 ring-amber-500/20" />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[11.5px] font-semibold text-text group-hover:text-amber-800 transition-colors truncate leading-tight">
+                                        {task.title}
+                                      </p>
+                                      <p className="text-[9.5px] text-text-3 font-mono truncate mt-0.5">
+                                        {task.hint}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className="shrink-0 text-[10.5px] font-bold text-amber-600 group-hover:translate-x-0.5 transition-transform">
+                                    Set up →
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* 2. Core Settings tailored to User Role */}
+                      <div className="space-y-0.5 text-[12px] font-medium text-text-2 pt-0.5">
                         <Link
                           href="/console/settings?tab=account"
                           onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                          className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer group"
                         >
-                          <IconUsers
-                            width={14}
-                            height={14}
-                            className="text-text-3"
-                          />
-                          <span>Team &amp; Roles</span>
+                          <div className="flex items-center gap-2">
+                            <IconShield
+                              width={14}
+                              height={14}
+                              className="text-text-3 group-hover:text-text transition-colors"
+                            />
+                            <span>Profile &amp; Security</span>
+                          </div>
+                          <span className="text-[9.5px] text-text-3 font-mono">
+                            Password, 2FA
+                          </span>
                         </Link>
-                        <Link
-                          href="/console/brain"
-                          onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
-                        >
-                          <IconBot
-                            width={14}
-                            height={14}
-                            className="text-text-3"
-                          />
-                          <span>AI Brain &amp; Persona</span>
-                        </Link>
-                        <Link
-                          href="/console/settings"
-                          onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
-                        >
-                          <IconSettings
-                            width={14}
-                            height={14}
-                            className="text-text-3"
-                          />
-                          <span>Settings</span>
-                        </Link>
+
+                        {isAdminOrOwner ? (
+                          <>
+                            <Link
+                              href="/console/settings?tab=business"
+                              onClick={() => setProfileOpen(false)}
+                              className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <IconSettings
+                                  width={14}
+                                  height={14}
+                                  className="text-text-3 group-hover:text-text transition-colors"
+                                />
+                                <span>Store &amp; Business Profile</span>
+                              </div>
+                              <span className="text-[9.5px] text-text-3 font-mono truncate max-w-[90px]">
+                                {tenantInfo.name}
+                              </span>
+                            </Link>
+
+                            <Link
+                              href="/console/settings?tab=courier"
+                              onClick={() => setProfileOpen(false)}
+                              className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <IconTruck
+                                  width={14}
+                                  height={14}
+                                  className="text-text-3 group-hover:text-text transition-colors"
+                                />
+                                <span>Courier &amp; Logistics API</span>
+                              </div>
+                              <span className="text-[9.5px] text-emerald-700 bg-emerald-500/10 font-mono font-medium px-1.5 py-0.5 rounded">
+                                Steadfast
+                              </span>
+                            </Link>
+                          </>
+                        ) : (
+                          <Link
+                            href="/console/threads"
+                            onClick={() => setProfileOpen(false)}
+                            className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <IconBot
+                                width={14}
+                                height={14}
+                                className="text-text-3 group-hover:text-text transition-colors"
+                              />
+                              <span>Live Customer Inbox</span>
+                            </div>
+                            <span className="text-[9.5px] text-signal font-mono font-bold">
+                              Assigned
+                            </span>
+                          </Link>
+                        )}
                       </div>
 
-                      {/* Sign Out */}
-                      <div className="pt-1.5 border-t border-line/60">
+                      {/* 3. Sign Out & Version Footer */}
+                      <div className="pt-1.5 border-t border-line/60 flex items-center justify-between px-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -1116,15 +1485,18 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                             logout();
                             router.push("/login");
                           }}
-                          className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-medium text-rose-600 hover:bg-rose-50/80 transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-[12px] font-semibold text-rose-600 hover:bg-rose-50/80 transition-colors cursor-pointer"
                         >
                           <IconLogOut
-                            width={14}
-                            height={14}
+                            width={13.5}
+                            height={13.5}
                             className="text-rose-500"
                           />
                           <span>Sign Out</span>
                         </button>
+                        <span className="text-[9.5px] font-mono text-text-3/60 pr-1 select-none">
+                          AriseSell v2.4
+                        </span>
                       </div>
                     </motion.div>
                   </>

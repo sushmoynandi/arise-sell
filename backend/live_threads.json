@@ -395,7 +395,7 @@
     "channel": "whatsapp",
     "lang": "banglish",
     "district": "Dhaka",
-    "status": "ai",
+    "status": "human",
     "intent": "Store Catalog & Availability",
     "value": 3500,
     "unread": 0,
@@ -499,6 +499,17 @@
         "action": {
           "label": "AI Handled (Gemini)",
           "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-12",
+        "from": "human",
+        "body": "ok nice",
+        "at": "14:56",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
           "tone": "signal"
         }
       }

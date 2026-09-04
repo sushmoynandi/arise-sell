@@ -5,6 +5,30 @@ from typing import Optional, Any
 from pydantic import BaseModel, ConfigDict
 
 
+class SetupTaskItem(BaseModel):
+    id: str
+    title: str
+    hint: str
+    href: str
+    completed: bool
+
+
+class SetupChecklistResponse(BaseModel):
+    total: int = 3
+    completed: int = 1
+    is_complete: bool = False
+    tasks: list[SetupTaskItem] = []
+
+
+class NotificationItem(BaseModel):
+    id: str
+    title: str
+    body: str
+    time: str
+    unread: bool = True
+    type: str = "admin"  # "admin" | "system" | "courier"
+
+
 class TenantResponse(BaseModel):
     model_config = ConfigDict(extra="allow", from_attributes=True)
 
@@ -15,6 +39,10 @@ class TenantResponse(BaseModel):
     plan: str
     ordersUsed: int
     ordersQuota: int
+    messagesUsed: int = 0
+    messagesQuota: int = 500
+    remainingQuota: int = 500
+    remainingPercent: int = 100
     pages: int
     logoHue: int
     slug: str | None = None
@@ -40,8 +68,7 @@ class TenantResponse(BaseModel):
     website_orders_auth_header: str = "X-API-Key"
     website_orders_api_key: str | None = None
     website_orders_template: str | None = None
-
-    model_config = {"from_attributes": True}
+    setup_checklist: SetupChecklistResponse | None = None
 
 
 class TeamMemberResponse(BaseModel):

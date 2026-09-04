@@ -366,6 +366,12 @@ class ApiClient {
         body: JSON.stringify(settings),
       }),
     getTeam: () => this.request<unknown[]>("/merchants/team"),
+    getNotifications: () => this.request<unknown[]>("/merchants/notifications"),
+    markNotificationsRead: (ids: string[]) =>
+      this.request("/merchants/notifications/mark-read", {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
   };
 
   // --- Billing ---
