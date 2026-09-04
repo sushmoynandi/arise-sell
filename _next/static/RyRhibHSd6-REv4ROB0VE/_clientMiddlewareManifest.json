@@ -1,0 +1,22 @@
+[
+  {
+    "regexp": "^\\/arise-sell(?:\\/(_next\\/data\\/[^/]{1,}))?\\/console(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\\\.json)?[\\/#\\?]?$",
+    "originalSource": "/console/:path*"
+  },
+  {
+    "regexp": "^\\/arise-sell(?:\\/(_next\\/data\\/[^/]{1,}))?\\/admin(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\\\.json)?[\\/#\\?]?$",
+    "originalSource": "/admin/:path*"
+  },
+  {
+    "regexp": "^\\/arise-sell(?:\\/(_next\\/data\\/[^/]{1,}))?\\/choose-plan(\\\\.json)?[\\/#\\?]?$",
+    "originalSource": "/choose-plan"
+  },
+  {
+    "regexp": "^\\/arise-sell(?:\\/(_next\\/data\\/[^/]{1,}))?\\/login(\\\\.json)?[\\/#\\?]?$",
+    "originalSource": "/login"
+  },
+  {
+    "regexp": "^\\/arise-sell(?:\\/(_next\\/data\\/[^/]{1,}))?\\/signup(\\\\.json)?[\\/#\\?]?$",
+    "originalSource": "/signup"
+  }
+]
