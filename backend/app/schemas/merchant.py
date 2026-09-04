@@ -1,11 +1,13 @@
 """Tenant Info, Team Members, and Settings Schemas."""
 from __future__ import annotations
 
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, Any
+from pydantic import BaseModel, ConfigDict
 
 
 class TenantResponse(BaseModel):
+    model_config = ConfigDict(extra="allow", from_attributes=True)
+
     name: str
     nameBn: str
     kind: str
@@ -64,6 +66,8 @@ class ChannelResponse(BaseModel):
 
 
 class UpdateSettingsRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     name: str | None = None
     name_bn: str | None = None
     kind: str | None = None

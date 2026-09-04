@@ -32,10 +32,14 @@ export default function BrainPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Persona");
 
   // AI Persona & Autopilot States
-  const [dialect, setDialect] = useState<"bangla" | "banglish" | "english">("bangla");
-  const [personaTone, setPersonaTone] = useState<"friendly" | "urgent" | "formal" | "custom">("friendly");
+  const [dialect, setDialect] = useState<"bangla" | "banglish" | "english">(
+    "bangla",
+  );
+  const [personaTone, setPersonaTone] = useState<
+    "friendly" | "urgent" | "formal" | "custom"
+  >("friendly");
   const [systemPrompt, setSystemPrompt] = useState(
-    "You sell for Nokshi & Co., a handloom and home brand in Dhaka.\n\nSpeak the way a good shop assistant speaks: warm, unhurried, always আপনি. Default to Bangla script. If the customer writes Banglish, answer in Banglish. If they write English, answer in English.\n\nQuote only prices and stock the catalog gives you. If you do not know, say so and offer to check. Never promise a delivery date the courier has not given.\n\nYour job is finished when the parcel is booked — not when the question is answered."
+    "You sell for Nokshi & Co., a handloom and home brand in Dhaka.\n\nSpeak the way a good shop assistant speaks: warm, unhurried, always আপনি. Default to Bangla script. If the customer writes Banglish, answer in Banglish. If they write English, answer in English.\n\nQuote only prices and stock the catalog gives you. If you do not know, say so and offer to check. Never promise a delivery date the courier has not given.\n\nYour job is finished when the parcel is booked — not when the question is answered.",
   );
   const [autoPhoto, setAutoPhoto] = useState(true);
   const [scarcityNudge, setScarcityNudge] = useState(true);
@@ -125,7 +129,9 @@ export default function BrainPage() {
             className="mx-5 lg:mx-8 mt-4 rounded-xl border border-signal/40 bg-[#edf7f3] p-3 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
           >
             <IconCheck width={16} height={16} />
-            <span>AI Brain &amp; Persona guidelines published successfully!</span>
+            <span>
+              AI Brain &amp; Persona guidelines published successfully!
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -138,7 +144,9 @@ export default function BrainPage() {
               onClick={() => setTab(t)}
               className={cx(
                 "relative px-3 py-3 text-[13.5px] transition-colors cursor-pointer",
-                tab === t ? "text-text font-medium" : "text-text-3 hover:text-text-2",
+                tab === t
+                  ? "text-text font-medium"
+                  : "text-text-3 hover:text-text-2",
               )}
             >
               {t}
@@ -204,8 +212,12 @@ export default function BrainPage() {
                           )}
                         >
                           <div>
-                            <p className="text-[13px] font-bold text-text">{d.label}</p>
-                            <p className="text-[11.5px] text-text-3 mt-0.5">{d.desc}</p>
+                            <p className="text-[13px] font-bold text-text">
+                              {d.label}
+                            </p>
+                            <p className="text-[11.5px] text-text-3 mt-0.5">
+                              {d.desc}
+                            </p>
                           </div>
                           {dialect === d.id && (
                             <span className="size-5 rounded-full bg-signal text-white grid place-items-center shrink-0">
@@ -258,8 +270,12 @@ export default function BrainPage() {
                           )}
                         >
                           <div>
-                            <p className="text-[13px] font-bold text-text">{t.label}</p>
-                            <p className="text-[11.5px] text-text-3 mt-0.5">{t.desc}</p>
+                            <p className="text-[13px] font-bold text-text">
+                              {t.label}
+                            </p>
+                            <p className="text-[11.5px] text-text-3 mt-0.5">
+                              {t.desc}
+                            </p>
                           </div>
                           {personaTone === t.id && (
                             <span className="size-5 rounded-full bg-signal text-white grid place-items-center shrink-0">
@@ -294,7 +310,7 @@ export default function BrainPage() {
                             type="button"
                             onClick={() =>
                               setSystemPrompt(
-                                "You sell for Nokshi & Co., a handloom and home brand in Dhaka.\n\nSpeak the way a good shop assistant speaks: warm, unhurried, always আপনি. Default to Bangla script. If the customer writes Banglish, answer in Banglish. If they write English, answer in English.\n\nQuote only prices and stock the catalog gives you. If you do not know, say so and offer to check. Never promise a delivery date the courier has not given.\n\nYour job is finished when the parcel is booked — not when the question is answered."
+                                "You sell for Nokshi & Co., a handloom and home brand in Dhaka.\n\nSpeak the way a good shop assistant speaks: warm, unhurried, always আপনি. Default to Bangla script. If the customer writes Banglish, answer in Banglish. If they write English, answer in English.\n\nQuote only prices and stock the catalog gives you. If you do not know, say so and offer to check. Never promise a delivery date the courier has not given.\n\nYour job is finished when the parcel is booked — not when the question is answered.",
                               )
                             }
                             className="text-signal hover:underline cursor-pointer"
@@ -402,15 +418,21 @@ export default function BrainPage() {
                             className="p-3.5 flex items-center justify-between gap-3"
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="text-[12.5px] font-bold text-text">{s.label}</p>
-                              <p className="text-[11px] text-text-3">{s.desc}</p>
+                              <p className="text-[12.5px] font-bold text-text">
+                                {s.label}
+                              </p>
+                              <p className="text-[11px] text-text-3">
+                                {s.desc}
+                              </p>
                             </div>
                             <button
                               type="button"
                               onClick={() => s.set(!s.val)}
                               className={cx(
                                 "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-                                s.val ? "bg-signal" : "bg-neutral-300 dark:bg-neutral-700",
+                                s.val
+                                  ? "bg-signal"
+                                  : "bg-neutral-300 dark:bg-neutral-700",
                               )}
                             >
                               <span
