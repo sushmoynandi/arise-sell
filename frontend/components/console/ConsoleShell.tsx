@@ -542,7 +542,9 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     }
 
     // 3. Match against dynamic database plans loaded from /billing/plans
-    const planKey = (activeStorePlan || tenantInfo.plan || "").toLowerCase().trim();
+    const planKey = (activeStorePlan || tenantInfo.plan || "")
+      .toLowerCase()
+      .trim();
     if (dynamicPlans && dynamicPlans.length > 0) {
       const matched = dynamicPlans.find(
         (p) =>

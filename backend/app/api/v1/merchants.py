@@ -55,7 +55,40 @@ def get_plan_ai_quota(plan: str | None) -> int:
     return PLAN_AI_QUOTAS.get(plan.strip().lower(), 500)
 
 
-def _build_tenant_response(biz: Business, user: User | None = None) -> TenantResponse:
+async def get_user_owned_stores(user: User, db: AsyncSession) -> list[Business]:
+    """Return all stores strictly owned by the user (excluding stores where user is merely a teammate)."""
+    clean_user_email = user.email.strip().lower()
+    stmt = select(Business)
+    res = await db.execute(stmt)
+    all_businesses = res.scalars().all()
+
+    owned_stores: list[Business] = []
+    seen_ids = set()
+    for b in all_businesses:
+        if str(b.id) in seen_ids:
+            continue
+        extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+        owner_id = str(extra.get("owner_id", ""))
+        owner_email = str(extra.get("owner_email", "")).strip().lower()
+        support_email = str(extra.get("support_email", "")).strip().lower()
+
+        is_owner = bool(
+            (b.id == user.business_id and user.role == "owner")
+            or (owner_id and owner_id == str(user.id))
+            or (owner_email and owner_email == clean_user_email)
+            or (support_email and support_email == clean_user_email)
+        )
+        if is_owner:
+            seen_ids.add(str(b.id))
+            owned_stores.append(b)
+    return owned_stores
+
+
+def _build_tenant_response(
+    biz: Business,
+    user: User | None = None,
+    owned_stores_count: int | None = None,
+) -> TenantResponse:
     extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
 
     # Calculate live AI reply usage from live store + db + user account
@@ -138,7 +171,7 @@ def _build_tenant_response(biz: Business, user: User | None = None) -> TenantRes
         "maxStores": max_stores,
         "maxSeats": max_seats,
         "currentSeatsCount": seats_used,
-        "currentStoresCount": 1,
+        "currentStoresCount": owned_stores_count if owned_stores_count is not None else 1,
         "nextBillingDate": extra.get("next_billing_date", "10 Oct, 2026"),
         "paymentMethod": extra.get("payment_method", "bKash Auto-Debit"),
         "ordersUsed": ai_used,
@@ -253,32 +286,17 @@ async def get_merchant_profile(
         res = await db.execute(stmt)
         biz = res.scalar_one_or_none()
 
+    owned_stores = await get_user_owned_stores(user, db)
+    owned_count = len(owned_stores)
+
     if not biz:
-        clean_user_email = user.email.strip().lower()
-        stmt = select(Business)
-        res = await db.execute(stmt)
-        all_businesses = res.scalars().all()
-
-        owned_store = None
-        for b in all_businesses:
-            extra = b.settings_data if isinstance(b.settings_data, dict) else {}
-            owner_id = str(extra.get("owner_id", ""))
-            owner_email = str(extra.get("owner_email", "")).strip().lower()
-            support_email = str(extra.get("support_email", "")).strip().lower()
-            if (
-                (owner_id and owner_id == str(user.id))
-                or (owner_email and owner_email == clean_user_email)
-                or (support_email and support_email == clean_user_email)
-            ):
-                owned_store = b
-                break
-
-        if owned_store:
+        if owned_stores:
+            owned_store = owned_stores[0]
             user.business_id = owned_store.id
             user.role = "owner"
             await db.commit()
             await db.refresh(user)
-            return _build_tenant_response(owned_store, user)
+            return _build_tenant_response(owned_store, user, owned_stores_count=owned_count)
         else:
             first_name = user.first_name.strip() if user.first_name else ""
             default_name = f"{first_name}'s Store" if first_name else "My Store"
@@ -334,7 +352,7 @@ async def get_merchant_profile(
             await db.commit()
             await db.refresh(user)
             await db.refresh(new_biz)
-            return _build_tenant_response(new_biz, user)
+            return _build_tenant_response(new_biz, user, owned_stores_count=1)
 
     # Sync store plan with user account tier if user has a configured plan
     if user.plan and (biz.plan or "").strip().lower() != user.plan.strip().lower():
@@ -344,7 +362,7 @@ async def get_merchant_profile(
         await db.commit()
         await db.refresh(biz)
 
-    return _build_tenant_response(biz, user)
+    return _build_tenant_response(biz, user, owned_stores_count=owned_count)
 
 
 @router.get("/settings", response_model=TenantResponse)
@@ -521,7 +539,7 @@ async def create_store(
     await db.refresh(biz)
     await db.refresh(user)
 
-    return _build_tenant_response(biz, user)
+    return _build_tenant_response(biz, user, owned_stores_count=len(owned_stores) + 1)
 
 
 @router.post("/quick-create-store", response_model=TenantResponse)
@@ -646,7 +664,7 @@ async def quick_create_default_store(
     await db.refresh(biz)
     await db.refresh(user)
 
-    return _build_tenant_response(biz, user)
+    return _build_tenant_response(biz, user, owned_stores_count=len(owned_stores) + 1)
 
 
 @router.patch("/settings", response_model=TenantResponse)
@@ -836,7 +854,8 @@ async def update_merchant_settings(
     await db.commit()
     await db.refresh(biz)
 
-    return _build_tenant_response(biz, user)
+    owned_stores = await get_user_owned_stores(user, db)
+    return _build_tenant_response(biz, user, owned_stores_count=len(owned_stores))
 
 
 PLAN_SEAT_LIMITS = {

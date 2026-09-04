@@ -125,8 +125,9 @@ export function TabBilling() {
     settings.maxSeats ??
     (planName.toLowerCase().includes("business") ? 8 : 4);
 
+  const ownedStores = stores.filter((s) => s.is_owner);
   const storesUsed =
-    stores.length > 0 ? stores.length : (settings.currentStoresCount ?? 1);
+    stores.length > 0 ? ownedStores.length : (settings.currentStoresCount ?? 1);
   const seatsUsed =
     teamMembers.length > 0
       ? teamMembers.length
@@ -329,7 +330,7 @@ export function TabBilling() {
               total={ordersQuota}
             />
             <QuotaBar
-              label="Connected Stores"
+              label="Owned Stores"
               used={storesUsed}
               total={maxStores}
             />
