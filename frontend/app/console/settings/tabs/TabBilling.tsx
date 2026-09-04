@@ -71,7 +71,10 @@ export function TabBilling() {
       ) {
         setInvoices(invoicesData.value);
       }
-      if (storesData.status === "fulfilled" && Array.isArray(storesData.value)) {
+      if (
+        storesData.status === "fulfilled" &&
+        Array.isArray(storesData.value)
+      ) {
         setStores(storesData.value);
       }
       if (teamData.status === "fulfilled" && Array.isArray(teamData.value)) {
@@ -321,7 +324,7 @@ export function TabBilling() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <QuotaBar
-              label="AI Messages & Orders"
+              label="AI Messages"
               used={ordersUsed}
               total={ordersQuota}
             />
@@ -348,29 +351,29 @@ export function TabBilling() {
       <Panel>
         <PanelHead
           title="1-Click Quota Top-Up"
-          sub="Add instant AI messages and order capacity. Top-up packs never expire and roll over."
+          sub="Add instant AI message quota. Top-up packs never expire and roll over."
         />
         <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
           {[
             {
-              name: "+500 Closed Orders",
+              name: "+500 AI Messages",
               quota: 500,
               price: "৳১,২৫০",
-              unit: "৳২.৫০/order",
+              unit: "৳২.৫০/msg",
               badge: "Most Popular",
             },
             {
-              name: "+1,500 Closed Orders",
+              name: "+1,500 AI Messages",
               quota: 1500,
               price: "৳৩,২০০",
-              unit: "৳২.১৩/order",
+              unit: "৳২.১৩/msg",
               badge: "Best Value",
             },
             {
-              name: "+5,000 Closed Orders",
+              name: "+5,000 AI Messages",
               quota: 5000,
               price: "৳৮,৫০০",
-              unit: "৳১.৭০/order",
+              unit: "৳১.৭০/msg",
               badge: "High Volume",
             },
           ].map((p) => {
@@ -421,8 +424,8 @@ export function TabBilling() {
               Compare Subscription Tiers
             </h3>
             <p className="text-xs text-text-3">
-              Upgrade or switch anytime. Multi-tenant quota and store allocations
-              update instantly.
+              Upgrade or switch anytime. Multi-tenant quota and store
+              allocations update instantly.
             </p>
           </div>
 
@@ -460,8 +463,7 @@ export function TabBilling() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 p-5">
           {plans.map((p) => {
-            const isCurrent =
-              p.name.toLowerCase() === planName.toLowerCase();
+            const isCurrent = p.name.toLowerCase() === planName.toLowerCase();
             const isSwitching = switchingPlanId === p.id;
             const price =
               billingCycle === "yearly"
@@ -513,7 +515,7 @@ export function TabBilling() {
                     <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                       <span>Quota:</span>
                       <span className="text-signal font-bold">
-                        {p.messageLimit.toLocaleString()} Orders
+                        {p.messageLimit.toLocaleString()} Messages
                       </span>
                     </div>
                     <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
@@ -760,4 +762,3 @@ export function TabBilling() {
     </div>
   );
 }
-
