@@ -196,6 +196,31 @@ export function TabBilling() {
     }
   };
 
+  // Helper to identify Custom / Enterprise plans that require custom consultation
+  const isCustomPlan = (p: BillingPlan) => {
+    const name = (p.name || "").toLowerCase().trim();
+    const id = (p.id || "").toLowerCase().trim();
+    const tagline = (p.tagline || "").toLowerCase().trim();
+    return (
+      name.includes("custom") ||
+      id.includes("custom") ||
+      tagline.includes("custom") ||
+      name.includes("enterprise") ||
+      name.includes("enterprize")
+    );
+  };
+
+  // Handle Contact Sales for Custom Plan
+  const handleContactSales = (p: BillingPlan) => {
+    const phone = "8801711234567";
+    const storeName = settings.name || "My Store";
+    const planTitle = p.name || "Custom";
+    const text = encodeURIComponent(
+      `Hello Arise-Sell Team, I am interested in the ${planTitle} Plan for my store "${storeName}". Please share details regarding custom AI message quota, multi-store limits, and pricing.`,
+    );
+    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+  };
+
   // Handle PDF Download
   const handleDownloadPdf = async (inv: BillingInvoice) => {
     try {
@@ -462,95 +487,180 @@ export function TabBilling() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 p-5">
-          {plans.map((p) => {
-            const isCurrent = p.name.toLowerCase() === planName.toLowerCase();
-            const isSwitching = switchingPlanId === p.id;
-            const price =
-              billingCycle === "yearly"
-                ? Math.round(p.yearlyPriceBDT || p.priceBDT * 10)
-                : p.priceBDT;
-            const periodLabel = billingCycle === "yearly" ? "/ yr" : "/ mo";
+        {/* Dynamic Plans Grid: Only show plans with showOnHome: true, sort Custom to the far right */}
+        {(() => {
+          const homePlans = plans.filter(
+            (p) => p.showOnHome === true && p.status !== "archived",
+          );
+          const displayPlans =
+            homePlans.length > 0
+              ? homePlans
+              : plans.filter((p) => p.status === "active");
 
-            return (
-              <div
-                key={p.id}
-                className={cx(
-                  "rounded-2xl border p-4 space-y-3 flex flex-col justify-between transition-all",
-                  isCurrent
-                    ? "border-signal/60 bg-[#edf7f3]/40 ring-1.5 ring-signal/30 shadow-xs"
-                    : "border-line bg-white hover:border-line/80 hover:shadow-2xs",
-                )}
-              >
-                <div className="space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-bold text-base text-text capitalize">
-                      {p.name}
-                    </h4>
+          const sortedPlans = [...displayPlans].sort((a, b) => {
+            const aCustom = isCustomPlan(a);
+            const bCustom = isCustomPlan(b);
+            if (aCustom && !bCustom) return 1; // Custom goes to the rightmost column
+            if (!aCustom && bCustom) return -1;
+            return (a.priceBDT || 0) - (b.priceBDT || 0);
+          });
+
+          return (
+            <div
+              className={cx(
+                "grid grid-cols-1 md:grid-cols-2 gap-4 p-5",
+                sortedPlans.length === 3 && "lg:grid-cols-3",
+                sortedPlans.length === 4 && "lg:grid-cols-4",
+                sortedPlans.length >= 5 && "lg:grid-cols-5",
+              )}
+            >
+              {sortedPlans.map((p) => {
+                const isCurrent =
+                  p.name.toLowerCase() === planName.toLowerCase();
+                const isSwitching = switchingPlanId === p.id;
+                const isCustom = isCustomPlan(p);
+                const price =
+                  billingCycle === "yearly"
+                    ? Math.round(p.yearlyPriceBDT || p.priceBDT * 10)
+                    : p.priceBDT;
+                const periodLabel = billingCycle === "yearly" ? "/ yr" : "/ mo";
+
+                return (
+                  <div
+                    key={p.id}
+                    className={cx(
+                      "rounded-2xl border p-4 space-y-3 flex flex-col justify-between transition-all",
+                      isCurrent
+                        ? "border-signal/60 bg-[#edf7f3]/40 ring-1.5 ring-signal/30 shadow-xs"
+                        : isCustom
+                          ? "border-signal/40 bg-white hover:border-signal/80 hover:shadow-xs"
+                          : "border-line bg-white hover:border-line/80 hover:shadow-2xs",
+                    )}
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-bold text-base text-text capitalize">
+                          {p.name}
+                        </h4>
+                        {isCurrent ? (
+                          <span className="rounded bg-signal text-white px-2 py-0.5 text-[9.5px] font-bold">
+                            CURRENT
+                          </span>
+                        ) : isCustom ? (
+                          <span className="rounded bg-signal/15 text-signal px-2 py-0.5 text-[9.5px] font-bold font-mono">
+                            {p.badge || "CUSTOM"}
+                          </span>
+                        ) : p.badge ? (
+                          <span className="rounded bg-signal/15 text-signal px-2 py-0.5 text-[9.5px] font-bold font-mono">
+                            {p.badge}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <p className="text-[11px] text-text-3 min-h-[30px] line-clamp-2">
+                        {p.tagline ||
+                          (isCustom
+                            ? "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA."
+                            : `Designed for growing merchants needing reliable conversational AI.`)}
+                      </p>
+
+                      <div className="flex items-baseline gap-1 pt-1">
+                        {isCustom ? (
+                          <div className="flex flex-col">
+                            <span className="text-xl font-bold font-display text-text">
+                              Contact Sales
+                            </span>
+                            <span className="text-[10px] text-text-3 font-mono">
+                              Custom & Tailored Pricing
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="text-xl font-bold font-display text-text">
+                              ৳{price.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] text-text-3 font-mono">
+                              {periodLabel}
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 pt-1">
+                        <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
+                          <span>Quota:</span>
+                          <span className="text-signal font-bold">
+                            {isCustom && p.messageLimit >= 10000
+                              ? `${p.messageLimit.toLocaleString()}+ Messages (Custom)`
+                              : `${p.messageLimit.toLocaleString()} Messages`}
+                          </span>
+                        </div>
+                        <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
+                          <span>Stores:</span>
+                          <span className="text-text font-bold">
+                            {isCustom && p.maxStores >= 4
+                              ? `${p.maxStores}+ Stores (Flexible)`
+                              : `${p.maxStores} ${p.maxStores > 1 ? "Stores" : "Store"}`}
+                          </span>
+                        </div>
+                        <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
+                          <span>Seats:</span>
+                          <span className="text-text font-bold">
+                            {isCustom && p.maxSeats >= 20
+                              ? `${p.maxSeats}+ Seats`
+                              : `${p.maxSeats} ${p.maxSeats > 1 ? "Seats" : "Seat"}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
                     {isCurrent ? (
-                      <span className="rounded bg-signal text-white px-2 py-0.5 text-[9.5px] font-bold">
-                        CURRENT
-                      </span>
-                    ) : p.badge ? (
-                      <span className="rounded bg-signal/15 text-signal px-2 py-0.5 text-[9.5px] font-bold font-mono">
-                        {p.badge}
-                      </span>
-                    ) : null}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled
+                        className="w-full justify-center text-xs mt-2"
+                      >
+                        Active Plan
+                      </Button>
+                    ) : isCustom ? (
+                      <Button
+                        size="sm"
+                        variant="signal"
+                        onClick={() => handleContactSales(p)}
+                        className="w-full justify-center text-xs mt-2 gap-1.5"
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        <span>Contact Sales</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="signal"
+                        disabled={isSwitching}
+                        onClick={() => handleSwitchPlan(p)}
+                        className="w-full justify-center text-xs mt-2"
+                      >
+                        {isSwitching ? "Switching..." : `Switch to ${p.name}`}
+                      </Button>
+                    )}
                   </div>
-
-                  <p className="text-[11px] text-text-3 min-h-[30px] line-clamp-2">
-                    {p.tagline ||
-                      `Designed for growing merchants needing reliable conversational AI.`}
-                  </p>
-
-                  <div className="flex items-baseline gap-1 pt-1">
-                    <span className="text-xl font-bold font-display text-text">
-                      ৳{price.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-text-3 font-mono">
-                      {periodLabel}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1 pt-1">
-                    <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
-                      <span>Quota:</span>
-                      <span className="text-signal font-bold">
-                        {p.messageLimit.toLocaleString()} Messages
-                      </span>
-                    </div>
-                    <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
-                      <span>Stores:</span>
-                      <span className="text-text font-bold">
-                        {p.maxStores} {p.maxStores > 1 ? "Stores" : "Store"}
-                      </span>
-                    </div>
-                    <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
-                      <span>Seats:</span>
-                      <span className="text-text font-bold">
-                        {p.maxSeats} {p.maxSeats > 1 ? "Seats" : "Seat"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  size="sm"
-                  variant={isCurrent ? "outline" : "signal"}
-                  disabled={isCurrent || isSwitching}
-                  onClick={() => handleSwitchPlan(p)}
-                  className="w-full justify-center text-xs mt-2"
-                >
-                  {isCurrent
-                    ? "Active Plan"
-                    : isSwitching
-                      ? "Switching..."
-                      : `Switch to ${p.name}`}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </Panel>
 
       {/* Invoices & Tax Receipts (Dynamic from PostgreSQL) */}

@@ -55,14 +55,42 @@ export default function ChoosePlanPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch 4 active plans directly from backend API
+  const isCustomPlan = (p: BackendPlan) => {
+    const name = (p.name || "").toLowerCase().trim();
+    const id = (p.id || "").toLowerCase().trim();
+    const tagline = (p.tagline || "").toLowerCase().trim();
+    return (
+      name.includes("custom") ||
+      id.includes("custom") ||
+      tagline.includes("custom") ||
+      name.includes("enterprise") ||
+      name.includes("enterprize")
+    );
+  };
+
+  // Fetch active plans directly from backend API (show only showOnHome, Custom placed at far right)
   useEffect(() => {
     let active = true;
     async function fetchPlans() {
       try {
         const res = await api.billing.listPlans();
         if (active && Array.isArray(res) && res.length > 0) {
-          setPlans(res as BackendPlan[]);
+          const all = res as BackendPlan[];
+          const homePlans = all.filter(
+            (p) => p.showOnHome === true && p.status !== "archived",
+          );
+          const display =
+            homePlans.length > 0
+              ? homePlans
+              : all.filter((p) => p.status === "active");
+          const sorted = [...display].sort((a, b) => {
+            const aCustom = isCustomPlan(a);
+            const bCustom = isCustomPlan(b);
+            if (aCustom && !bCustom) return 1;
+            if (!aCustom && bCustom) return -1;
+            return (a.priceBDT || 0) - (b.priceBDT || 0);
+          });
+          setPlans(sorted);
         }
       } catch (err) {
         console.error("Failed to load plans from backend:", err);
@@ -77,6 +105,15 @@ export default function ChoosePlanPage() {
   }, []);
 
   const handleSelectPlan = async (plan: BackendPlan) => {
+    if (isCustomPlan(plan)) {
+      const phone = "8801711234567";
+      const text = encodeURIComponent(
+        `Hello Arise-Sell Team, I am interested in the ${plan.name} Plan. Please share customized volume quota, multi-store allocations, and enterprise SLA pricing.`,
+      );
+      window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+      return;
+    }
+
     setError(null);
     setLoadingPlanId(plan.id);
     setSelectedPlanId(plan.id);
@@ -265,8 +302,16 @@ export default function ChoosePlanPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
+            <div
+              className={cx(
+                "grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch",
+                plans.length === 3 && "xl:grid-cols-3",
+                plans.length === 4 && "xl:grid-cols-4",
+                plans.length >= 5 && "xl:grid-cols-5",
+              )}
+            >
               {plans.map((plan, index) => {
+                const isCustom = isCustomPlan(plan);
                 const isFree = Number(plan.priceBDT) === 0;
                 const priceVal = isYearly
                   ? plan.yearlyPriceBDT || plan.priceBDT * 10
@@ -292,7 +337,9 @@ export default function ChoosePlanPage() {
                       "relative flex flex-col justify-between rounded-[24px] border transition-all duration-300",
                       isHighlighted
                         ? "border-signal/50 bg-surface p-6 sm:p-7 shadow-[0_16px_40px_-12px_rgba(10,110,80,0.16),0_1px_3px_rgba(0,0,0,0.04)] ring-2 ring-signal/20 scale-[1.01]"
-                        : "border-line bg-surface p-6 sm:p-7 shadow-xs hover:border-line-soft hover:shadow-md",
+                        : isCustom
+                          ? "border-signal/40 bg-surface p-6 sm:p-7 shadow-xs hover:border-signal hover:shadow-md"
+                          : "border-line bg-surface p-6 sm:p-7 shadow-xs hover:border-line-soft hover:shadow-md",
                     )}
                   >
                     {/* Badge */}
@@ -331,21 +378,29 @@ export default function ChoosePlanPage() {
 
                       {/* Price Section */}
                       <div className="mt-4 flex items-baseline gap-1.5 border-b border-line pb-4">
-                        <span className="font-display text-[34px] sm:text-[38px] font-extrabold tracking-tight text-text">
-                          {isFree
-                            ? lang === "bn"
-                              ? "৳০"
-                              : "৳0"
-                            : bdt(priceVal)}
-                        </span>
+                        {isCustom ? (
+                          <span className="font-display text-[26px] sm:text-[30px] font-extrabold tracking-tight text-text">
+                            {t("Contact Sales", "কাস্টম প্রাইসিং")}
+                          </span>
+                        ) : (
+                          <span className="font-display text-[34px] sm:text-[38px] font-extrabold tracking-tight text-text">
+                            {isFree
+                              ? lang === "bn"
+                                ? "৳০"
+                                : "৳0"
+                              : bdt(priceVal)}
+                          </span>
+                        )}
                         <span className="text-[12.5px] font-medium text-text-3">
-                          {isFree
-                            ? lang === "bn"
-                              ? "চিরকাল ফ্রি"
-                              : "free forever"
-                            : isYearly
-                              ? t("/ year", "/ বছর")
-                              : t("/ month", "/ মাস")}
+                          {isCustom
+                            ? t("/ tailored", "/ কাস্টমাইজড")
+                            : isFree
+                              ? lang === "bn"
+                                ? "চিরকাল ফ্রি"
+                                : "free forever"
+                              : isYearly
+                                ? t("/ year", "/ বছর")
+                                : t("/ month", "/ মাস")}
                         </span>
                       </div>
 
@@ -356,8 +411,9 @@ export default function ChoosePlanPage() {
                             {t("Order / Msg Limit", "মেসেজ / অর্ডার লিমিট")}
                           </span>
                           <span className="font-mono font-bold text-text">
-                            {plan.messageLimit?.toLocaleString("en-IN") || 200}{" "}
-                            {t("limit", "টি")}
+                            {isCustom && (plan.messageLimit || 0) >= 10000
+                              ? `${(plan.messageLimit || 10000).toLocaleString("en-IN")}+ ${t("Custom Quota", "টি (কাস্টম)")}`
+                              : `${(plan.messageLimit || 200).toLocaleString("en-IN")} ${t("limit", "টি")}`}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[12px] border-t border-line/60 pt-1.5">
@@ -365,7 +421,9 @@ export default function ChoosePlanPage() {
                             {t("Store Capacity", "স্টোর ধারণক্ষমতা")}
                           </span>
                           <span className="font-mono font-semibold text-text-2">
-                            {plan.maxStores || 1} {t("Stores", "টি স্টোর")}
+                            {isCustom && (plan.maxStores || 0) >= 4
+                              ? `${plan.maxStores}+ ${t("Stores (Flexible)", "টি স্টোর (ফ্লেক্সিবল)")}`
+                              : `${plan.maxStores || 1} ${t("Stores", "টি স্টোর")}`}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[12px] border-t border-line/60 pt-1.5">
@@ -373,7 +431,9 @@ export default function ChoosePlanPage() {
                             {t("Team Member Seats", "টিম মেম্বার সিট")}
                           </span>
                           <span className="font-mono font-semibold text-text-2">
-                            {plan.maxSeats || 1} {t("Seats", "জন টিমমেট")}
+                            {isCustom && (plan.maxSeats || 0) >= 20
+                              ? `${plan.maxSeats}+ ${t("Seats", "জন টিমমেট")}`
+                              : `${plan.maxSeats || 1} ${t("Seats", "জন টিমমেট")}`}
                           </span>
                         </div>
                       </div>
@@ -411,7 +471,9 @@ export default function ChoosePlanPage() {
                           "flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[13.5px] font-semibold transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer select-none",
                           isHighlighted
                             ? "bg-signal text-white shadow-[0_2px_10px_rgba(10,110,80,0.3)] hover:bg-signal-deep hover:shadow-md"
-                            : "border border-line bg-surface text-text hover:bg-surface-2 hover:border-line-soft shadow-2xs",
+                            : isCustom
+                              ? "border-2 border-signal/50 bg-signal/5 text-signal hover:bg-signal hover:text-white transition-all shadow-xs"
+                              : "border border-line bg-surface text-text hover:bg-surface-2 hover:border-line-soft shadow-2xs",
                         )}
                       >
                         {isLoading ? (
@@ -423,6 +485,10 @@ export default function ChoosePlanPage() {
                               {t("Activating...", "অ্যাক্টিভ হচ্ছে...")}
                             </span>
                           </>
+                        ) : isCustom ? (
+                          <span>
+                            {t("Contact Sales", "আমাদের সাথে যোগাযোগ করুন")}
+                          </span>
                         ) : (
                           <span>
                             {isFree
@@ -435,15 +501,20 @@ export default function ChoosePlanPage() {
                         )}
                       </button>
                       <p className="mt-2 text-center text-[11px] text-text-3">
-                        {isFree
+                        {isCustom
                           ? t(
-                              "No credit card required · Free",
-                              "কোনো কার্ড লাগবে না · চিরকাল ফ্রি",
+                              "Tailored quota & dedicated SLA agreement",
+                              "কাস্টম কোটা ও ডেডিকেটেড এন্টারপ্রাইজ সাপোর্ট",
                             )
-                          : t(
-                              "Instant activation · Cancel anytime",
-                              "তাৎক্ষণিক অ্যাক্টিভেশন · পরিবর্তনযোগ্য",
-                            )}
+                          : isFree
+                            ? t(
+                                "No credit card required · Free",
+                                "কোনো কার্ড লাগবে না · চিরকাল ফ্রি",
+                              )
+                            : t(
+                                "Instant activation · Cancel anytime",
+                                "তাৎক্ষণিক অ্যাক্টিভেশন · পরিবর্তনযোগ্য",
+                              )}
                       </p>
                     </div>
                   </div>
