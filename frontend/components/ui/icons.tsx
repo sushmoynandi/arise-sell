@@ -376,8 +376,17 @@ export const IconTrash = (p: P) => (
 
 export const IconKey = (p: P) => (
   <svg {...base(p)}>
-    <path d="m21 2-2 2m-1.5 1.5L14 9M19 5l2 2-2 2-2-2 2-2ZM9.5 14.5 3 21v-3l6.5-6.5" />
-    <circle cx="15.5" cy="8.5" r="4.5" />
+    <circle cx="7.5" cy="15.5" r="5.5" />
+    <path d="m21 2-9.6 9.6" />
+    <path d="m15.5 7.5 2.5 2.5" />
+    <path d="m18.5 4.5 2 2" />
+  </svg>
+);
+
+export const IconSmartphone = (p: P) => (
+  <svg {...base(p)}>
+    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+    <path d="M12 18h.01" />
   </svg>
 );
 

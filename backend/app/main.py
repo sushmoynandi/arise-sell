@@ -65,8 +65,17 @@ async def lifespan(app: FastAPI):
     try:
         async with async_session_factory() as session:
             await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS settings_data JSON DEFAULT '{}'::json;"))
+            await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP WITH TIME ZONE;"))
+            await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMP WITH TIME ZONE;"))
+            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(32) DEFAULT 'local';"))
+            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS has_password BOOLEAN DEFAULT TRUE;"))
+            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP WITH TIME ZONE;"))
+            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMP WITH TIME ZONE;"))
+            await session.execute(text("ALTER TABLE connected_channels ADD COLUMN IF NOT EXISTS access_token TEXT;"))
+            await session.execute(text("ALTER TABLE connected_channels ALTER COLUMN config DROP NOT NULL;"))
+            await session.execute(text("ALTER TABLE users ALTER COLUMN business_id DROP NOT NULL;"))
             await session.commit()
-            print("✅ Auto-migration: businesses.settings_data ensured.")
+            print("✅ Auto-migration: businesses, channels & users store-isolation columns ensured.")
     except Exception as e:
         print(f"⚠️ Auto-migration note: {e}")
     yield

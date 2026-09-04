@@ -1,93 +1,137 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge, Button, Panel } from "@/components/ui/primitives";
-import { IconCheck, IconBrain } from "@/components/ui/icons";
-import { TENANT } from "@/data/tenant";
+import { IconCheck, IconBrain, IconSpark } from "@/components/ui/icons";
 import { cx } from "@/lib/format";
 import { EnhancedField } from "../components";
 import { useSettings } from "../settings-context";
 
 export function TabBusiness() {
-  const { settings, updateSettings } = useSettings();
-  const [storeName, setStoreName] = useState<string>(
-    settings.name || TENANT.name || "Nokshi & Co.",
+  const { settings, updateSettings, createStore } = useSettings();
+  const isNoStore = settings.has_store === false || !settings.name;
+
+  const [storeName, setStoreName] = useState<string>(() =>
+    isNoStore ? "" : settings.name || "",
   );
-  const [storeNameBn, setStoreNameBn] = useState<string>(
-    settings.nameBn ||
-      (settings.name_bn as string) ||
-      TENANT.nameBn ||
-      "নকশী অ্যান্ড কোং",
+  const [storeNameBn, setStoreNameBn] = useState<string>(() =>
+    isNoStore ? "" : settings.nameBn || (settings.name_bn as string) || "",
   );
-  const [tagline, setTagline] = useState<string>(
-    (settings.tagline as string) ||
-      "Authentic Handloom, Silk Sarees & Artisanal Home Decor in Dhaka",
+  const [tagline, setTagline] = useState<string>(() =>
+    isNoStore ? "" : (settings.tagline as string) || "",
   );
-  const [category, setCategory] = useState<string>(
-    settings.kind || "Handicrafts, Handloom & Artisanal Decor",
+  const [category, setCategory] = useState<string>(() =>
+    isNoStore ? "" : settings.kind || "Fashion, Clothing & Saree Boutique",
   );
-  const [website, setWebsite] = useState(
-    settings.website || "https://nokshi.co",
+  const [website, setWebsite] = useState<string>(() =>
+    isNoStore ? "" : settings.website || "",
   );
-  const [supportEmail, setSupportEmail] = useState(
-    settings.support_email || "support@nokshi.co",
+  const [supportEmail, setSupportEmail] = useState<string>(() =>
+    isNoStore ? "" : settings.support_email || "",
   );
-  const [phone, setPhone] = useState(settings.phone || "+880 1711-234567");
-  const [whatsappNumber, setWhatsappNumber] = useState(
-    settings.whatsapp_number || "+880 1401-411091",
+  const [phone, setPhone] = useState<string>(() =>
+    isNoStore ? "" : settings.phone || "",
   );
-  const [address, setAddress] = useState(
-    settings.address || "House 42, Road 11, Dhanmondi, Dhaka 1209",
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(() =>
+    isNoStore ? "" : settings.whatsapp_number || "",
   );
-  const [cityDivision, setCityDivision] = useState(
-    settings.city_division || "Dhaka",
+  const [address, setAddress] = useState<string>(() =>
+    isNoStore ? "" : settings.address || "",
   );
-  const [postalCode, setPostalCode] = useState(settings.postal_code || "1209");
-  const [tradeLicense, setTradeLicense] = useState(
-    settings.trade_license || "TRAD/DNCC/049182/2022",
+  const [cityDivision, setCityDivision] = useState<string>(() =>
+    isNoStore ? "" : settings.city_division || "",
+  );
+  const [postalCode, setPostalCode] = useState<string>(() =>
+    isNoStore ? "" : settings.postal_code || "",
+  );
+  const [tradeLicense, setTradeLicense] = useState<string>(() =>
+    isNoStore ? "" : settings.trade_license || "",
   );
 
   // Operating Hours
-  const [isOpenForOrders, setIsOpenForOrders] = useState(
+  const [isOpenForOrders, setIsOpenForOrders] = useState<boolean>(
     settings.isOpenForOrders ?? true,
   );
   const [scheduleMode, setScheduleMode] = useState<"24x7" | "custom">(
     settings.scheduleMode || "custom",
   );
-  const [openTime, setOpenTime] = useState(settings.openTime || "09:00 AM");
-  const [closeTime, setCloseTime] = useState(settings.closeTime || "10:00 PM");
-  const [weeklyOffDay, setWeeklyOffDay] = useState(
+  const [openTime, setOpenTime] = useState<string>(
+    settings.openTime || "09:00 AM",
+  );
+  const [closeTime, setCloseTime] = useState<string>(
+    settings.closeTime || "10:00 PM",
+  );
+  const [weeklyOffDay, setWeeklyOffDay] = useState<string>(
     settings.weeklyOffDay || "None (Open 7 Days)",
   );
-  const [enableAwayMsg, setEnableAwayMsg] = useState(
+  const [enableAwayMsg, setEnableAwayMsg] = useState<boolean>(
     settings.enableAwayMsg ?? true,
   );
-  const [awayMessage, setAwayMessage] = useState(
-    settings.awayMessage ||
-      "নমস্কার! আমাদের অফিস ও ওয়্যারহাউস এখন বন্ধ আছে। আপনার অর্ডারটি সুরক্ষিতভাবে গ্রহণ করা হয়েছে। আগামীকাল সকাল ১০টায় আমাদের টিম পার্সেল প্যাকেজিং ও ডেলিভারি কনফার্মেশন শুরু করবে। 🌿",
+  const [awayMessage, setAwayMessage] = useState<string>(() =>
+    isNoStore ? "" : settings.awayMessage || "",
   );
 
   // Localization & Regional
-  const [currency, setCurrency] = useState(settings.currency || "BDT");
-  const [timezone, setTimezone] = useState(settings.timezone || "Asia/Dhaka");
-  const [dateFormat, setDateFormat] = useState(
+  const [currency, setCurrency] = useState<string>(settings.currency || "BDT");
+  const [timezone, setTimezone] = useState<string>(
+    settings.timezone || "Asia/Dhaka",
+  );
+  const [dateFormat, setDateFormat] = useState<string>(
     settings.dateFormat || "DD/MM/YYYY",
   );
-  const [taxMode, setTaxMode] = useState(settings.taxMode || "inclusive_75");
-  const [orderPrefix, setOrderPrefix] = useState(
-    settings.orderPrefix || "NOK-",
+  const [taxMode, setTaxMode] = useState<string>(
+    settings.taxMode || "inclusive_75",
+  );
+  const [orderPrefix, setOrderPrefix] = useState<string>(() =>
+    isNoStore ? "" : settings.orderPrefix || "",
   );
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+  const [savedToastMessage, setSavedToastMessage] = useState("");
+
+  // Sync state if settings or store presence changes
+  useEffect(() => {
+    if (isNoStore) {
+      setStoreName("");
+      setStoreNameBn("");
+      setTagline("");
+      setCategory("Fashion, Clothing & Saree Boutique");
+      setWebsite("");
+      setSupportEmail("");
+      setPhone("");
+      setWhatsappNumber("");
+      setAddress("");
+      setCityDivision("");
+      setPostalCode("");
+      setTradeLicense("");
+      setOrderPrefix("");
+      setAwayMessage("");
+    } else {
+      setStoreName(settings.name || "");
+      setStoreNameBn(settings.nameBn || (settings.name_bn as string) || "");
+      setTagline((settings.tagline as string) || "");
+      setCategory(settings.kind || "Fashion, Clothing & Saree Boutique");
+      setWebsite(settings.website || "");
+      setSupportEmail(settings.support_email || "");
+      setPhone(settings.phone || "");
+      setWhatsappNumber(settings.whatsapp_number || "");
+      setAddress(settings.address || "");
+      setCityDivision(settings.city_division || "");
+      setPostalCode(settings.postal_code || "");
+      setTradeLicense(settings.trade_license || "");
+      setOrderPrefix(settings.orderPrefix || "");
+      setAwayMessage(settings.awayMessage || "");
+    }
+  }, [isNoStore, settings]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await updateSettings({
+      const payload = {
         name: storeName,
         name_bn: storeNameBn,
         nameBn: storeNameBn,
@@ -113,10 +157,33 @@ export function TabBusiness() {
         dateFormat,
         taxMode,
         orderPrefix,
-      });
-      setSavedToast(true);
-      setTimeout(() => setSavedToast(false), 3000);
+      };
+
+      if (isNoStore) {
+        const ok = await createStore(payload);
+        if (ok) {
+          setSavedToastMessage(
+            "Store created successfully! Welcome to your new store workspace.",
+          );
+          setSavedToast(true);
+          setTimeout(() => setSavedToast(false), 4000);
+        } else {
+          setSavedToastMessage(
+            "Failed to create store. Please check your store name.",
+          );
+          setSavedToast(true);
+          setTimeout(() => setSavedToast(false), 4000);
+        }
+      } else {
+        await updateSettings(payload);
+        setSavedToastMessage(
+          "Store general information saved and synchronized across all channels!",
+        );
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      }
     } catch {
+      setSavedToastMessage("An error occurred while saving store details.");
       setSavedToast(true);
       setTimeout(() => setSavedToast(false), 3000);
     } finally {
@@ -135,13 +202,36 @@ export function TabBusiness() {
             className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
           >
             <IconCheck width={16} height={16} />
-            <span>
-              Store general information saved and synchronized across all
-              channels!
-            </span>
+            <span>{savedToastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ─── Hero Banner: Create Your Store mode ─── */}
+      {isNoStore && (
+        <div className="rounded-2xl border border-signal/30 bg-gradient-to-r from-signal/10 via-signal/5 to-transparent p-5 sm:p-7 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="size-11 rounded-2xl bg-signal text-white grid place-items-center shrink-0 shadow-xs">
+                <IconSpark className="size-5.5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-xl sm:text-2xl font-bold text-text font-display">
+                    Create Your Store
+                  </h2>
+                  <Badge tone="azure">New Store</Badge>
+                </div>
+                <p className="mt-1 text-xs sm:text-[13px] text-text-2 max-w-2xl leading-relaxed">
+                  Fill in your brand store details below. All fields have
+                  recommended placeholders to guide you. Once created, your
+                  sales channels, catalog, and AI assistant will be ready.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Link Callout to Knowledge Base & AI Brain */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-signal/25 bg-signal-wash/35 shadow-2xs">
@@ -190,7 +280,9 @@ export function TabBusiness() {
             </div>
             <div>
               <h3 className="text-base font-bold text-text">
-                Store Identity &amp; Trade Profile
+                {isNoStore
+                  ? "Store Identity & Setup"
+                  : "Store Identity & Trade Profile"}
               </h3>
               <p className="text-xs text-text-3">
                 Official business registration details, branding names, and
@@ -198,8 +290,8 @@ export function TabBusiness() {
               </p>
             </div>
           </div>
-          <Badge tone="mint" dot>
-            Active Tenant
+          <Badge tone={isNoStore ? "azure" : "mint"} dot={!isNoStore}>
+            {isNoStore ? "Setup Required" : "Active Tenant"}
           </Badge>
         </div>
 
@@ -304,7 +396,7 @@ export function TabBusiness() {
                 value={website}
                 onChange={setWebsite}
                 placeholder="https://nokshi.co"
-                badge="Verified 🟢"
+                badge={isNoStore ? undefined : "Verified 🟢"}
                 badgeTone="mint"
                 icon={
                   <svg
@@ -323,14 +415,16 @@ export function TabBusiness() {
                   </svg>
                 }
                 actionButton={
-                  <a
-                    href={website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-signal hover:underline px-2 py-1 rounded-md bg-signal-wash/50"
-                  >
-                    Visit ↗
-                  </a>
+                  !isNoStore && website ? (
+                    <a
+                      href={website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-signal hover:underline px-2 py-1 rounded-md bg-signal-wash/50"
+                    >
+                      Visit ↗
+                    </a>
+                  ) : undefined
                 }
                 helper="Main public e-commerce store URL."
               />
@@ -342,7 +436,7 @@ export function TabBusiness() {
                 value={tradeLicense}
                 onChange={setTradeLicense}
                 placeholder="TRAD/DNCC/XXXXXX"
-                badge="Verified"
+                badge={isNoStore ? undefined : "Verified"}
                 badgeTone="mint"
                 icon={
                   <svg
@@ -450,18 +544,20 @@ export function TabBusiness() {
               value={whatsappNumber}
               onChange={setWhatsappNumber}
               placeholder="+880 1401-411091"
-              badge="WABA API"
+              badge={isNoStore ? undefined : "WABA API"}
               badgeTone="mint"
               icon={<span className="text-xs">💬</span>}
               actionButton={
-                <a
-                  href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline px-2 py-1 rounded-md bg-emerald-50"
-                >
-                  Chat 💬
-                </a>
+                !isNoStore && whatsappNumber ? (
+                  <a
+                    href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline px-2 py-1 rounded-md bg-emerald-50"
+                  >
+                    Chat 💬
+                  </a>
+                ) : undefined
               }
               helper="Direct WhatsApp customer support hotline."
             />
@@ -903,11 +999,11 @@ export function TabBusiness() {
                   label=""
                   value={orderPrefix}
                   onChange={setOrderPrefix}
-                  placeholder="NOK-"
+                  placeholder="e.g. ORD-"
                 />
               </div>
               <Badge tone="neutral" className="text-xs font-mono font-bold">
-                Preview: #{orderPrefix}1043
+                Preview: #{orderPrefix || "ORD-"}1043
               </Badge>
             </div>
           </div>
@@ -917,28 +1013,39 @@ export function TabBusiness() {
       {/* ─── Bottom Save Action ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface border border-line shadow-xs">
         <div>
-          <p className="text-sm font-bold text-text">Ready to apply changes?</p>
+          <p className="text-sm font-bold text-text">
+            {isNoStore
+              ? "Ready to create your store?"
+              : "Ready to apply changes?"}
+          </p>
           <p className="text-xs text-text-3 mt-0.5">
-            Synchronizes instantly across customer receipts, courier waybills,
-            and AI sales engine.
+            {isNoStore
+              ? "Provisions your store workspace, sets up default channels, and activates your AI assistant."
+              : "Synchronizes instantly across customer receipts, courier waybills, and AI sales engine."}
           </p>
         </div>
         <Button
           size="md"
           variant="signal"
           type="submit"
-          disabled={isSaving}
-          className="px-6 flex items-center gap-2 shadow-sm"
+          disabled={isSaving || (isNoStore && !storeName.trim())}
+          className="px-6 flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {isSaving ? (
             <>
               <span className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              <span>Saving Profile…</span>
+              <span>{isNoStore ? "Creating Store…" : "Saving Profile…"}</span>
             </>
           ) : (
             <>
-              <IconCheck width={15} height={15} />
-              <span>Save General Settings</span>
+              {isNoStore ? (
+                <IconSpark width={15} height={15} />
+              ) : (
+                <IconCheck width={15} height={15} />
+              )}
+              <span>
+                {isNoStore ? "Create Your Store" : "Save General Settings"}
+              </span>
             </>
           )}
         </Button>

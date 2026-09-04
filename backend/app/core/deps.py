@@ -101,11 +101,16 @@ async def get_current_user(
 async def get_current_active_user(
     current_user=Depends(get_current_user),
 ):
-    """Ensure user account is active."""
+    """Ensure user account is active and not pending scheduled deletion."""
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user account",
+        )
+    if getattr(current_user, "scheduled_deletion_at", None) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is scheduled for deletion. Please log in again with your credentials to cancel deletion and restore access.",
         )
     return current_user
 

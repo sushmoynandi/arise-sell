@@ -108,10 +108,14 @@ function SettingsInner() {
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
           >
             {activeTab === "business" && (
-              <TabBusiness key={settings.slug || "biz"} />
+              <TabBusiness
+                key={settings.slug || (settings.name ? "biz" : "create-store")}
+              />
             )}
             {activeTab === "account" && (
-              <TabAccount key={settings.slug || "acc"} />
+              <TabAccount
+                key={settings.slug || (settings.name ? "acc" : "no-store-acc")}
+              />
             )}
             {activeTab === "branding" && (
               <TabBranding key={settings.slug || "brand"} />

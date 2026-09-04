@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, DateTime, Integer, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,6 +22,12 @@ class User(Base, TimestampMixin, TenantMixin):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    business_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("businesses.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -36,5 +42,9 @@ class User(Base, TimestampMixin, TenantMixin):
     platforms: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     hue: Mapped[int] = mapped_column(Integer, default=82, nullable=False)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    auth_provider: Mapped[str] = mapped_column(String(32), default="local", nullable=False)
+    has_password: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    scheduled_deletion_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     business: Mapped[Business] = relationship("Business", back_populates="users")

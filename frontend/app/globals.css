@@ -199,11 +199,37 @@ html.lang-bn h6 {
   color: var(--text);
 }
 
-/* Focus: visible, on-brand, never removed */
+/* Focus: visible, on-brand for keyboard navigation on buttons/links */
 :focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Form input elements use their own dedicated container borders/rings; never apply offset outlines */
+input,
+textarea,
+select,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none;
+}
+
+/* Clean browser autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Scrollbars */

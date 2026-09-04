@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import ForeignKey, String, Text, JSON
+from sqlalchemy import DateTime, ForeignKey, String, Text, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,12 +58,14 @@ class Business(Base, TimestampMixin):
     settings_data: Mapped[dict[str, Any]] = mapped_column(
         JSON, default=dict, server_default="{}", nullable=False
     )
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    scheduled_deletion_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     organization: Mapped[Organization | None] = relationship(
         "Organization", back_populates="businesses", foreign_keys=[org_id]
     )
-    users: Mapped[list[User]] = relationship("User", back_populates="business", cascade="all, delete-orphan")
+    users: Mapped[list[User]] = relationship("User", back_populates="business")
     channels: Mapped[list[ConnectedChannel]] = relationship("ConnectedChannel", back_populates="business", cascade="all, delete-orphan")
     products: Mapped[list[Product]] = relationship("Product", back_populates="business", cascade="all, delete-orphan")
     conversations: Mapped[list[Conversation]] = relationship("Conversation", back_populates="business", cascade="all, delete-orphan")

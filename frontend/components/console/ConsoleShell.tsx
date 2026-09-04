@@ -8,7 +8,7 @@ import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
 import { Avatar, Wordmark } from "@/components/ui/primitives";
 import { useAuth } from "@/lib/auth-context";
-import api from "@/lib/api-client";
+import api, { type StoreWorkspace } from "@/lib/api-client";
 import {
   CHANNEL_ICON,
   NAV_ICON,
@@ -85,16 +85,62 @@ const CONSOLE_ITEM_LABELS: Record<string, string> = {
   "AI Playground": "এআই প্লেগ্রাউন্ড",
 };
 
+function hasPermission(
+  permissions: string[] | undefined,
+  isOwner: boolean,
+  targetHref: string,
+): boolean {
+  if (isOwner) return true;
+  if (!permissions || permissions.length === 0) return false;
+  if (permissions.includes("all")) return true;
+  if (permissions.includes(targetHref)) return true;
+
+  // Aliases & Legacy Mappings
+  if (
+    (permissions.includes("chat") || permissions.includes("/console/inbox")) &&
+    (targetHref === "/console/inbox" || targetHref === "/console/comments")
+  ) {
+    return true;
+  }
+  if (
+    (permissions.includes("orders") ||
+      permissions.includes("/console/orders")) &&
+    (targetHref === "/console/orders" || targetHref === "/console/pipeline")
+  ) {
+    return true;
+  }
+  if (
+    (permissions.includes("catalog") ||
+      permissions.includes("/console/products")) &&
+    targetHref === "/console/products"
+  ) {
+    return true;
+  }
+  if (
+    (permissions.includes("settings") ||
+      permissions.includes("/console/settings")) &&
+    targetHref === "/console/settings"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function NavList({
   collapsed,
   onNavigate,
   expandedGroups,
   onToggleGroup,
+  permissions,
+  isOwner = true,
 }: {
   collapsed?: boolean;
   onNavigate?: () => void;
   expandedGroups: Record<string, boolean>;
   onToggleGroup: (group: string) => void;
+  permissions?: string[];
+  isOwner?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -108,6 +154,11 @@ function NavList({
   return (
     <nav className="space-y-6">
       {CONSOLE_NAV.map((group) => {
+        const visibleItems = group.items.filter((item) =>
+          hasPermission(permissions, isOwner, item.href),
+        );
+        if (visibleItems.length === 0) return null;
+
         const isOpen = expandedGroups[group.group] ?? true;
 
         return (
@@ -141,7 +192,7 @@ function NavList({
             )}
             {isOpen && (
               <ul className="space-y-1">
-                {group.items.map((item) => {
+                {visibleItems.map((item) => {
                   const Icon = NAV_ICON[item.icon as keyof typeof NAV_ICON];
                   const active =
                     pathname === item.href ||
@@ -417,6 +468,65 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
   // Dynamic Notifications from backend
   const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
 
+  // Dynamic Store Workspaces (Multi-Store & Teammate Workspaces)
+  const [workspaces, setWorkspaces] = useState<StoreWorkspace[]>([]);
+  const [switchingStoreId, setSwitchingStoreId] = useState<string | null>(null);
+
+  const handleSwitchWorkspace = async (storeId: string) => {
+    try {
+      setSwitchingStoreId(storeId);
+      await api.merchants.switchStore(storeId);
+      setStoreDropdownOpen(false);
+      window.location.reload();
+    } catch (err: unknown) {
+      alert(
+        err instanceof Error ? err.message : "Failed to switch store workspace",
+      );
+      setSwitchingStoreId(null);
+    }
+  };
+
+  const activeWorkspace = workspaces.find((w) => w.is_active) || workspaces[0];
+  const activeStoreName =
+    activeWorkspace?.name || tenantInfo.name || TENANT.name;
+  const activeStoreInitial = (activeStoreName || "S").charAt(0).toUpperCase();
+  const activeStorePlan =
+    activeWorkspace?.plan || tenantInfo.plan || TENANT.plan;
+  const isTeammateInActiveStore = activeWorkspace
+    ? !activeWorkspace.is_owner
+    : false;
+  const isOwner = activeWorkspace
+    ? activeWorkspace.is_owner
+    : user?.role === "owner";
+  const hasSettingsPerm = hasPermission(
+    activeWorkspace?.permissions,
+    isOwner,
+    "/console/settings",
+  );
+
+  const isPageAuthorized = (() => {
+    if (isOwner) return true;
+    if (!activeWorkspace) return true;
+    const perms = activeWorkspace.permissions || [];
+
+    if (pathname.startsWith("/console/settings")) {
+      return hasPermission(perms, false, "/console/settings");
+    }
+
+    for (const group of CONSOLE_NAV) {
+      for (const item of group.items) {
+        if (
+          pathname === item.href ||
+          (item.href !== "/console" && pathname.startsWith(item.href))
+        ) {
+          return hasPermission(perms, false, item.href);
+        }
+      }
+    }
+
+    return true;
+  })();
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push(`/login?from=${encodeURIComponent(pathname)}`);
@@ -425,6 +535,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // 0. Fetch accessible Store Workspaces (Multi-Store & Teammates)
+      api.merchants
+        .getMyStores()
+        .then((res: unknown) => {
+          if (Array.isArray(res)) {
+            setWorkspaces(res as StoreWorkspace[]);
+          }
+        })
+        .catch(() => {});
+
       // 1. Fetch live Tenant Profile, Message Quota & Setup Checklist
       api.merchants
         .getProfile()
@@ -639,6 +759,8 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
             collapsed={collapsed}
             expandedGroups={expandedGroups}
             onToggleGroup={toggleGroup}
+            permissions={activeWorkspace?.permissions}
+            isOwner={isOwner}
           />
         </div>
 
@@ -667,19 +789,26 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                   : "",
               )}
               title={
-                collapsed ? `${TENANT.name} (${TENANT.pages} pages)` : undefined
+                collapsed
+                  ? `${activeStoreName} (${activeStorePlan} Plan)`
+                  : undefined
               }
               aria-label="Store switcher menu"
             >
               <span className="grid size-7 shrink-0 place-items-center rounded-lg font-display text-[12px] font-bold text-signal bg-signal/10 border border-signal/20 shadow-2xs group-hover:scale-105 transition-transform">
-                {TENANT.name.charAt(0)}
+                {activeStoreInitial}
               </span>
               {!collapsed && (
                 <>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] sm:text-[14px] font-bold text-text group-hover:text-signal transition-colors">
-                      {TENANT.name}
+                      {activeStoreName}
                     </span>
+                    {isTeammateInActiveStore && (
+                      <span className="block truncate text-[10.5px] font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                        {activeWorkspace.role} · Owner Paid
+                      </span>
+                    )}
                   </span>
                   <svg
                     width="12"
@@ -716,7 +845,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     className={cx(
                       "absolute z-[70] rounded-[18px] border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-[0_18px_40px_rgba(15,20,25,0.14)] space-y-2.5",
                       collapsed
-                        ? "left-[calc(100%+12px)] bottom-0 w-[290px] origin-bottom-left"
+                        ? "left-[calc(100%+12px)] bottom-0 w-[300px] origin-bottom-left"
                         : "left-0 right-0 bottom-full mb-2 w-full origin-bottom",
                     )}
                   >
@@ -725,64 +854,141 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                         Workspaces
                       </p>
                       <span className="rounded-full bg-signal/15 px-2 py-0.2 font-mono text-[10px] font-bold text-signal">
-                        1 Active
+                        {workspaces.length > 0
+                          ? `${workspaces.length} Available`
+                          : "1 Active"}
                       </span>
                     </div>
 
-                    <div className="rounded-[14px] border border-line bg-surface-2/80 p-2.5 shadow-2xs">
+                    {/* Active Workspace Card */}
+                    <div className="rounded-[14px] border border-signal/30 bg-signal/5 p-2.5 shadow-2xs ring-1 ring-signal/15">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal/12 text-[18px] font-display font-bold text-signal">
-                          {TENANT.name.charAt(0)}
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal/12 text-[17px] font-display font-bold text-signal">
+                          {activeStoreInitial}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[16px] font-display font-bold tracking-[-0.02em] text-text leading-tight">
-                            {TENANT.name}
+                          <p className="truncate text-[15px] font-display font-bold tracking-[-0.02em] text-text leading-tight">
+                            {activeStoreName}
                           </p>
-                          <p className="mt-0.5 truncate text-[11.5px] font-mono text-text-3">
-                            {TENANT.pages} Connected Channels
+                          <p className="mt-0.5 truncate text-[11px] font-mono text-text-3">
+                            {isTeammateInActiveStore
+                              ? `Role: ${activeWorkspace.role}`
+                              : `${activeStorePlan} Plan`}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-lg border border-signal/20 bg-signal/10 px-1.5 py-1 text-[9.5px] font-mono font-bold text-signal">
-                          {TENANT.plan}
+                        <span
+                          className={cx(
+                            "shrink-0 rounded-lg border px-1.5 py-0.5 text-[9.5px] font-mono font-bold",
+                            isTeammateInActiveStore
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-signal/10 text-signal border-signal/20",
+                          )}
+                        >
+                          {isTeammateInActiveStore ? "Owner Paid" : "Active"}
                         </span>
                       </div>
                     </div>
 
+                    {/* Other Workspaces Switcher List */}
+                    {workspaces.length > 1 && (
+                      <div className="space-y-1.5 border-t border-line/60 pt-2">
+                        <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-3 px-1">
+                          Switch Workspace
+                        </p>
+                        <div className="max-h-40 overflow-y-auto space-y-1 pr-0.5">
+                          {workspaces
+                            .filter((w) => w.id !== activeWorkspace?.id)
+                            .map((w) => (
+                              <button
+                                key={w.id}
+                                type="button"
+                                onClick={() => handleSwitchWorkspace(w.id)}
+                                disabled={switchingStoreId === w.id}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-text hover:bg-surface-2 transition-all cursor-pointer group disabled:opacity-50"
+                              >
+                                <span className="grid size-7 shrink-0 place-items-center rounded-lg font-display text-[11px] font-bold text-text-2 bg-surface-2 border border-line group-hover:border-signal/30 group-hover:text-signal transition-colors">
+                                  {w.name.charAt(0).toUpperCase()}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-[13px] font-semibold text-text group-hover:text-signal transition-colors leading-tight">
+                                    {w.name}
+                                  </p>
+                                  <p className="truncate text-[10px] font-mono text-text-3">
+                                    {w.is_owner
+                                      ? `Owner · ${w.plan}`
+                                      : `${w.role} · Owner Paid`}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 text-[10px] font-mono text-text-3 group-hover:text-signal transition-colors">
+                                  {switchingStoreId === w.id
+                                    ? "Switching…"
+                                    : "Switch →"}
+                                </span>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-1 border-t border-line/60 pt-2 text-[13.5px] font-medium text-text-2">
+                      {hasSettingsPerm ? (
+                        <Link
+                          href="/console/settings?tab=business"
+                          onClick={() => setStoreDropdownOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-text hover:bg-surface-2 transition-colors cursor-pointer"
+                        >
+                          <IconSettings
+                            width={15}
+                            height={15}
+                            className="text-text-3"
+                          />
+                          <span>Store Settings</span>
+                        </Link>
+                      ) : (
+                        <div
+                          className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-text-3 opacity-60 select-none cursor-not-allowed text-xs"
+                          title="Contact store owner for settings access"
+                        >
+                          <IconSettings
+                            width={15}
+                            height={15}
+                            className="text-text-3"
+                          />
+                          <span>Settings (Restricted)</span>
+                        </div>
+                      )}
+
+                      {!isTeammateInActiveStore ? (
+                        <Link
+                          href="/pricing"
+                          onClick={() => setStoreDropdownOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold text-signal hover:bg-signal/8 transition-colors cursor-pointer"
+                        >
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-signal"
+                          >
+                            <path d="M13 2 5 13h6l-1 9 8-11h-6l1-9Z" />
+                          </svg>
+                          <span>Upgrade Store Plan</span>
+                        </Link>
+                      ) : (
+                        <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/60 p-2 text-[11px] text-emerald-800 leading-snug">
+                          🌿 Your seat is fully covered by the store owner (
+                          {activeWorkspace?.owner_name || "Owner"}). No
+                          subscription needed.
+                        </div>
+                      )}
+
                       <Link
                         href="/console/settings?tab=business"
-                        onClick={() => setStoreDropdownOpen(false)}
-                        className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-text hover:bg-surface-2 transition-colors cursor-pointer"
-                      >
-                        <IconSettings
-                          width={15}
-                          height={15}
-                          className="text-text-3"
-                        />
-                        <span>Store Settings</span>
-                      </Link>
-                      <Link
-                        href="/pricing"
-                        onClick={() => setStoreDropdownOpen(false)}
-                        className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold text-signal hover:bg-signal/8 transition-colors cursor-pointer"
-                      >
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-signal"
-                        >
-                          <path d="M13 2 5 13h6l-1 9 8-11h-6l1-9Z" />
-                        </svg>
-                        <span>Upgrade to Business Tier</span>
-                      </Link>
-                      <button
-                        type="button"
                         onClick={() => setStoreDropdownOpen(false)}
                         className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-text-2 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
@@ -799,7 +1005,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                           <path d="M12 5v14M5 12h14" />
                         </svg>
                         <span>Connect Another Store</span>
-                      </button>
+                      </Link>
                     </div>
                   </motion.div>
                 </>
@@ -1511,7 +1717,37 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           key={pathname}
           className="min-w-0 flex-1 animate-in fade-in duration-100"
         >
-          {children}
+          {isPageAuthorized ? (
+            children
+          ) : (
+            <div className="flex min-h-[60vh] items-center justify-center p-6">
+              <div className="max-w-md w-full rounded-2xl border border-line bg-surface p-6 sm:p-8 text-center shadow-lg space-y-4">
+                <div className="mx-auto size-12 rounded-2xl bg-amber-500/10 text-amber-600 grid place-items-center text-2xl border border-amber-500/20">
+                  🔒
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-text font-display">
+                    Access Restricted
+                  </h3>
+                  <p className="text-xs sm:text-[13px] text-text-3 leading-relaxed">
+                    You do not have permission to access this section in{" "}
+                    <strong className="text-text">{activeStoreName}</strong>.
+                    Please contact the store owner (
+                    {activeWorkspace?.owner_name || "Store Owner"}) to request
+                    access.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/console/inbox"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-signal px-4 py-2 text-xs font-semibold text-white hover:bg-signal/90 transition-all shadow-xs cursor-pointer"
+                  >
+                    Go to Accessible Section
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -1540,25 +1776,33 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 onNavigate={() => setMobileNav(false)}
                 expandedGroups={expandedGroups}
                 onToggleGroup={toggleGroup}
+                permissions={activeWorkspace?.permissions}
+                isOwner={isOwner}
               />
             </div>
 
             {/* Mobile Store Profile in Bottom */}
             <div className="shrink-0 border-t border-line pt-3 mt-2">
               <Link
-                href="/console/settings?tab=business"
+                href={
+                  hasSettingsPerm
+                    ? "/console/settings?tab=business"
+                    : "/console"
+                }
                 onClick={() => setMobileNav(false)}
                 className="flex items-center gap-2.5 rounded-2xl p-2 bg-surface-2/60 border border-line hover:bg-surface-2 transition-colors cursor-pointer"
               >
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg font-display text-[12px] font-bold text-signal bg-signal/10 border border-signal/20">
-                  {TENANT.name.charAt(0)}
+                  {activeStoreInitial}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13.5px] font-bold text-text">
-                    {TENANT.name}
+                    {activeStoreName}
                   </p>
                   <p className="truncate text-[10.5px] font-mono text-text-3">
-                    {TENANT.plan} Plan · {TENANT.pages} Channels
+                    {isTeammateInActiveStore
+                      ? `${activeWorkspace?.role || "Teammate"} · Owner Paid`
+                      : `${activeStorePlan} Plan · ${activeWorkspace?.channels_count || 3} Channels`}
                   </p>
                 </div>
               </Link>

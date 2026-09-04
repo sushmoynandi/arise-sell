@@ -34,7 +34,17 @@ interface BackendPlan {
 export default function ChoosePlanPage() {
   const router = useRouter();
   const { lang, t } = useLang();
-  const { user, selectPlan, deleteAccount, logout } = useAuth();
+  const { user, selectPlan, logout } = useAuth();
+
+  const [storeDeleted, setStoreDeleted] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("store_deleted") === "true") {
+        setStoreDeleted(true);
+      }
+    }
+  }, []);
 
   const [plans, setPlans] = useState<BackendPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -42,12 +52,6 @@ export default function ChoosePlanPage() {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [confirmPhrase, setConfirmPhrase] = useState("");
-  const [deletePassword, setDeletePassword] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Fetch 4 active plans directly from backend API
   useEffect(() => {
@@ -94,48 +98,6 @@ export default function ChoosePlanPage() {
       const msg = err instanceof Error ? err.message : "Plan activation error";
       setError(msg);
       setLoadingPlanId(null);
-    }
-  };
-
-  const handleDeleteAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDeleteError(null);
-
-    const targetEmail = user?.email?.toLowerCase().trim() || "";
-    const cleanPhrase = confirmPhrase.trim();
-
-    if (cleanPhrase !== "DELETE" && cleanPhrase.toLowerCase() !== targetEmail) {
-      setDeleteError(
-        t(
-          `Please type DELETE or ${user?.email || "your email"} to confirm.`,
-          `কনফার্ম করতে DELETE অথবা ${user?.email || "আপনার ইমেইল"} লিখুন।`,
-        ),
-      );
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const res = await deleteAccount({
-        confirm_phrase: cleanPhrase,
-        password: deletePassword.trim() || undefined,
-      });
-      if (res.success) {
-        window.location.href = "/login?deleted=true";
-      } else {
-        setDeleteError(
-          res.error ||
-            t(
-              "Failed to delete account. Please check your credentials.",
-              "অ্যাকাউন্ট ডিলিট করা যায়নি। অনুগ্রহ করে তথ্য যাচাই করুন।",
-            ),
-        );
-        setIsDeleting(false);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Account deletion error";
-      setDeleteError(msg);
-      setIsDeleting(false);
     }
   };
 
@@ -189,19 +151,6 @@ export default function ChoosePlanPage() {
                     {t("Sign out", "লগআউট")}
                   </span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDeleteError(null);
-                    setConfirmPhrase("");
-                    setDeletePassword("");
-                    setDeleteModalOpen(true);
-                  }}
-                  title={t("Delete Account", "অ্যাকাউন্ট ডিলিট")}
-                  className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-2.5 py-1.5 text-[12px] font-medium text-red-600 hover:bg-red-600 hover:text-white transition-colors cursor-pointer shadow-2xs"
-                >
-                  <span>{t("Delete Account", "অ্যাকাউন্ট মুছুন")}</span>
-                </button>
               </div>
             )}
           </div>
@@ -210,6 +159,29 @@ export default function ChoosePlanPage() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-[1400px] px-5 pt-10 pb-20 sm:px-8 lg:pt-14">
+        {/* Store Deleted Alert Banner */}
+        {storeDeleted && (
+          <div className="mx-auto mb-8 max-w-2xl rounded-2xl border border-emerald-500/25 bg-emerald-50/90 p-4 sm:p-5 shadow-xs flex items-start gap-3.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-xs">
+              ✓
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-emerald-950">
+                {t(
+                  "Your store was successfully deleted",
+                  "আপনার স্টোরটি সফলভাবে মুছে ফেলা হয়েছে",
+                )}
+              </h3>
+              <p className="mt-0.5 text-xs text-emerald-800 leading-relaxed">
+                {t(
+                  "All connected channels, products, conversations, and orders were removed. Your personal user account remains active. Select a plan below whenever you are ready to launch a new store.",
+                  "সকল সংযুক্ত চ্যানেল, পণ্য, কথোপকথন এবং অর্ডার সফলভাবে মুছে ফেলা হয়েছে। আপনার ব্যক্তিগত ইউজার একাউন্ট অপরিবর্তিত রয়েছে। যেকোনো সময় নতুন স্টোর চালু করতে নিচের যেকোনো প্ল্যান বেছে নিন।",
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Title & Onboarding Headline */}
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-signal/25 bg-signal/8 px-3.5 py-1 text-[11.5px] font-mono font-semibold uppercase tracking-wider text-signal shadow-2xs">
@@ -550,145 +522,6 @@ export default function ChoosePlanPage() {
             </p>
           </div>
         </div>
-
-        {/* Delete Confirmation Modal */}
-        <AnimatePresence>
-          {deleteModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="grid size-10 place-items-center rounded-2xl bg-red-100 text-red-600 text-lg">
-                    ⚠️
-                  </span>
-                  <div>
-                    <h3 className="text-lg font-bold text-text font-display">
-                      {t(
-                        "Delete Account Permanently?",
-                        "অ্যাকাউন্ট চিরতরে মুছে ফেলতে চান?",
-                      )}
-                    </h3>
-                    <p className="text-xs text-text-3">
-                      {t(
-                        "This action is immediate and cannot be undone.",
-                        "এই পদক্ষেপটি তাৎক্ষণিক কার্যকর হবে এবং পুনরায় উদ্ধার করা যাবে না।",
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-red-100 bg-red-50/60 p-3.5 text-xs text-red-800 space-y-1.5">
-                  <p className="font-semibold">
-                    {t(
-                      "The following data will be erased immediately:",
-                      "নিম্নলিখিত তথ্যসমূহ অবিলম্বে মুছে যাবে:",
-                    )}
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 text-red-700">
-                    <li>
-                      {t(
-                        "Your login credentials and authentication session tokens",
-                        "আপনার লগইন তথ্য ও সেশন টোকেন",
-                      )}
-                    </li>
-                    <li>
-                      {t(
-                        "Your pending store configuration and merchant data",
-                        "আপনার স্টোর কনফিগারেশন ও মার্চেন্ট ডাটা",
-                      )}
-                    </li>
-                    <li>
-                      {t("All associated activity logs", "সকল অ্যাক্টিভিটি লগ")}
-                    </li>
-                  </ul>
-                </div>
-
-                {deleteError && (
-                  <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-600">
-                    {deleteError}
-                  </div>
-                )}
-
-                <form onSubmit={handleDeleteAccount} className="mt-5 space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">
-                      {t("To confirm, please type", "কনফার্ম করতে টাইপ করুন")}{" "}
-                      <span className="font-mono text-red-600 font-bold">
-                        DELETE
-                      </span>{" "}
-                      {t("or your email", "অথবা আপনার ইমেইল")} (
-                      <span className="font-mono text-text-2">
-                        {user?.email}
-                      </span>
-                      ):
-                    </label>
-                    <input
-                      type="text"
-                      value={confirmPhrase}
-                      onChange={(e) => setConfirmPhrase(e.target.value)}
-                      placeholder="DELETE"
-                      required
-                      className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-text mb-1">
-                      {t(
-                        "Enter Password (if your account uses one):",
-                        "পাসওয়ার্ড দিন (যদি পাসওয়ার্ড ব্যবহার করে থাকেন):",
-                      )}
-                    </label>
-                    <input
-                      type="password"
-                      value={deletePassword}
-                      onChange={(e) => setDeletePassword(e.target.value)}
-                      placeholder={t(
-                        "Account password",
-                        "অ্যাকাউন্টের পাসওয়ার্ড",
-                      )}
-                      className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
-                    <button
-                      type="button"
-                      onClick={() => setDeleteModalOpen(false)}
-                      disabled={isDeleting}
-                      className="rounded-xl border border-line bg-surface px-4 py-2 text-xs font-semibold text-text-2 hover:bg-surface-2 transition-colors cursor-pointer"
-                    >
-                      {t("Cancel", "বাতিল")}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isDeleting}
-                      className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition-colors disabled:opacity-60 cursor-pointer"
-                    >
-                      {isDeleting ? (
-                        <>
-                          <span className="size-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          <span>{t("Deleting...", "মুছে ফেলা হচ্ছে...")}</span>
-                        </>
-                      ) : (
-                        <span>
-                          {t(
-                            "Permanently Delete Account",
-                            "স্থায়ীভাবে অ্যাকাউন্ট মুছুন",
-                          )}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
       </main>
     </div>
   );

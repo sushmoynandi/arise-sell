@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -169,6 +169,45 @@ async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    # Check 30-day soft-deletion grace period status
+    reactivated = False
+    if getattr(user, "scheduled_deletion_at", None) is not None:
+        now = datetime.now(timezone.utc)
+        sched = user.scheduled_deletion_at
+        if sched.tzinfo is None:
+            sched = sched.replace(tzinfo=timezone.utc)
+
+        if now >= sched:
+            # 30-day recovery grace period has expired: permanently purge account and business
+            if user.role == "owner" and user.business_id:
+                biz_stmt = select(Business).where(Business.id == user.business_id)
+                biz_res = await db.execute(biz_stmt)
+                biz = biz_res.scalar_one_or_none()
+                if biz:
+                    await db.delete(biz)
+                else:
+                    await db.delete(user)
+            else:
+                await db.delete(user)
+            await db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account was scheduled for deletion and the 30-day recovery period has expired. The account has been permanently deleted.",
+            )
+        else:
+            # Within 30 days: Cancel deletion & restore account!
+            user.scheduled_deletion_at = None
+            user.deletion_requested_at = None
+            user.is_active = True
+            if user.role == "owner" and user.business_id:
+                biz_stmt = select(Business).where(Business.id == user.business_id)
+                biz_res = await db.execute(biz_stmt)
+                biz = biz_res.scalar_one_or_none()
+                if biz:
+                    biz.scheduled_deletion_at = None
+                    biz.deletion_requested_at = None
+            reactivated = True
+
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is deactivated. Please contact support.")
 
@@ -194,6 +233,13 @@ async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(
             is_superadmin=user.is_superadmin,
             plan=plan_name,
             has_plan=has_plan,
+            avatar_url=getattr(user, "avatar_url", None),
+            auth_provider=str(getattr(user, "auth_provider", "local") or "local"),
+            has_password=bool(getattr(user, "has_password", True)),
+            business_id=user.business_id,
+            has_store=bool(user.business_id),
+            scheduled_deletion_at=user.scheduled_deletion_at,
+            reactivated=reactivated,
         ),
     )
 
@@ -239,6 +285,12 @@ async def get_me(
         phone=getattr(user, "phone", None),
         avatar_url=getattr(user, "avatar_url", None),
         hue=int(getattr(user, "hue", 82) or 82),
+        auth_provider=str(getattr(user, "auth_provider", "local") or "local"),
+        has_password=bool(getattr(user, "has_password", True)),
+        business_id=user.business_id,
+        has_store=bool(user.business_id),
+        scheduled_deletion_at=getattr(user, "scheduled_deletion_at", None),
+        reactivated=False,
     )
 
 
@@ -269,17 +321,17 @@ async def update_profile(
     await db.commit()
     await db.refresh(db_user)
 
-    try:
-        plan_name, has_plan = await _resolve_user_plan(db_user, db)
-    except Exception:
-        plan_name, has_plan = "growth", True
-
     clean_email = str(getattr(db_user, "email", "")).strip().lower()
     is_super = bool(
         getattr(db_user, "is_superadmin", False) or
         getattr(db_user, "role", "") == "superadmin" or
         clean_email in ["admin@arisesell.com", "admin@nextproduct.ai"]
     )
+    plan_name, has_plan = "growth", True
+    try:
+        plan_name, has_plan = await _resolve_user_plan(db_user, db)
+    except Exception:
+        pass
 
     return UserBrief(
         id=db_user.id,
@@ -294,6 +346,10 @@ async def update_profile(
         phone=db_user.phone,
         avatar_url=db_user.avatar_url,
         hue=int(getattr(db_user, "hue", 82) or 82),
+        auth_provider=str(getattr(db_user, "auth_provider", "local") or "local"),
+        has_password=bool(getattr(db_user, "has_password", True)),
+        scheduled_deletion_at=getattr(db_user, "scheduled_deletion_at", None),
+        reactivated=False,
     )
 
 
@@ -303,15 +359,23 @@ async def change_password(
     user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Change account password securely."""
+    """Change or add account password securely."""
     stmt = select(User).where(User.id == user.id)
     res = await db.execute(stmt)
     db_user = res.scalar_one_or_none()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if db_user.hashed_password:
-        if not verify_password(req.current_password, db_user.hashed_password):
+    user_has_password = bool(getattr(db_user, "has_password", True))
+
+    # If the user already has a password, verify current password
+    if user_has_password:
+        if not req.current_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required to change password.",
+            )
+        if db_user.hashed_password and not verify_password(req.current_password, db_user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current password is incorrect.",
@@ -322,11 +386,13 @@ async def change_password(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err_msg)
 
     db_user.hashed_password = hash_password(req.new_password)
+    db_user.has_password = True
     await db.commit()
 
     return {
         "success": True,
-        "message": "Password changed successfully.",
+        "message": "Password changed successfully." if user_has_password else "Password added successfully.",
+        "has_password": True,
     }
 
 
@@ -424,12 +490,51 @@ async def google_auth(
 
     # 3. User Lookup or Auto-Provisioning (with resilient DB fallback)
     user = None
+    reactivated = False
     try:
         stmt = select(User).where(User.email == profile.email)
         res = await db.execute(stmt)
         user = res.scalar_one_or_none()
 
         if user:
+            # Check 30-day soft-deletion grace period status
+            if getattr(user, "scheduled_deletion_at", None) is not None:
+                now = datetime.now(timezone.utc)
+                sched = user.scheduled_deletion_at
+                if sched.tzinfo is None:
+                    sched = sched.replace(tzinfo=timezone.utc)
+
+                if now >= sched:
+                    # Grace period expired: permanently purge
+                    if user.role == "owner" and user.business_id:
+                        biz_stmt = select(Business).where(Business.id == user.business_id)
+                        biz_res = await db.execute(biz_stmt)
+                        biz = biz_res.scalar_one_or_none()
+                        if biz:
+                            await db.delete(biz)
+                        else:
+                            await db.delete(user)
+                    else:
+                        await db.delete(user)
+                    await db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="This account was scheduled for deletion and the 30-day recovery period has expired. The account has been permanently deleted.",
+                    )
+                else:
+                    # Within 30 days: Cancel deletion & restore account!
+                    user.scheduled_deletion_at = None
+                    user.deletion_requested_at = None
+                    user.is_active = True
+                    if user.role == "owner" and user.business_id:
+                        biz_stmt = select(Business).where(Business.id == user.business_id)
+                        biz_res = await db.execute(biz_stmt)
+                        biz = biz_res.scalar_one_or_none()
+                        if biz:
+                            biz.scheduled_deletion_at = None
+                            biz.deletion_requested_at = None
+                    reactivated = True
+
             if not user.is_active:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -459,6 +564,8 @@ async def google_auth(
                 is_active=True,
                 is_verified=True,
                 last_login=datetime.now(timezone.utc),
+                auth_provider="google",
+                has_password=False,
             )
             db.add(user)
             await db.commit()
@@ -479,6 +586,8 @@ async def google_auth(
             is_active=True,
             is_verified=True,
             last_login=datetime.now(timezone.utc),
+            auth_provider="google",
+            has_password=False,
         )
 
     # 4. Generate JWT Pair
@@ -505,6 +614,11 @@ async def google_auth(
             is_superadmin=bool(getattr(user, "is_superadmin", False)),
             plan=plan_name,
             has_plan=has_plan,
+            avatar_url=getattr(user, "avatar_url", None),
+            auth_provider=str(getattr(user, "auth_provider", "google") or "google"),
+            has_password=bool(getattr(user, "has_password", False)),
+            scheduled_deletion_at=getattr(user, "scheduled_deletion_at", None),
+            reactivated=reactivated,
         ),
     )
 
@@ -547,24 +661,30 @@ async def delete_account(
     if token:
         revoke_token(token)
 
-    # 5. Cascading Deletion
-    # If the user is the owner of the store, deleting the business cleans up all channels, products, threads, and staff
+    # 5. Soft Deletion with 30-Day Recovery Grace Period
+    # Generates a fresh 30-day countdown timer every time deletion is requested
+    now = datetime.now(timezone.utc)
+    scheduled_deletion = now + timedelta(days=30)
+
+    user.deletion_requested_at = now
+    user.scheduled_deletion_at = scheduled_deletion
+    user.is_active = False
+
     if user.role == "owner" and user.business_id:
         biz_stmt = select(Business).where(Business.id == user.business_id)
         biz_res = await db.execute(biz_stmt)
         biz = biz_res.scalar_one_or_none()
         if biz:
-            await db.delete(biz)
-        else:
-            await db.delete(user)
-    else:
-        await db.delete(user)
+            biz.deletion_requested_at = now
+            biz.scheduled_deletion_at = scheduled_deletion
 
     await db.commit()
 
     return DeleteAccountResponse(
         success=True,
-        message="Account and all associated store data have been permanently deleted.",
+        scheduled_deletion_at=scheduled_deletion,
+        grace_days=30,
+        message="Account deletion scheduled. Your data is backed up for 30 days. Log back in anytime within 30 days to cancel deletion and restore your account.",
     )
 
 

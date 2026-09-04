@@ -13,6 +13,33 @@ interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+export interface StoreWorkspace {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  role: string;
+  is_owner: boolean;
+  owner_name: string;
+  plan_covered_by_owner: boolean;
+  is_active: boolean;
+  channels_count: number;
+  permissions: string[];
+}
+
+export interface TeamMemberData {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  initials: string;
+  online: boolean;
+  hue: number;
+  platforms: string[];
+  permissions: string[];
+  is_owner: boolean;
+}
+
 class ApiClient {
   private getAccessToken(): string | null {
     if (typeof window === "undefined") return null;
@@ -184,7 +211,7 @@ class ApiClient {
         body: JSON.stringify(body),
       }),
     changePassword: (body: {
-      current_password: string;
+      current_password?: string;
       new_password: string;
       confirm_password?: string;
     }) =>
@@ -196,7 +223,12 @@ class ApiClient {
         },
       ),
     deleteAccount: (body: { password?: string; confirm_phrase: string }) =>
-      this.request<{ success: boolean; message: string }>("/auth/account", {
+      this.request<{
+        success: boolean;
+        scheduled_deletion_at?: string;
+        grace_days?: number;
+        message: string;
+      }>("/auth/account", {
         method: "DELETE",
         body: JSON.stringify(body),
       }).finally(() => this.clearTokens()),
@@ -360,17 +392,75 @@ class ApiClient {
   // --- Merchant Settings ---
   public merchants = {
     getProfile: () => this.request<unknown>("/merchants/profile"),
+    createStore: (storeData: Record<string, unknown>) =>
+      this.request<unknown>("/merchants/store", {
+        method: "POST",
+        body: JSON.stringify(storeData),
+      }),
     updateSettings: (settings: Record<string, unknown>) =>
       this.request("/merchants/settings", {
         method: "PATCH",
         body: JSON.stringify(settings),
       }),
-    getTeam: () => this.request<unknown[]>("/merchants/team"),
+    getTeam: () => this.request<TeamMemberData[]>("/merchants/team"),
+    inviteTeamMember: (data: {
+      name: string;
+      email: string;
+      role: string;
+      channels: string[];
+      permissions: string[];
+    }) =>
+      this.request<TeamMemberData>("/merchants/team", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateTeamMember: (
+      memberId: string,
+      data: {
+        name?: string;
+        role?: string;
+        channels?: string[];
+        permissions?: string[];
+      },
+    ) =>
+      this.request<TeamMemberData>(`/merchants/team/${memberId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    removeTeamMember: (memberId: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/merchants/team/${memberId}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    getMyStores: () => this.request<StoreWorkspace[]>("/merchants/my-stores"),
+    switchStore: (storeId: string) =>
+      this.request<{
+        success: boolean;
+        active_store_id: string;
+        store_name: string;
+        role: string;
+        plan: string;
+        is_owner: boolean;
+      }>("/merchants/switch-store", {
+        method: "POST",
+        body: JSON.stringify({ store_id: storeId }),
+      }),
     getNotifications: () => this.request<unknown[]>("/merchants/notifications"),
     markNotificationsRead: (ids: string[]) =>
       this.request("/merchants/notifications/mark-read", {
         method: "POST",
         body: JSON.stringify({ ids }),
+      }),
+    deleteStore: (body: { confirm_phrase: string; password?: string }) =>
+      this.request<{
+        success: boolean;
+        deleted_store_name: string;
+        message: string;
+      }>("/merchants/store", {
+        method: "DELETE",
+        body: JSON.stringify(body),
       }),
   };
 
