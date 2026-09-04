@@ -51,8 +51,28 @@ class TopUpResponse(BaseModel):
     message: str
 
 
+class VerifyCodeRequest(BaseModel):
+    code: str
+
+
+class VerifyCodeResponse(BaseModel):
+    valid: bool
+    error: str | None = None
+    code: str | None = None
+    plan_id: str | None = None
+    plan_name: str | None = None
+    duration_months: int | None = None
+    message_limit: int | None = None
+    max_stores: int | None = None
+    max_seats: int | None = None
+    price_bdt: float | None = None
+    code_expiry: str | None = None
+    features: list[str] | None = None
+
+
 class RedeemCodeRequest(BaseModel):
     code: str
+    payment_method: str | None = "bKash Auto-Debit"
 
 
 class RedeemCodeResponse(BaseModel):
@@ -62,5 +82,9 @@ class RedeemCodeResponse(BaseModel):
     messages_quota: int
     max_stores: int
     max_seats: int
+    duration_months: int = 1
+    price_bdt: float = 0.0
+    payment_method: str | None = None
     message: str
+
 

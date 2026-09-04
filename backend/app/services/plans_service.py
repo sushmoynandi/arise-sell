@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import uuid
+from datetime import datetime
 from typing import Any
 import asyncpg
 
@@ -536,28 +538,146 @@ def get_custom_activation_codes() -> list[dict[str, Any]]:
     return [
         {
             "code": c.get("code"),
+            "plan_id": c.get("plan_id"),
             "plan_name": c.get("plan_name"),
+            "duration_months": c.get("duration_months", 1),
             "message_limit": c.get("message_limit"),
             "max_stores": c.get("max_stores", 5),
             "max_seats": c.get("max_seats", 20),
             "price_bdt": c.get("price_bdt", 15000.0),
+            "code_expiry": c.get("code_expiry"),
             "features": c.get("features", []),
             "active": c.get("active", True),
+            "used_count": c.get("used_count", 0),
+            "max_uses": c.get("max_uses", 1),
+            "created_at": c.get("created_at"),
         }
         for c in codes
         if c.get("active", True)
     ]
 
 
+def create_custom_activation_code(data: dict[str, Any]) -> dict[str, Any]:
+    codes = _get_json_custom_codes()
+    raw_code = data.get("code")
+    plan_name = data.get("plan_name", "Custom Enterprise")
+    duration = max(1, int(data.get("duration_months", 1)))
+
+    if raw_code and str(raw_code).strip():
+        clean_code = re.sub(r"[^A-Z0-9_-]+", "", str(raw_code).strip().upper())
+    else:
+        # Auto-generate pattern: e.g. ENTERPRIZE-6M-A8B9 or CUSTOM-5M-X9Y2
+        prefix = re.sub(r"[^A-Z0-9]+", "", plan_name.upper())[:10] or "CUSTOM"
+        unique_suffix = uuid.uuid4().hex[:4].upper()
+        clean_code = f"{prefix}-{duration}M-{unique_suffix}"
+
+    new_code = {
+        "code": clean_code,
+        "plan_id": data.get("plan_id") or clean_code.lower(),
+        "plan_name": plan_name,
+        "duration_months": duration,
+        "message_limit": int(data.get("message_limit", 50000)),
+        "max_stores": int(data.get("max_stores", 5)),
+        "max_seats": int(data.get("max_seats", 20)),
+        "price_bdt": float(data.get("price_bdt", 0.0)),
+        "code_expiry": data.get("code_expiry") or None,
+        "features": data.get("features") or [
+            f"{int(data.get('message_limit', 50000)):,} AI Messages / month",
+            f"{int(data.get('max_stores', 5))} Connected Stores",
+            f"{int(data.get('max_seats', 20))} Team Member Seats",
+            f"{duration} Months Full Access License",
+            "Dedicated Account Manager & SLA",
+        ],
+        "active": True,
+        "max_uses": int(data.get("max_uses", 1)),
+        "used_count": 0,
+        "created_at": datetime.now().isoformat(),
+    }
+
+    # Replace if duplicate code or insert at top
+    idx = next((i for i, c in enumerate(codes) if c.get("code", "").upper() == clean_code), None)
+    if idx is not None:
+        codes[idx] = new_code
+    else:
+        codes.insert(0, new_code)
+
+    _save_json_custom_codes(codes)
+    return new_code
+
+
+def delete_custom_activation_code(code_str: str) -> bool:
+    clean_code = code_str.strip().upper()
+    codes = _get_json_custom_codes()
+    initial_len = len(codes)
+    codes = [c for c in codes if c.get("code", "").strip().upper() != clean_code]
+    if len(codes) != initial_len:
+        _save_json_custom_codes(codes)
+        return True
+    return False
+
+
+def verify_activation_code(code_str: str) -> dict[str, Any]:
+    norm_code = code_str.strip().upper()
+    codes = _get_json_custom_codes()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    for item in codes:
+        if item.get("code", "").strip().upper() == norm_code:
+            if not item.get("active", True):
+                return {"valid": False, "error": "This activation code is deactivated or revoked."}
+
+            expiry = item.get("code_expiry")
+            if expiry and today_str > str(expiry).strip():
+                return {"valid": False, "error": f"This activation voucher expired on {expiry}. Please request a renewed code from sales."}
+
+            used = int(item.get("used_count", 0))
+            max_u = int(item.get("max_uses", 1))
+            if used >= max_u:
+                return {"valid": False, "error": "This activation code has already been redeemed."}
+
+            return {
+                "valid": True,
+                "code": item.get("code"),
+                "plan_id": item.get("plan_id"),
+                "plan_name": item.get("plan_name", "Custom Enterprise"),
+                "duration_months": item.get("duration_months", 1),
+                "message_limit": item.get("message_limit", 50000),
+                "max_stores": item.get("max_stores", 5),
+                "max_seats": item.get("max_seats", 20),
+                "price_bdt": float(item.get("price_bdt", 0.0)),
+                "code_expiry": item.get("code_expiry"),
+                "features": item.get("features") or [
+                    f"{int(item.get('message_limit', 50000)):,} AI Messages / month",
+                    f"{int(item.get('max_stores', 5))} Connected Stores",
+                    f"{int(item.get('max_seats', 20))} Team Member Seats",
+                    f"{item.get('duration_months', 1)} Months Full Access License",
+                    "Dedicated Account Manager & SLA",
+                ],
+            }
+    return {"valid": False, "error": "Invalid activation code. Please check and try again."}
+
+
 def find_and_redeem_code(code_str: str) -> dict[str, Any] | None:
     norm_code = code_str.strip().upper()
     codes = _get_json_custom_codes()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
     for item in codes:
-        if item.get("code", "").strip().upper() == norm_code and item.get("active", True):
+        if item.get("code", "").strip().upper() == norm_code:
+            if not item.get("active", True):
+                return {"error": "This activation code is deactivated or revoked."}
+
+            expiry = item.get("code_expiry")
+            if expiry and today_str > str(expiry).strip():
+                return {"error": f"This activation voucher expired on {expiry}. Please request a renewed code from sales."}
+
             used = int(item.get("used_count", 0))
-            max_u = int(item.get("max_uses", 100))
-            if used < max_u:
-                item["used_count"] = used + 1
-                _save_json_custom_codes(codes)
-                return item
+            max_u = int(item.get("max_uses", 1))
+            if used >= max_u:
+                return {"error": "This activation code has already been redeemed."}
+
+            item["used_count"] = used + 1
+            _save_json_custom_codes(codes)
+            return item
     return None
+

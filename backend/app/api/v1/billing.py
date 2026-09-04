@@ -20,12 +20,15 @@ from app.schemas.billing import (
     InvoiceResponse,
     TopUpRequest,
     TopUpResponse,
+    VerifyCodeRequest,
+    VerifyCodeResponse,
     RedeemCodeRequest,
     RedeemCodeResponse,
 )
 from app.services.plans_service import (
     get_stored_plans,
     get_custom_activation_codes,
+    verify_activation_code,
     find_and_redeem_code,
 )
 
@@ -371,6 +374,20 @@ async def list_custom_codes() -> list[dict[str, Any]]:
     return get_custom_activation_codes()
 
 
+@router.post("/verify-code", response_model=VerifyCodeResponse)
+async def verify_code(
+    req: VerifyCodeRequest,
+    user: User = Depends(get_current_active_user),
+):
+    """Verify an activation code and preview plan entitlements and contract price without redeeming."""
+    clean_code = req.code.strip().upper()
+    if not clean_code:
+        return VerifyCodeResponse(valid=False, error="Activation code cannot be empty.")
+
+    info = verify_activation_code(clean_code)
+    return VerifyCodeResponse(**info)
+
+
 @router.post("/redeem-code", response_model=RedeemCodeResponse)
 async def redeem_code(
     req: RedeemCodeRequest,
@@ -389,7 +406,12 @@ async def redeem_code(
     if not code_info:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired plan activation code. Please contact sales on WhatsApp for a valid enterprise code.",
+            detail="Invalid activation code. Please contact sales on WhatsApp for a valid enterprise code.",
+        )
+    if "error" in code_info:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(code_info["error"]),
         )
 
     plan_name = code_info.get("plan_name", "Custom Enterprise")
@@ -397,13 +419,27 @@ async def redeem_code(
     max_stores = int(code_info.get("max_stores", 5))
     max_seats = int(code_info.get("max_seats", 20))
     price_bdt = float(code_info.get("price_bdt", 0.0))
+    duration_months = max(1, int(code_info.get("duration_months", 1)))
+    pay_method = req.payment_method or ("bKash Auto-Debit" if price_bdt > 0 else "Enterprise License Voucher")
+
+    # Calculate expiration and next billing date
+    import calendar
+    now = datetime.now()
+    now_str = now.strftime("%Y-%m-%d")
+    new_month = now.month + duration_months
+    new_year = now.year + (new_month - 1) // 12
+    new_month = ((new_month - 1) % 12) + 1
+    max_day = calendar.monthrange(new_year, new_month)[1]
+    new_day = min(now.day, max_day)
+    end_date = datetime(new_year, new_month, new_day)
+    next_billing_date_str = end_date.strftime("%d %b, %Y")
+    plan_expires_at_iso = end_date.isoformat()
 
     # 1. Update user permanent account
     user.plan = plan_name
     user.ai_quota = quota
     db.add(user)
 
-    now_str = datetime.now().strftime("%Y-%m-%d")
     inv_no = f"INV-CUSTOM-{datetime.now().strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
 
     # 2. Find or create merchant business store
@@ -444,6 +480,11 @@ async def redeem_code(
                 "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
                 "plan": plan_name,
                 "plan_price_bdt": price_bdt,
+                "payment_method": pay_method,
+                "subscription_months": duration_months,
+                "plan_activated_at": now.isoformat(),
+                "plan_expires_at": plan_expires_at_iso,
+                "next_billing_date": next_billing_date_str,
                 "max_stores": max_stores,
                 "max_seats": max_seats,
                 "team_members": [],
@@ -459,21 +500,36 @@ async def redeem_code(
         extra = dict(biz.settings_data or {})
         extra["plan"] = plan_name
         extra["plan_price_bdt"] = price_bdt
+        extra["payment_method"] = pay_method
+        extra["subscription_months"] = duration_months
+        extra["plan_activated_at"] = now.isoformat()
+        extra["plan_expires_at"] = plan_expires_at_iso
+        extra["next_billing_date"] = next_billing_date_str
         extra["max_stores"] = max_stores
         extra["max_seats"] = max_seats
         biz.settings_data = extra
         flag_modified(biz, "settings_data")
         db.add(biz)
 
-    # 3. Create paid voucher tax invoice
+    # 3. Create paid voucher tax invoice with chosen payment method
+    plan_invoice_title = (
+        f"{plan_name} ({duration_months} Months Access, Code: {clean_code})"
+        if duration_months > 1
+        else f"{plan_name} (Code: {clean_code})"
+    )
+    tx_code = (
+        f"BKH{uuid.uuid4().hex[:8].upper()}"
+        if "bkash" in pay_method.lower()
+        else (f"NGD{uuid.uuid4().hex[:8].upper()}" if "nagad" in pay_method.lower() else f"VCHR-{clean_code}")
+    )
     custom_inv = Invoice(
         invoice_no=inv_no,
         merchant_name=biz.name,
-        plan_name=f"{plan_name} (Code: {clean_code})",
+        plan_name=plan_invoice_title,
         amount_bdt=price_bdt,
         original_amount_bdt=price_bdt,
-        payment_method="Enterprise License Voucher",
-        tx_id=f"VCHR-{clean_code}",
+        payment_method=pay_method,
+        tx_id=tx_code,
         invoice_date=now_str,
         status="paid",
         business_id=biz.id,
@@ -494,6 +550,11 @@ async def redeem_code(
                 b.orders_quota = quota
                 b_extra["plan"] = plan_name
                 b_extra["plan_price_bdt"] = price_bdt
+                b_extra["payment_method"] = pay_method
+                b_extra["subscription_months"] = duration_months
+                b_extra["plan_activated_at"] = now.isoformat()
+                b_extra["plan_expires_at"] = plan_expires_at_iso
+                b_extra["next_billing_date"] = next_billing_date_str
                 b_extra["max_stores"] = max_stores
                 b_extra["max_seats"] = max_seats
                 b.settings_data = b_extra
@@ -504,6 +565,7 @@ async def redeem_code(
     await db.refresh(biz)
     await db.refresh(user)
 
+    duration_label = f"{duration_months} মাসের" if duration_months > 1 else "১ মাসের"
     return RedeemCodeResponse(
         success=True,
         plan=biz.plan,
@@ -511,6 +573,9 @@ async def redeem_code(
         messages_quota=user.ai_quota or 0,
         max_stores=max_stores,
         max_seats=max_seats,
-        message=f"অভিনন্দন! আপনার {plan_name} প্ল্যান সফলভাবে সক্রিয় হয়েছে ({quota:,} AI মেসেজ, {max_stores}টি স্টোর, {max_seats}টি সিট)।",
+        duration_months=duration_months,
+        price_bdt=price_bdt,
+        payment_method=pay_method,
+        message=f"অভিনন্দন! আপনার {plan_name} প্ল্যান ({duration_label}) সফলভাবে সক্রিয় হয়েছে ({quota:,} AI মেসেজ, {max_stores}টি স্টোর, {max_seats}টি সিট)। মেয়াদ: {next_billing_date_str} পর্যন্ত।",
     )
 

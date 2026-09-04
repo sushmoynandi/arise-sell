@@ -10,7 +10,7 @@ import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import api from "@/lib/api-client";
 import { bdt, cx } from "@/lib/format";
-import { IconCheck, IconLogOut, IconSpark } from "@/components/ui/icons";
+import { IconCheck, IconClose, IconLogOut, IconShield, IconSpark } from "@/components/ui/icons";
 
 interface BackendPlan {
   id: string;
@@ -54,6 +54,26 @@ export default function ChoosePlanPage() {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [redeemModalOpen, setRedeemModalOpen] = useState(false);
+  const [redeemCodeInput, setRedeemCodeInput] = useState("");
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [verifiedPlan, setVerifiedPlan] = useState<{
+    valid: boolean;
+    code?: string;
+    plan_id?: string;
+    plan_name?: string;
+    duration_months?: number;
+    message_limit?: number;
+    max_stores?: number;
+    max_seats?: number;
+    price_bdt?: number;
+    code_expiry?: string | null;
+    features?: string[];
+  } | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<string>("bKash Auto-Debit");
+  const [verifyingCode, setVerifyingCode] = useState(false);
 
   const isCustomPlan = (p: BackendPlan) => {
     const name = (p.name || "").toLowerCase().trim();
@@ -137,6 +157,63 @@ export default function ChoosePlanPage() {
       const msg = err instanceof Error ? err.message : "Plan activation error";
       setError(msg);
       setLoadingPlanId(null);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    const cleanCode = redeemCodeInput.trim().toUpperCase();
+    if (!cleanCode) {
+      setRedeemError("Please enter an activation code.");
+      return;
+    }
+    setVerifyingCode(true);
+    setRedeemError(null);
+    try {
+      const res = await api.billing.verifyCode(cleanCode);
+      if (res && res.valid) {
+        setVerifiedPlan(res);
+        setRedeemError(null);
+      } else {
+        setVerifiedPlan(null);
+        setRedeemError(res.error || "Invalid or expired activation code.");
+      }
+    } catch (err: unknown) {
+      setVerifiedPlan(null);
+      setRedeemError(
+        err instanceof Error
+          ? err.message
+          : "Failed to verify activation code.",
+      );
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  const handleRedeemCode = async () => {
+    const targetCode = (verifiedPlan?.code || redeemCodeInput).trim().toUpperCase();
+    if (!targetCode) {
+      setRedeemError("Please enter an activation code.");
+      return;
+    }
+    setRedeemLoading(true);
+    setRedeemError(null);
+    try {
+      const res = await api.billing.redeemCode(targetCode, selectedPaymentMethod);
+      if (res.success) {
+        setRedeemModalOpen(false);
+        router.push("/console");
+      } else {
+        setRedeemError(res.message || "Failed to activate code.");
+      }
+    } catch (err: unknown) {
+      console.error("Redeem code failed:", err);
+      setRedeemError(
+        err instanceof Error
+          ? err.message
+          : "Invalid or expired activation code.",
+      );
+    } finally {
+      setRedeemLoading(false);
     }
   };
 
@@ -516,6 +593,23 @@ export default function ChoosePlanPage() {
                                 "তাৎক্ষণিক অ্যাক্টিভেশন · পরিবর্তনযোগ্য",
                               )}
                       </p>
+                      {isCustom && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRedeemError(null);
+                            setVerifiedPlan(null);
+                            setRedeemCodeInput("");
+                            setRedeemModalOpen(true);
+                          }}
+                          className="mt-2 w-full text-center text-xs font-semibold text-signal hover:underline cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                          </svg>
+                          <span>{t("Have a Code? Redeem Here", "কোড আছে? এখানে রিডিম করুন")}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -543,12 +637,29 @@ export default function ChoosePlanPage() {
               )}
             </p>
           </div>
-          <Link
-            href="/contact"
-            className="shrink-0 inline-flex items-center justify-center rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-[13px] font-medium text-text hover:bg-surface-3 transition-colors cursor-pointer"
-          >
-            {t("Contact Enterprise Team", "এন্টারপ্রাইজ টিমের সাথে কথা বলুন")}
-          </Link>
+          <div className="shrink-0 flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setRedeemError(null);
+                setVerifiedPlan(null);
+                setRedeemCodeInput("");
+                setRedeemModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-signal/40 bg-signal/5 px-4 py-2.5 text-[13px] font-semibold text-signal hover:bg-signal/15 hover:border-signal transition-colors cursor-pointer"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+              </svg>
+              <span>{t("Redeem Plan Code", "প্ল্যান কোড রিডিম করুন")}</span>
+            </button>
+            <Link
+              href="/contact"
+              className="inline-flex items-center justify-center rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-[13px] font-medium text-text hover:bg-surface-3 transition-colors cursor-pointer"
+            >
+              {t("Contact Enterprise Team", "এন্টারপ্রাইজ টিমের সাথে কথা বলুন")}
+            </Link>
+          </div>
         </div>
 
         {/* Trust Badges */}
@@ -590,6 +701,303 @@ export default function ChoosePlanPage() {
             </p>
           </div>
         </div>
+        {/* Custom Plan Code Redemption & Payment Checkout Modal */}
+        <AnimatePresence>
+          {redeemModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4.5 border border-line"
+              >
+                {/* Modal Header */}
+                <div className="flex items-start justify-between border-b border-line pb-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal/15 text-signal">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold font-display text-text">
+                        {verifiedPlan
+                          ? t("Review Plan & Complete Payment", "প্ল্যান পর্যালোচনা ও পেমেন্ট সম্পন্ন করুন")
+                          : t("Redeem Custom Plan Code", "কাস্টম প্ল্যান কোড রিডিম করুন")}
+                      </h3>
+                      <p className="text-[11.5px] text-text-3">
+                        {verifiedPlan
+                          ? t("Verify your enterprise package entitlements and finalize subscription", "আপনার প্যাকেজের সুবিধাসমূহ দেখে সাবস্ক্রিপশন চালু করুন")
+                          : t("Enter the activation license key provided by sales to view and activate your plan", "সেলস থেকে প্রাপ্ত লাইসেন্স কোডটি দিন")}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRedeemModalOpen(false);
+                      setVerifiedPlan(null);
+                      setRedeemError(null);
+                    }}
+                    className="rounded-lg p-1 text-text-3 hover:bg-surface-2 hover:text-text cursor-pointer"
+                  >
+                    <IconClose width={18} height={18} />
+                  </button>
+                </div>
+
+                {!verifiedPlan ? (
+                  /* Step 1: Input Code */
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-text">
+                        {t("Enterprise Activation Code", "এন্টারপ্রাইজ এক্টিভেশন কোড")}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. ENTERPRIZE-6M-ABCD"
+                          value={redeemCodeInput}
+                          onChange={(e) => {
+                            setRedeemCodeInput(e.target.value.toUpperCase());
+                            setRedeemError(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !verifyingCode && redeemCodeInput.trim()) {
+                              e.preventDefault();
+                              handleVerifyCode();
+                            }
+                          }}
+                          className="flex-1 rounded-xl border border-line bg-surface-2/30 px-3.5 py-2.5 font-mono text-sm uppercase tracking-wider text-text placeholder:normal-case placeholder:font-sans placeholder:text-text-3 focus:border-signal focus:bg-white focus:ring-2 focus:ring-signal/20 focus:outline-hidden"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyCode}
+                          disabled={verifyingCode || !redeemCodeInput.trim()}
+                          className="shrink-0 rounded-xl bg-signal px-4 py-2 text-xs font-semibold text-white hover:bg-signal-deep disabled:opacity-60 transition-colors cursor-pointer"
+                        >
+                          {verifyingCode ? t("Checking...", "যাচাই হচ্ছে...") : t("Verify Code", "যাচাই করুন")}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-text-3">
+                        {t("Enter the code given by sales to view your contract plan details and proceed to payment.", "সেলস থেকে পাওয়া কোডটি প্রবেশ করালে আপনার প্ল্যানের বিস্তারিত ও পেমেন্ট অপশন দেখাবে।")}
+                      </p>
+                    </div>
+
+                    {redeemError && (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 flex items-center gap-2">
+                        <IconShield width={15} height={15} className="shrink-0 text-red-500" />
+                        <span>{redeemError}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2.5 pt-2 border-t border-line">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRedeemModalOpen(false);
+                          setRedeemError(null);
+                        }}
+                        className="rounded-xl border border-line bg-surface px-4 py-2 text-xs font-semibold text-text hover:bg-surface-2 transition-colors cursor-pointer"
+                      >
+                        {t("Cancel", "বাতিল")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleVerifyCode}
+                        disabled={verifyingCode || !redeemCodeInput.trim()}
+                        className="rounded-xl bg-signal px-4 py-2 text-xs font-semibold text-white hover:bg-signal-deep disabled:opacity-60 transition-colors cursor-pointer"
+                      >
+                        {verifyingCode ? t("Verifying...", "যাচাই হচ্ছে...") : t("Next: View Plan", "পরবর্তী: প্ল্যান দেখুন")}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Step 2: Display Verified Plan & Payment Checkout */
+                  <div className="space-y-4">
+                    {/* Plan Card Banner */}
+                    <div className="rounded-2xl border border-signal/40 bg-gradient-to-br from-signal/10 via-[#edf7f3] to-white p-4.5 space-y-3.5 shadow-xs">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-2 w-2 rounded-full bg-signal animate-pulse" />
+                            <h4 className="text-base font-bold font-display text-text">
+                              {verifiedPlan.plan_name}
+                            </h4>
+                            <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold font-mono uppercase tracking-wider">
+                              {verifiedPlan.duration_months || 1} Month{(verifiedPlan.duration_months || 1) > 1 ? "s" : ""} Access
+                            </span>
+                          </div>
+                          <div className="font-mono text-xs text-signal font-semibold mt-1">
+                            Code: {verifiedPlan.code}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVerifiedPlan(null);
+                            setRedeemError(null);
+                          }}
+                          className="text-[11px] text-text-3 hover:text-signal underline cursor-pointer"
+                        >
+                          {t("Change Code", "কোড পরিবর্তন")}
+                        </button>
+                      </div>
+
+                      {/* Pricing Breakdown */}
+                      <div className="flex items-baseline gap-1.5 border-t border-signal/20 pt-3">
+                        <span className="text-2xl font-black font-display text-text">
+                          {(verifiedPlan.price_bdt || 0) > 0
+                            ? `৳${(verifiedPlan.price_bdt || 0).toLocaleString("en-US")}`
+                            : "৳0 Free"}
+                        </span>
+                        <span className="text-xs text-text-3 font-medium">
+                          {(verifiedPlan.price_bdt || 0) > 0
+                            ? `Total for ${verifiedPlan.duration_months || 1} month contract (≈ ৳${Math.round((verifiedPlan.price_bdt || 0) / Math.max(1, verifiedPlan.duration_months || 1)).toLocaleString()}/mo)`
+                            : t("Complimentary Access", "ফ্রি এক্সেস")}
+                        </span>
+                      </div>
+
+                      {/* Resource Entitlements */}
+                      <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+                        <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
+                          <div className="text-[10px] text-text-3 font-sans font-medium">Stores Limit</div>
+                          <div className="font-bold text-text text-xs">{verifiedPlan.max_stores || 1} Stores</div>
+                        </div>
+                        <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
+                          <div className="text-[10px] text-text-3 font-sans font-medium">Team Seats</div>
+                          <div className="font-bold text-text text-xs">{verifiedPlan.max_seats || 1} Seats</div>
+                        </div>
+                        <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
+                          <div className="text-[10px] text-text-3 font-sans font-medium">AI Messages</div>
+                          <div className="font-bold text-signal text-xs">{(verifiedPlan.message_limit || 50000).toLocaleString()}</div>
+                        </div>
+                      </div>
+
+                      {/* Expiry date notice */}
+                      {verifiedPlan.code_expiry && (
+                        <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200">
+                          ⚠️ This activation code must be redeemed by <strong>{verifiedPlan.code_expiry}</strong>.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Step 3: Payment Method Selection */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-text">
+                        {(verifiedPlan.price_bdt || 0) > 0
+                          ? t("Select Payment Method", "পেমেন্ট মাধ্যম নির্বাচন করুন")
+                          : t("Activation Verification", "ভেরিফিকেশন")}
+                      </label>
+                      {(verifiedPlan.price_bdt || 0) > 0 ? (
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: "bKash Auto-Debit", label: "bKash", tag: "Popular", color: "border-pink-500/40 text-pink-700 bg-pink-500/5" },
+                            { id: "Nagad Instant", label: "Nagad", tag: "Instant", color: "border-orange-500/40 text-orange-700 bg-orange-500/5" },
+                            { id: "Card / Net Banking", label: "Card / Bank", tag: "Online", color: "border-blue-500/40 text-blue-700 bg-blue-500/5" },
+                          ].map((m) => {
+                            const isSelected = selectedPaymentMethod === m.id;
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => setSelectedPaymentMethod(m.id)}
+                                className={cx(
+                                  "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
+                                  isSelected
+                                    ? "border-signal bg-signal/10 ring-1.5 ring-signal shadow-xs"
+                                    : "border-line bg-surface-1 hover:border-signal/40"
+                                )}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-xs text-text">{m.label}</span>
+                                  <span className={cx("text-[9px] font-mono px-1 py-0.5 rounded", m.color)}>
+                                    {m.tag}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] text-text-3 mt-1">
+                                  {isSelected ? "● Selected" : "○ Choose"}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-xs text-emerald-800 flex items-center gap-2">
+                          <IconCheck width={14} height={14} className="text-emerald-600" />
+                          <span>{t("Complimentary code approved by sales. No payment needed.", "ফ্রি কোড অনুমোদিত। কোনো পেমেন্ট প্রয়োজন নেই।")}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {redeemError && (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-600 flex items-center gap-2">
+                        <IconShield width={14} height={14} className="shrink-0 text-red-500" />
+                        <span>{redeemError}</span>
+                      </div>
+                    )}
+
+                    {/* Footer Actions */}
+                    <div className="flex justify-between items-center pt-2 border-t border-line">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerifiedPlan(null);
+                          setRedeemError(null);
+                        }}
+                        className="text-xs text-text-3 hover:text-text font-medium cursor-pointer"
+                      >
+                        {t("← Back to Code", "← কোড পরিবর্তন")}
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRedeemModalOpen(false);
+                            setVerifiedPlan(null);
+                            setRedeemError(null);
+                          }}
+                          disabled={redeemLoading}
+                          className="rounded-xl border border-line bg-surface px-4 py-2 text-xs font-semibold text-text hover:bg-surface-2 transition-colors cursor-pointer"
+                        >
+                          {t("Cancel", "বাতিল")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRedeemCode}
+                          disabled={redeemLoading}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-signal px-4 py-2 text-xs font-bold text-white hover:bg-signal-deep disabled:opacity-60 transition-all cursor-pointer shadow-xs"
+                        >
+                          {redeemLoading ? (
+                            t("Processing Payment & Activating...", "পেমেন্ট ও সক্রিয়করণ হচ্ছে...")
+                          ) : (
+                            <>
+                              <IconCheck width={15} height={15} />
+                              <span>
+                                {(verifiedPlan.price_bdt || 0) > 0
+                                  ? `${t("Pay", "পে করুন")} ৳${(verifiedPlan.price_bdt || 0).toLocaleString("en-US")} & ${t("Activate", "অ্যাক্টিভ করুন")}`
+                                  : t("Confirm & Activate Plan Free", "ফ্রিতে প্ল্যান চালু করুন")}
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

@@ -535,7 +535,25 @@ class ApiClient {
         method: "POST",
         body: JSON.stringify({ pack, payment_method }),
       }),
-    redeemCode: (code: string) =>
+    verifyCode: (code: string) =>
+      this.request<{
+        valid: boolean;
+        error?: string;
+        code?: string;
+        plan_id?: string;
+        plan_name?: string;
+        duration_months?: number;
+        message_limit?: number;
+        max_stores?: number;
+        max_seats?: number;
+        price_bdt?: number;
+        code_expiry?: string | null;
+        features?: string[];
+      }>("/billing/verify-code", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      }),
+    redeemCode: (code: string, payment_method?: string) =>
       this.request<{
         success: boolean;
         plan: string;
@@ -543,10 +561,13 @@ class ApiClient {
         messages_quota: number;
         max_stores: number;
         max_seats: number;
+        duration_months: number;
+        price_bdt: number;
+        payment_method?: string;
         message: string;
       }>("/billing/redeem-code", {
         method: "POST",
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, payment_method }),
       }),
     getCustomCodes: () =>
       this.request<
@@ -649,6 +670,18 @@ class ApiClient {
     deleteFestivalOffer: (id: string) =>
       this.request<{ success: boolean; message: string }>(
         `/admin/plans/festival-offers/${id}`,
+        { method: "DELETE" },
+      ),
+    listCustomCodes: () =>
+      this.request<Record<string, unknown>[]>("/admin/plans/custom-codes"),
+    generateCustomCode: (data: Record<string, unknown>) =>
+      this.request<Record<string, unknown>>("/admin/plans/custom-codes", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    deleteCustomCode: (code: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/admin/plans/custom-codes/${encodeURIComponent(code)}`,
         { method: "DELETE" },
       ),
     listAiKeys: () =>

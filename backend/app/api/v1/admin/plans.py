@@ -17,6 +17,9 @@ from app.services.plans_service import (
     update_stored_festival_offer,
     toggle_stored_festival_offer,
     delete_stored_festival_offer,
+    get_custom_activation_codes,
+    create_custom_activation_code,
+    delete_custom_activation_code,
 )
 
 router = APIRouter(prefix="/admin/plans", tags=["Super Admin Plans"])
@@ -57,6 +60,39 @@ class FestivalOfferRequest(BaseModel):
     bonusMessages: int = 0
     validity: str = "Limited Time Offer"
     active: bool = True
+
+
+class CustomCodeRequest(BaseModel):
+    code: str | None = None
+    plan_id: str | None = None
+    plan_name: str
+    duration_months: int = 1
+    price_bdt: float = 0.0
+    message_limit: int = 50000
+    max_stores: int = 5
+    max_seats: int = 20
+    code_expiry: str | None = None
+    max_uses: int = 1
+
+
+# ─── Custom Activation Codes Endpoints ─────────────────────────
+
+@router.get("/custom-codes")
+async def list_custom_codes_admin():
+    return get_custom_activation_codes()
+
+
+@router.post("/custom-codes", status_code=status.HTTP_201_CREATED)
+async def create_custom_code_admin(req: CustomCodeRequest):
+    return create_custom_activation_code(req.model_dump())
+
+
+@router.delete("/custom-codes/{code}")
+async def delete_custom_code_admin(code: str):
+    success = delete_custom_activation_code(code)
+    if not success:
+        raise HTTPException(status_code=404, detail="Code not found")
+    return {"success": True, "message": f"Code {code} deleted"}
 
 
 # ─── Festival Offers Endpoints (Defined First to Avoid Route Shadowing) ───
