@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge, Button, Panel, PanelHead } from "@/components/ui/primitives";
@@ -22,178 +22,190 @@ import { cx } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
 
-/* ─── 12 Streamlined Tabs (Store -> Channels -> Logistics -> Operations) ─── */
-const TABS = [
-  { id: "business", label: "General" },
-  { id: "account", label: "Account" },
-  { id: "branding", label: "Branding" },
-  { id: "invoice", label: "Custom Invoice" },
+/* ─── 6 Primary Core Pillars (Guaranteed Zero Overflow, High-End Organization) ─── */
+const PRIMARY_TABS = [
+  { id: "store", label: "Store & Invoice" },
   { id: "website-orders", label: "Website Orders" },
-  { id: "courier", label: "Couriers" },
-  { id: "meta", label: "Meta CAPI" },
-  { id: "product-feed", label: "Product Feed" },
-  { id: "preferences", label: "AI Persona" },
-  { id: "team", label: "Team" },
-  { id: "notifications", label: "Notifications" },
-  { id: "billing", label: "Billing" },
+  { id: "courier", label: "Couriers & Shipping" },
+  { id: "growth", label: "Marketing & Feeds" },
+  { id: "ai", label: "AI Sales Persona" },
+  { id: "workspace", label: "Workspace & Billing" },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type PrimaryTabId = (typeof PRIMARY_TABS)[number]["id"];
 
-/* ─── Tab Icons for Frosted Glass Segmented Control ─── */
-const TAB_ICONS: Record<
-  TabId,
+/* ─── Primary Icons ─── */
+const PRIMARY_ICONS: Record<
+  PrimaryTabId,
   (props: { className?: string }) => React.ReactNode
 > = {
-  business: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+  store: (p) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   ),
-  account: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  ),
-  branding: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-    </svg>
-  ),
-  invoice: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  ),
   "website-orders": (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <circle cx="12" cy="12" r="10" />
       <line x1="2" y1="12" x2="22" y2="12" />
       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </svg>
   ),
   courier: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <rect x="1" y="3" width="15" height="13" rx="2" />
       <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
       <circle cx="5.5" cy="18.5" r="2.5" />
       <circle cx="18.5" cy="18.5" r="2.5" />
     </svg>
   ),
-  meta: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="m4.93 4.93 4.24 4.24" />
-      <path d="m14.83 9.17 4.24-4.24" />
-      <path d="m14.83 14.83 4.24 4.24" />
-      <path d="m9.17 14.83-4.24 4.24" />
-      <circle cx="12" cy="12" r="4" />
+  growth: (p) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="m3 11 18-5v12L3 13v-2ZM11.6 16.8a3 3 0 1 1-5.8-1.6" />
     </svg>
   ),
-  "product-feed": (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="m7.5 4.27 9 5.15" />
-      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-      <path d="m3.3 7 8.7 5 8.7-5" />
-      <path d="M12 22V12" />
-    </svg>
-  ),
-  preferences: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+  ai: (p) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04" />
       <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04" />
     </svg>
   ),
-  team: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  ),
-  notifications: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-    </svg>
-  ),
-  billing: (p) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+  workspace: (p) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <rect width="20" height="14" x="2" y="5" rx="2" />
       <line x1="2" x2="22" y1="10" y2="10" />
     </svg>
   ),
 };
 
-/* ─── Inner Component ─── */
+/* ─── Inner Component with URL Mapping & Sub-Tab Sync ─── */
 function SettingsInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tabFromUrl = (searchParams.get("tab") as TabId) || "business";
-  const [activeTab, setActiveTab] = useState<TabId>(
-    TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : "business",
+
+  // Backward compatibility: map old 10-12 tabs to 6 primary tabs + sub-tab
+  const rawTab = searchParams.get("tab") || "store";
+  const rawSub = searchParams.get("sub");
+
+  const { initialPrimary, initialSub } = useMemo(() => {
+    switch (rawTab) {
+      case "business":
+      case "store":
+        return { initialPrimary: "store" as PrimaryTabId, initialSub: rawSub || "profile" };
+      case "branding":
+        return { initialPrimary: "store" as PrimaryTabId, initialSub: "branding" };
+      case "invoice":
+        return { initialPrimary: "store" as PrimaryTabId, initialSub: "invoice" };
+      case "website-orders":
+        return { initialPrimary: "website-orders" as PrimaryTabId, initialSub: "" };
+      case "courier":
+        return { initialPrimary: "courier" as PrimaryTabId, initialSub: "" };
+      case "meta":
+        return { initialPrimary: "growth" as PrimaryTabId, initialSub: "meta" };
+      case "product-feed":
+      case "growth":
+        return { initialPrimary: "growth" as PrimaryTabId, initialSub: rawSub || "feeds" };
+      case "preferences":
+      case "ai":
+        return { initialPrimary: "ai" as PrimaryTabId, initialSub: "" };
+      case "team":
+        return { initialPrimary: "workspace" as PrimaryTabId, initialSub: "team" };
+      case "notifications":
+        return { initialPrimary: "workspace" as PrimaryTabId, initialSub: "notifications" };
+      case "billing":
+        return { initialPrimary: "workspace" as PrimaryTabId, initialSub: "billing" };
+      case "account":
+      case "workspace":
+        return { initialPrimary: "workspace" as PrimaryTabId, initialSub: rawSub || "billing" };
+      default:
+        return { initialPrimary: "store" as PrimaryTabId, initialSub: "profile" };
+    }
+  }, [rawTab, rawSub]);
+
+  const [activeTab, setActiveTab] = useState<PrimaryTabId>(initialPrimary);
+  const [storeSubTab, setStoreSubTab] = useState<"profile" | "branding" | "invoice">(
+    initialPrimary === "store" && ["profile", "branding", "invoice"].includes(initialSub)
+      ? (initialSub as "profile" | "branding" | "invoice")
+      : "profile",
+  );
+  const [growthSubTab, setGrowthSubTab] = useState<"meta" | "feeds">(
+    initialPrimary === "growth" && ["meta", "feeds"].includes(initialSub)
+      ? (initialSub as "meta" | "feeds")
+      : "meta",
+  );
+  const [workspaceSubTab, setWorkspaceSubTab] = useState<"billing" | "team" | "notifications" | "security">(
+    initialPrimary === "workspace" && ["billing", "team", "notifications", "security"].includes(initialSub)
+      ? (initialSub as "billing" | "team" | "notifications" | "security")
+      : "billing",
   );
 
-  const switchTab = (id: TabId) => {
+  const switchPrimary = (id: PrimaryTabId) => {
     setActiveTab(id);
-    router.replace(`/console/settings?tab=${id}`, { scroll: false });
+    let targetSub = "";
+    if (id === "store") targetSub = storeSubTab;
+    if (id === "growth") targetSub = growthSubTab;
+    if (id === "workspace") targetSub = workspaceSubTab;
+    const url = targetSub ? `/console/settings?tab=${id}&sub=${targetSub}` : `/console/settings?tab=${id}`;
+    router.replace(url, { scroll: false });
+  };
+
+  const switchStoreSub = (sub: "profile" | "branding" | "invoice") => {
+    setStoreSubTab(sub);
+    router.replace(`/console/settings?tab=store&sub=${sub}`, { scroll: false });
+  };
+
+  const switchGrowthSub = (sub: "meta" | "feeds") => {
+    setGrowthSubTab(sub);
+    router.replace(`/console/settings?tab=growth&sub=${sub}`, { scroll: false });
+  };
+
+  const switchWorkspaceSub = (sub: "billing" | "team" | "notifications" | "security") => {
+    setWorkspaceSubTab(sub);
+    router.replace(`/console/settings?tab=workspace&sub=${sub}`, { scroll: false });
   };
 
   return (
     <>
-      {/* ─── Frosted Glass Segmented Control Navigation Bar ─── */}
-      <div className="sticky top-16 z-20 border-b border-line/60 bg-surface/80 backdrop-blur-xl shadow-xs transition-all">
+      {/* ─── Frosted Glass 6-Pill Segmented Bar (Zero Overflow, Perfectly Balanced) ─── */}
+      <div className="sticky top-16 z-20 border-b border-line/60 bg-surface/85 backdrop-blur-xl shadow-xs transition-all">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-          {/* Glass Segmented Pill Container */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 rounded-2xl bg-canvas/50 border border-line/60 shadow-2xs backdrop-blur-md w-full">
-            {TABS.map((tab) => {
-              const Icon = TAB_ICONS[tab.id];
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-canvas/50 border border-line/60 shadow-2xs backdrop-blur-md w-full">
+            {PRIMARY_TABS.map((tab) => {
+              const Icon = PRIMARY_ICONS[tab.id];
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => switchTab(tab.id)}
+                  onClick={() => switchPrimary(tab.id)}
                   className={cx(
-                    "relative shrink-0 cursor-pointer px-2.5 py-1.5 text-[11.5px] font-medium transition-all rounded-xl whitespace-nowrap flex items-center justify-center gap-1.5 select-none group flex-1",
+                    "relative cursor-pointer px-3 py-2 text-[12px] lg:text-[13px] font-medium transition-all rounded-xl whitespace-nowrap flex items-center justify-center gap-2 select-none group flex-1",
                     isActive
                       ? "text-signal font-semibold"
-                      : "text-text-3 hover:text-text hover:bg-surface-2/50",
+                      : "text-text-3 hover:text-text hover:bg-surface-2/40",
                   )}
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="settings-active-glass-pill"
+                      layoutId="settings-primary-glass-pill"
                       className="absolute inset-0 rounded-xl bg-white shadow-xs border border-line/60 ring-1 ring-black/5 dark:bg-surface-2 dark:border-line"
                       transition={{
                         type: "spring",
                         bounce: 0.15,
-                        duration: 0.35,
+                        duration: 0.3,
                       }}
                     />
                   )}
                   <span
                     className={cx(
-                      "relative z-10 transition-colors",
-                      isActive
-                        ? "text-signal"
-                        : "text-text-3 group-hover:text-text",
+                      "relative z-10 transition-colors shrink-0",
+                      isActive ? "text-signal" : "text-text-3 group-hover:text-text",
                     )}
                   >
-                    {Icon && <Icon className="size-3.5 shrink-0" />}
+                    {Icon && <Icon className="size-4" />}
                   </span>
-                  <span className="relative z-10">{tab.label}</span>
+                  <span className="relative z-10 truncate">{tab.label}</span>
                 </button>
               );
             })}
@@ -206,23 +218,26 @@ function SettingsInner() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.12 }}
           >
-            {activeTab === "business" && <TabBusiness />}
-            {activeTab === "account" && <TabAccount />}
-            {activeTab === "branding" && <TabBranding />}
-            {activeTab === "invoice" && <TabInvoice />}
+            {activeTab === "store" && (
+              <TabStoreGroup subTab={storeSubTab} onSwitchSub={switchStoreSub} />
+            )}
             {activeTab === "website-orders" && <TabWebsiteOrders />}
             {activeTab === "courier" && <TabCourier />}
-            {activeTab === "meta" && <TabMeta />}
-            {activeTab === "product-feed" && <TabProductFeed />}
-            {activeTab === "preferences" && <TabPreferences />}
-            {activeTab === "team" && <TabTeam />}
-            {activeTab === "notifications" && <TabNotifications />}
-            {activeTab === "billing" && <TabBilling />}
+            {activeTab === "growth" && (
+              <TabGrowthGroup subTab={growthSubTab} onSwitchSub={switchGrowthSub} />
+            )}
+            {activeTab === "ai" && <TabPreferences />}
+            {activeTab === "workspace" && (
+              <TabWorkspaceGroup
+                subTab={workspaceSubTab}
+                onSwitchSub={switchWorkspaceSub}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -246,22 +261,185 @@ export default function SettingsPage() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 1: General (Store Identity, Contacts, Schedule & Localization)
+   PILLAR 1: Store & Invoice Group (Store Profile, Branding, Custom Invoice)
    ═══════════════════════════════════════════════════════════════════ */
-function TabBusiness() {
+function TabStoreGroup({
+  subTab,
+  onSwitchSub,
+}: {
+  subTab: "profile" | "branding" | "invoice";
+  onSwitchSub: (sub: "profile" | "branding" | "invoice") => void;
+}) {
+  return (
+    <div className="space-y-6">
+      {/* Secondary Sub-Segmented Pill */}
+      <div className="flex items-center justify-between border-b border-line/60 pb-3">
+        <div>
+          <h2 className="text-base font-bold text-text font-display">
+            {subTab === "profile" && "Store Profile & Identity"}
+            {subTab === "branding" && "Brand Assets & Theme"}
+            {subTab === "invoice" && "Custom Invoice & Packing Slips"}
+          </h2>
+          <p className="text-xs text-text-3 mt-0.5">
+            {subTab === "profile" && "Manage store name, contacts, operating mode, and localization."}
+            {subTab === "branding" && "Brand palette, logos, and conversational storefront presentation."}
+            {subTab === "invoice" && "Customize corporate tax invoices and thermal courier slips with real-time preview."}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-surface-2/60 rounded-xl border border-line/60">
+          {[
+            { id: "profile" as const, label: "Store Profile" },
+            { id: "branding" as const, label: "Branding" },
+            { id: "invoice" as const, label: "Custom Invoice" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSwitchSub(item.id)}
+              className={cx(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+                subTab === item.id
+                  ? "bg-white text-signal shadow-xs border border-line/60"
+                  : "text-text-3 hover:text-text",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {subTab === "profile" && <TabBusinessSection />}
+      {subTab === "branding" && <TabBrandingSection />}
+      {subTab === "invoice" && <TabInvoiceSection />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PILLAR 4: Marketing & Growth Group (Meta CAPI & Product Feeds)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabGrowthGroup({
+  subTab,
+  onSwitchSub,
+}: {
+  subTab: "meta" | "feeds";
+  onSwitchSub: (sub: "meta" | "feeds") => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between border-b border-line/60 pb-3">
+        <div>
+          <h2 className="text-base font-bold text-text font-display">
+            {subTab === "meta" && "Meta Conversions API (CAPI)"}
+            {subTab === "feeds" && "Product Catalog Feeds"}
+          </h2>
+          <p className="text-xs text-text-3 mt-0.5">
+            {subTab === "meta" && "Server-side Facebook & Instagram ad conversion tracking."}
+            {subTab === "feeds" && "Automated feeds for Facebook Commerce Manager and Google Merchant Center."}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-surface-2/60 rounded-xl border border-line/60">
+          {[
+            { id: "meta" as const, label: "Meta CAPI" },
+            { id: "feeds" as const, label: "Product Feeds" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSwitchSub(item.id)}
+              className={cx(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+                subTab === item.id
+                  ? "bg-white text-signal shadow-xs border border-line/60"
+                  : "text-text-3 hover:text-text",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {subTab === "meta" && <TabMetaSection />}
+      {subTab === "feeds" && <TabProductFeedSection />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PILLAR 6: Workspace & Billing Group (Billing, Team, Notifications, Security)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabWorkspaceGroup({
+  subTab,
+  onSwitchSub,
+}: {
+  subTab: "billing" | "team" | "notifications" | "security";
+  onSwitchSub: (sub: "billing" | "team" | "notifications" | "security") => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between border-b border-line/60 pb-3">
+        <div>
+          <h2 className="text-base font-bold text-text font-display">
+            {subTab === "billing" && "Subscription, Quotas & Top-Ups"}
+            {subTab === "team" && "Staff Teammates & Permissions"}
+            {subTab === "notifications" && "Owner Alerts & Notifications"}
+            {subTab === "security" && "Account Profile & Login Security"}
+          </h2>
+          <p className="text-xs text-text-3 mt-0.5">
+            {subTab === "billing" && "Monitor monthly closed order quotas, top-ups, and downloadable tax receipts."}
+            {subTab === "team" && "Manage staff members, assigned chat channels, and access roles."}
+            {subTab === "notifications" && "Instant WhatsApp order alerts, SMS notifications, and daily summaries."}
+            {subTab === "security" && "Owner credentials, bcrypt password change, and security settings."}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-surface-2/60 rounded-xl border border-line/60">
+          {[
+            { id: "billing" as const, label: "Billing & Quotas" },
+            { id: "team" as const, label: "Team" },
+            { id: "notifications" as const, label: "Alerts" },
+            { id: "security" as const, label: "Account & Security" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSwitchSub(item.id)}
+              className={cx(
+                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+                subTab === item.id
+                  ? "bg-white text-signal shadow-xs border border-line/60"
+                  : "text-text-3 hover:text-text",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {subTab === "billing" && <TabBillingSection />}
+      {subTab === "team" && <TabTeamSection />}
+      {subTab === "notifications" && <TabNotificationsSection />}
+      {subTab === "security" && <TabSecuritySection />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SUB-COMPONENT: Store Profile Section
+   ═══════════════════════════════════════════════════════════════════ */
+function TabBusinessSection() {
   const [storeName, setStoreName] = useState<string>(TENANT.name || "Nokshi");
-  const [storeNameBn, setStoreNameBn] = useState<string>(
-    TENANT.nameBn || "নকশী হ্যান্ডিক্রাফটস",
-  );
-  const [category, setCategory] = useState<string>(
-    TENANT.kind || "Traditional Handloom, Silk & Lifestyle",
-  );
+  const [storeNameBn, setStoreNameBn] = useState<string>(TENANT.nameBn || "নকশী হ্যান্ডিক্রাফটস");
+  const [category, setCategory] = useState<string>(TENANT.kind || "Traditional Handloom & Lifestyle");
   const [website, setWebsite] = useState("https://nokshi.co");
   const [supportEmail, setSupportEmail] = useState("support@nokshi.co");
   const [phone, setPhone] = useState("+880 1711-234567");
-  const [address, setAddress] = useState(
-    "House 42, Road 11, Dhanmondi, Dhaka 1209",
-  );
+  const [address, setAddress] = useState("House 42, Road 11, Dhanmondi, Dhaka 1209");
   const [tradeLicense, setTradeLicense] = useState("TRAD/DNCC/049182/2022");
   const [currency, setCurrency] = useState("BDT");
   const [timezone, setTimezone] = useState("Asia/Dhaka");
@@ -317,8 +495,8 @@ function TabBusiness() {
 
       <Panel>
         <PanelHead
-          title="Store Profile & Contacts"
-          sub="Official business identity shown on customer invoices, WhatsApp headers, and order confirmations."
+          title="Store Information & Identity"
+          sub="Official business identity displayed on invoices, WhatsApp headers, and customer receipts."
         />
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           <SettingsField
@@ -358,7 +536,7 @@ function TabBusiness() {
             placeholder="e.g. Traditional Handloom & Lifestyle"
           />
           <SettingsField
-            label="Storefront Physical Address"
+            label="Physical Store Address"
             value={address}
             onChange={setAddress}
             placeholder="House, Road, Area, City"
@@ -374,13 +552,13 @@ function TabBusiness() {
 
       <Panel>
         <PanelHead
-          title="Operating Hours & Availability"
-          sub="Control AI conversational checkout and order fulfillment hours."
+          title="Operating Hours & Schedule"
+          sub="Control AI automated checkout availability and business hours."
         />
         <div className="divide-y divide-line/60">
           <ToggleRow
             label="Open for New Orders"
-            desc="When turned off, the AI greets customers and collects inquiries but politely holds checkout until opening."
+            desc="When turned off, the AI greets customers and collects inquiries but holds checkout until opening."
             value={isOpenForOrders}
             onToggle={setIsOpenForOrders}
           />
@@ -401,8 +579,8 @@ function TabBusiness() {
 
       <Panel>
         <PanelHead
-          title="Localization & Regional Settings"
-          sub="Localization settings for currency, delivery charges, and timestamps."
+          title="Regional & Currency Settings"
+          sub="Pricing currency, timezones, and regional formats."
         />
         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -452,7 +630,7 @@ function TabBusiness() {
         </div>
       </Panel>
 
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex justify-end pt-2">
         <Button
           size="md"
           variant="signal"
@@ -460,7 +638,7 @@ function TabBusiness() {
           disabled={isSaving}
           className="px-6"
         >
-          {isSaving ? "Saving Changes…" : "Save General Settings"}
+          {isSaving ? "Saving Changes…" : "Save Store Information"}
         </Button>
       </div>
     </form>
@@ -468,583 +646,10 @@ function TabBusiness() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 2: Account (Profile, Security, Password Change & Danger Zone)
+   SUB-COMPONENT: Branding Section
    ═══════════════════════════════════════════════════════════════════ */
-function TabAccount() {
-  const { user, updateProfile, changePassword, deleteAccount } = useAuth();
-
-  const [firstName, setFirstName] = useState(user?.first_name || "Farhana");
-  const [lastName, setLastName] = useState(user?.last_name || "Rahman");
-  const [phone, setPhone] = useState(user?.phone || "+880 1711-234567");
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileToast, setProfileToast] = useState<string | null>(null);
-
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [pwChanging, setPwChanging] = useState(false);
-  const [pwError, setPwError] = useState<string | null>(null);
-  const [pwSuccess, setPwSuccess] = useState<string | null>(null);
-
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [confirmPhrase, setConfirmPhrase] = useState("");
-  const [deletePassword, setDeletePassword] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const fullName = `${firstName} ${lastName}`.trim() || user?.email || "Farhana Rahman";
-  const userEmail = user?.email || "farhana@nokshi.co";
-  const userInitials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "FR";
-
-  const pwHasLength = newPassword.length >= 8;
-  const pwHasUpper = /[A-Z]/.test(newPassword);
-  const pwHasLower = /[a-z]/.test(newPassword);
-  const pwHasNumber = /[0-9]/.test(newPassword);
-  const pwMatches = newPassword.length > 0 && newPassword === confirmPassword;
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProfileSaving(true);
-    setProfileToast(null);
-    try {
-      const res = await updateProfile({
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-      });
-      if (res.success) {
-        setProfileToast("Profile details updated successfully!");
-      } else {
-        setProfileToast(res.error || "Failed to update profile.");
-      }
-    } catch {
-      setProfileToast("Profile updated successfully!");
-    } finally {
-      setProfileSaving(false);
-      setTimeout(() => setProfileToast(null), 3500);
-    }
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPwError(null);
-    setPwSuccess(null);
-
-    if (!pwHasLength || !pwHasUpper || !pwHasLower || !pwHasNumber) {
-      setPwError("Password must be 8+ characters with uppercase, lowercase, and numeric characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPwError("New passwords do not match.");
-      return;
-    }
-
-    setPwChanging(true);
-    try {
-      const res = await changePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
-      if (res.success) {
-        setPwSuccess("Password changed securely! You can now use your new password.");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setTimeout(() => {
-          setPasswordModalOpen(false);
-          setPwSuccess(null);
-        }, 2000);
-      } else {
-        setPwError(res.error || "Failed to change password. Please verify current password.");
-      }
-    } catch (err: unknown) {
-      setPwError(err instanceof Error ? err.message : "Password change failed");
-    } finally {
-      setPwChanging(false);
-    }
-  };
-
-  const handleDeleteAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDeleteError(null);
-
-    const targetEmail = user?.email?.toLowerCase().trim() || "";
-    const cleanPhrase = confirmPhrase.trim();
-
-    if (cleanPhrase !== "DELETE" && cleanPhrase.toLowerCase() !== targetEmail) {
-      setDeleteError(`Please type DELETE or ${userEmail} to confirm.`);
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const res = await deleteAccount({
-        confirm_phrase: cleanPhrase,
-        password: deletePassword.trim() || undefined,
-      });
-      if (res.success) {
-        window.location.href = "/login?deleted=true";
-      } else {
-        setDeleteError(res.error || "Failed to delete account. Please check credentials.");
-        setIsDeleting(false);
-      }
-    } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : "Account deletion failed");
-      setIsDeleting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <AnimatePresence>
-        {profileToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
-          >
-            <IconCheck width={16} height={16} />
-            <span>{profileToast}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <form onSubmit={handleUpdateProfile}>
-        <Panel>
-          <PanelHead
-            title="Owner Profile"
-            sub="Primary store administrator credentials, identity, and verified contacts."
-          />
-          <div className="p-5 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="size-16 rounded-2xl bg-signal/15 text-signal font-bold grid place-items-center text-xl font-display border border-signal/20 shadow-2xs">
-                {userInitials}
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-text">{fullName}</h3>
-                <p className="text-sm text-text-3 font-mono">{userEmail}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <Badge tone="mint" className="capitalize font-mono text-[10.5px]">
-                    {user?.role || "Store Owner"}
-                  </Badge>
-                  <span className="text-[11px] text-signal font-medium flex items-center gap-1">
-                    <IconCheck width={13} height={13} /> Verified Active Account
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-line/60">
-              <SettingsField
-                label="First Name"
-                value={firstName}
-                onChange={setFirstName}
-                placeholder="First Name"
-              />
-              <SettingsField
-                label="Last Name"
-                value={lastName}
-                onChange={setLastName}
-                placeholder="Last Name"
-              />
-              <SettingsField
-                label="Mobile Phone"
-                value={phone}
-                onChange={setPhone}
-                placeholder="+880 1XXXXXXXXX"
-              />
-              <SettingsField
-                label="Email Address"
-                value={userEmail}
-                disabled
-              />
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button
-                size="sm"
-                variant="signal"
-                type="submit"
-                disabled={profileSaving}
-              >
-                {profileSaving ? "Saving Profile…" : "Save Profile Details"}
-              </Button>
-            </div>
-          </div>
-        </Panel>
-      </form>
-
-      {/* Security */}
-      <Panel>
-        <PanelHead
-          title="Security & Authentication"
-          sub="Manage your password, active sessions, and multi-factor account safety."
-        />
-        <div className="divide-y divide-line/60">
-          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-bold text-text">Account Password</p>
-              <p className="text-xs text-text-3 mt-0.5">
-                Secured with bcrypt hashing. Strengthen with symbols and numbers.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              type="button"
-              onClick={() => {
-                setPwError(null);
-                setPwSuccess(null);
-                setPasswordModalOpen(true);
-              }}
-            >
-              Change Password
-            </Button>
-          </div>
-
-          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-bold text-text">Session Protection & Rate Limiting</p>
-              <p className="text-xs text-text-3 mt-0.5">
-                Automated token rotation with sliding window rate limiting
-              </p>
-            </div>
-            <Badge tone="mint" dot>
-              Active
-            </Badge>
-          </div>
-        </div>
-      </Panel>
-
-      {/* Danger Zone */}
-      <div className="rounded-2xl border border-red-200 bg-red-50/40 p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-red-700">
-                Danger Zone
-              </span>
-            </div>
-            <h3 className="mt-2 text-base font-bold text-red-950 font-display">
-              Delete Account & Store
-            </h3>
-            <p className="mt-1 text-xs text-red-700 max-w-xl leading-relaxed">
-              Permanently erase your merchant profile, product catalogs, connected WhatsApp channels, and AI conversational memory. This action is irreversible.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setDeleteError(null);
-              setConfirmPhrase("");
-              setDeletePassword("");
-              setDeleteModalOpen(true);
-            }}
-            className="shrink-0 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors shadow-2xs cursor-pointer"
-          >
-            Delete Account
-          </button>
-        </div>
-      </div>
-
-      {/* Password Modal */}
-      <AnimatePresence>
-        {passwordModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              className="relative w-full max-w-md rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-2xl bg-signal/15 text-signal grid place-items-center">
-                    <IconShield width={20} height={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-text">Change Password</h3>
-                    <p className="text-xs text-text-3">Update your login security credentials</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPasswordModalOpen(false)}
-                  className="text-text-3 hover:text-text text-sm cursor-pointer p-1"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {pwError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-600">
-                  {pwError}
-                </div>
-              )}
-
-              {pwSuccess && (
-                <div className="rounded-xl border border-signal/40 bg-[#edf7f3] p-2.5 text-xs text-signal font-medium">
-                  {pwSuccess}
-                </div>
-              )}
-
-              <form onSubmit={handleChangePassword} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-text mb-1">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showCurrentPw ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-text pr-10 focus:border-signal outline-hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPw(!showCurrentPw)}
-                      className="absolute right-3 top-2.5 text-text-3 hover:text-text cursor-pointer"
-                    >
-                      {showCurrentPw ? (
-                        <IconEyeOff width={16} height={16} />
-                      ) : (
-                        <IconEye width={16} height={16} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-text mb-1">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPw ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                      required
-                      className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-text pr-10 focus:border-signal outline-hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPw(!showNewPw)}
-                      className="absolute right-3 top-2.5 text-text-3 hover:text-text cursor-pointer"
-                    >
-                      {showNewPw ? (
-                        <IconEyeOff width={16} height={16} />
-                      ) : (
-                        <IconEye width={16} height={16} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-text mb-1">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat new password"
-                    required
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-text focus:border-signal outline-hidden"
-                  />
-                </div>
-
-                <div className="rounded-xl bg-surface-2/60 border border-line/60 p-3 space-y-1.5 text-[11px] font-mono">
-                  <div className="flex items-center gap-1.5">
-                    <span className={pwHasLength ? "text-signal" : "text-text-3"}>
-                      {pwHasLength ? "✓" : "○"}
-                    </span>
-                    <span className={pwHasLength ? "text-text font-semibold" : "text-text-3"}>
-                      At least 8 characters
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={pwHasUpper ? "text-signal" : "text-text-3"}>
-                      {pwHasUpper ? "✓" : "○"}
-                    </span>
-                    <span className={pwHasUpper ? "text-text font-semibold" : "text-text-3"}>
-                      One uppercase letter (A-Z)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={pwHasLower ? "text-signal" : "text-text-3"}>
-                      {pwHasLower ? "✓" : "○"}
-                    </span>
-                    <span className={pwHasLower ? "text-text font-semibold" : "text-text-3"}>
-                      One lowercase letter (a-z)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={pwHasNumber ? "text-signal" : "text-text-3"}>
-                      {pwHasNumber ? "✓" : "○"}
-                    </span>
-                    <span className={pwHasNumber ? "text-text font-semibold" : "text-text-3"}>
-                      One numeric digit (0-9)
-                    </span>
-                  </div>
-                  {confirmPassword && (
-                    <div className="flex items-center gap-1.5">
-                      <span className={pwMatches ? "text-signal" : "text-red-500"}>
-                        {pwMatches ? "✓" : "✕"}
-                      </span>
-                      <span className={pwMatches ? "text-text font-semibold" : "text-red-500"}>
-                        Passwords match
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    type="button"
-                    onClick={() => setPasswordModalOpen(false)}
-                    disabled={pwChanging}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="signal"
-                    type="submit"
-                    disabled={pwChanging || !pwHasLength || !pwMatches}
-                  >
-                    {pwChanging ? "Updating Password…" : "Save New Password"}
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl"
-            >
-              <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-2xl bg-red-100 text-red-600 text-lg">
-                  ⚠️
-                </span>
-                <div>
-                  <h3 className="text-lg font-bold text-text font-display">
-                    Delete Account Permanently?
-                  </h3>
-                  <p className="text-xs text-text-3">
-                    This action is immediate and cannot be undone.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-red-100 bg-red-50/60 p-3.5 text-xs text-red-800 space-y-1.5">
-                <p className="font-semibold">
-                  The following data will be erased immediately:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-red-700">
-                  <li>Your user login credentials and session tokens</li>
-                  <li>Your merchant store catalogs, orders, and products</li>
-                  <li>WhatsApp and Facebook Messenger live connections</li>
-                  <li>Customer conversation logs and AI knowledge base</li>
-                </ul>
-              </div>
-
-              {deleteError && (
-                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-600">
-                  {deleteError}
-                </div>
-              )}
-
-              <form onSubmit={handleDeleteAccount} className="mt-5 space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    To confirm, please type{" "}
-                    <span className="font-mono text-red-600 font-bold">
-                      DELETE
-                    </span>{" "}
-                    or your email (
-                    <span className="font-mono text-text-2">{userEmail}</span>):
-                  </label>
-                  <input
-                    type="text"
-                    value={confirmPhrase}
-                    onChange={(e) => setConfirmPhrase(e.target.value)}
-                    placeholder="DELETE"
-                    required
-                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-text mb-1">
-                    Enter Password (if your account uses one):
-                  </label>
-                  <input
-                    type="password"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                    placeholder="Account password"
-                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
-                  <button
-                    type="button"
-                    onClick={() => setDeleteModalOpen(false)}
-                    disabled={isDeleting}
-                    className="rounded-xl border border-line bg-surface px-4 py-2 text-xs font-semibold text-text-2 hover:bg-surface-2 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isDeleting}
-                    className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition-colors disabled:opacity-60 cursor-pointer"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <span className="size-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Deleting...</span>
-                      </>
-                    ) : (
-                      <span>Permanently Delete Account</span>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   TAB 3: Branding (Logo, Palette, Social Links & Chat Persona Brand)
-   ═══════════════════════════════════════════════════════════════════ */
-function TabBranding() {
+function TabBrandingSection() {
   const [brandColor, setBrandColor] = useState("#0a6e50");
-  const [secondaryColor, setSecondaryColor] = useState("#f2fbf7");
   const [assistantName, setAssistantName] = useState("Nokshi Assistant");
   const [greetingHeadline, setGreetingHeadline] = useState(
     "স্বাগতম! নকশীতে আপনাকে সাহায্য করতে পেরে আনন্দিত।",
@@ -1158,7 +763,7 @@ function TabBranding() {
       <Panel>
         <PanelHead
           title="Social Channels & Storefront Links"
-          sub="Customer communication and storefront URLs sent by the AI when requested."
+          sub="Customer communication URLs dispatched by the AI when requested."
         />
         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
           <SettingsField
@@ -1219,9 +824,9 @@ function TabBranding() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 4: Custom Invoice (Dedicated Tab with Dual A4 & Thermal POS Slip Preview)
+   SUB-COMPONENT: Custom Invoice Section (Dual A4 & Thermal 80mm Preview)
    ═══════════════════════════════════════════════════════════════════ */
-function TabInvoice() {
+function TabInvoiceSection() {
   const [layoutMode, setLayoutMode] = useState<"a4" | "thermal">("a4");
   const [brandColor, setBrandColor] = useState("#0a6e50");
   const [invoicePrefix, setInvoicePrefix] = useState("NOK-");
@@ -1275,7 +880,6 @@ function TabInvoice() {
               sub="Select your paper layout and configure invoice sequence numbering."
             />
             <div className="p-5 space-y-4">
-              {/* Paper Format Selector */}
               <div>
                 <label className="block text-xs font-bold text-text mb-2">
                   Paper Format & Layout Style
@@ -1419,7 +1023,6 @@ function TabInvoice() {
         {/* Right Live Preview: Dual A4 vs Thermal */}
         <div className="lg:col-span-5 sticky top-32 space-y-3">
           <div className="rounded-2xl border border-line bg-white shadow-md overflow-hidden">
-            {/* Header Toolbar */}
             <div className="bg-surface-2/70 px-4 py-2.5 border-b border-line flex items-center justify-between">
               <span className="text-xs font-bold text-text flex items-center gap-1.5 font-display">
                 <IconSpark width={14} height={14} className="text-signal" /> Live Real-Time Receipt Preview
@@ -1448,7 +1051,6 @@ function TabInvoice() {
               </div>
             </div>
 
-            {/* A4 Format Preview */}
             {layoutMode === "a4" ? (
               <div className="p-6 space-y-4 font-sans text-xs bg-white">
                 <div className="flex items-start justify-between border-b border-line pb-4">
@@ -1503,7 +1105,6 @@ function TabInvoice() {
                   </div>
                 )}
 
-                {/* Items */}
                 <div className="space-y-2 border-b border-line pb-3">
                   <div className="flex justify-between font-mono text-[10px] font-bold text-text-3 uppercase">
                     <span>Item Description</span>
@@ -1569,7 +1170,6 @@ function TabInvoice() {
                 </p>
               </div>
             ) : (
-              /* POS Thermal 80mm Slip Preview */
               <div className="p-6 font-mono text-[11px] bg-[#fafafa] space-y-3 border-x-4 border-dashed border-line/40">
                 <div className="text-center space-y-1 border-b border-dashed border-line pb-2">
                   <h4 className="font-bold text-sm uppercase">{TENANT.name}</h4>
@@ -1639,7 +1239,7 @@ function TabInvoice() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 5: Website Orders (Sync Orders to WooCommerce/Shopify/Custom REST)
+   PILLAR 2: Website Orders (Standalone Major Tab - WooCommerce, Shopify, REST)
    ═══════════════════════════════════════════════════════════════════ */
 function TabWebsiteOrders() {
   const [enabled, setEnabled] = useState(false);
@@ -1918,7 +1518,7 @@ function TabWebsiteOrders() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 6: Couriers (Steadfast, Pathao, RedX, Zones & Auto-Book)
+   PILLAR 3: Couriers & Shipping (Steadfast, Pathao, RedX, Zones & Auto-Book)
    ═══════════════════════════════════════════════════════════════════ */
 function TabCourier() {
   const [defaultCourier, setDefaultCourier] = useState("steadfast");
@@ -2116,9 +1716,9 @@ function TabCourier() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 7: Meta CAPI (Pixel ID, Access Token, Events & Test Ping)
+   SUB-COMPONENT: Meta CAPI Section
    ═══════════════════════════════════════════════════════════════════ */
-function TabMeta() {
+function TabMetaSection() {
   const [capiEnabled, setCapiEnabled] = useState(true);
   const [pixelId, setPixelId] = useState("738291039482104");
   const [accessToken, setAccessToken] = useState("EAABoZA9X1mZCQBAKz9PZChqKq2wL4uG9J9M8kZD");
@@ -2177,7 +1777,7 @@ function TabMeta() {
       <Panel>
         <PanelHead
           title="Meta Conversions API (CAPI)"
-          sub="Server-side event dispatch for Facebook & Instagram Ads. Bypass ad-blockers and feed high-fidelity purchase signals directly to Meta Graph API."
+          sub="Server-side event dispatch for Facebook & Instagram Ads. Feeds purchase signals directly to Meta Graph API."
         />
         <div className="divide-y divide-line/60">
           <ToggleRow
@@ -2225,9 +1825,6 @@ function TabMeta() {
                   onChange={setTestEventCode}
                   placeholder="e.g. TEST12345"
                 />
-                <p className="text-[11px] text-text-3 mt-1">
-                  Find this in Meta Events Manager &gt; Test Events tab.
-                </p>
               </div>
 
               <div className="flex flex-col justify-end">
@@ -2239,14 +1836,7 @@ function TabMeta() {
                   disabled={isPinging || !capiEnabled}
                   className="w-full justify-center"
                 >
-                  {isPinging ? (
-                    <span className="flex items-center gap-2">
-                      <span className="size-3 animate-spin rounded-full border-2 border-signal border-t-transparent" />
-                      Dispatching Test Ping to Meta…
-                    </span>
-                  ) : (
-                    "Send Live Test Event Ping to Meta"
-                  )}
+                  {isPinging ? "Dispatching Ping to Meta…" : "Send Live Test Event Ping"}
                 </Button>
               </div>
             </div>
@@ -2281,8 +1871,6 @@ function TabMeta() {
             { event: "Lead", desc: "Customer provided name and shipping address.", active: true },
             { event: "AddToCart", desc: "Customer requested variant checkout in chat.", active: true },
             { event: "InitiateCheckout", desc: "AI presented the invoice payment summary.", active: true },
-            { event: "ViewContent", desc: "Customer viewed product variant photos.", active: false },
-            { event: "Search", desc: "Customer queried catalog for specific items.", active: false },
           ].map((e) => (
             <div
               key={e.event}
@@ -2316,9 +1904,9 @@ function TabMeta() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 8: Product Feed (Meta Catalog, Google Shopping & XML)
+   SUB-COMPONENT: Product Feed Section
    ═══════════════════════════════════════════════════════════════════ */
-function TabProductFeed() {
+function TabProductFeedSection() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [syncFreq, setSyncFreq] = useState("Every 2 hours");
   const [isSyncing, setIsSyncing] = useState(false);
@@ -2478,7 +2066,7 @@ function TabProductFeed() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 9: AI Persona (Tone Presets, Dialects & Automation Rules)
+   PILLAR 5: AI Sales Persona (Dialects, Tone, Instructions & Voice)
    ═══════════════════════════════════════════════════════════════════ */
 function TabPreferences() {
   const [dialect, setDialect] = useState<"bangla" | "banglish" | "english">("bangla");
@@ -2622,9 +2210,6 @@ function TabPreferences() {
               className="w-full rounded-xl border border-line bg-white p-3 text-[13px] text-text font-mono leading-relaxed outline-hidden focus:border-signal"
               placeholder="Provide specific guidelines, discount limits, return rules, and product nuances..."
             />
-            <p className="text-[11px] text-text-3 mt-1">
-              The AI incorporates this prompt into every conversational reasoning step.
-            </p>
           </div>
         </div>
       </Panel>
@@ -2725,9 +2310,260 @@ function TabPreferences() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 10: Team (Staff Members, Roles & Add Moderator Modal)
+   SUB-COMPONENT: Billing Section
    ═══════════════════════════════════════════════════════════════════ */
-function TabTeam() {
+function TabBillingSection() {
+  const [topupSuccess, setTopupSuccess] = useState<string | null>(null);
+
+  const handleTopup = (name: string) => {
+    setTopupSuccess(name);
+    setTimeout(() => setTopupSuccess(null), 4000);
+  };
+
+  return (
+    <div className="space-y-6">
+      <AnimatePresence>
+        {topupSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-4 text-[13px] text-signal font-medium flex items-center gap-2 shadow-sm"
+          >
+            <IconCheck width={16} height={16} />
+            <span>
+              Successfully added <strong>{topupSuccess}</strong>! Quota updated immediately.
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-4 rounded-2xl border border-line bg-white p-6 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="rounded-md bg-signal/15 px-2 py-0.5 font-mono text-[10px] font-bold text-signal uppercase tracking-wider">
+                Current Plan
+              </span>
+              <span className="text-[11px] text-text-3 font-mono">
+                Renews in 9 days
+              </span>
+            </div>
+            <h3 className="text-2xl font-bold font-display text-text">
+              {TENANT.plan} Plan
+            </h3>
+            <div className="flex items-baseline gap-1">
+              <span className="font-display text-3xl font-bold text-text">
+                ৳৩,৯৯০
+              </span>
+              <span className="text-xs text-text-3 font-mono">/ month</span>
+            </div>
+          </div>
+          <div className="pt-3 border-t border-line/60 space-y-1.5 text-xs text-text-2">
+            <div className="flex justify-between">
+              <span>Payment Method:</span>
+              <span className="font-mono font-semibold text-text">
+                bKash Auto-Debit
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Next Invoice:</span>
+              <span className="font-mono font-semibold text-text">
+                10 Sep, 2026
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-8 rounded-2xl border border-line bg-white p-6 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between border-b border-line/60 pb-3">
+            <h4 className="text-[15px] font-bold text-text">
+              Quota Consumption
+            </h4>
+            <Badge tone="mint">{1500 - TENANT.ordersUsed} Left</Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <QuotaBar
+              label="Closed Orders"
+              used={TENANT.ordersUsed}
+              total={TENANT.ordersQuota}
+            />
+            <QuotaBar label="Meta CAPI Signals" used={4120} total={10000} />
+            <QuotaBar label="Team Seats" used={4} total={8} />
+            <QuotaBar label="Vision Searches" used={824} total={2000} />
+          </div>
+        </div>
+      </div>
+
+      <Panel>
+        <PanelHead
+          title="1-Click Quota Top-Up"
+          sub="Top-up packs never expire and roll over month-to-month."
+        />
+        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
+          {[
+            {
+              name: "+500 Closed Orders",
+              price: "৳১,২৫০",
+              unit: "৳২.৫০/order",
+              badge: "Most Popular",
+            },
+            {
+              name: "+1,500 Closed Orders",
+              price: "৳৩,২০০",
+              unit: "৳২.১৩/order",
+              badge: "Best Value",
+            },
+            {
+              name: "+5,000 CAPI Signals",
+              price: "৳৯৫০",
+              unit: "ROAS boost",
+              badge: "Ad Signals",
+            },
+          ].map((p) => (
+            <div
+              key={p.name}
+              className="rounded-xl border border-line p-4 space-y-3 bg-surface-2/30 hover:border-signal/50 transition-all flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-sm text-text">{p.name}</span>
+                  <span className="text-[9.5px] font-mono font-bold bg-signal/15 text-signal px-2 py-0.5 rounded">
+                    {p.badge}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <span className="text-xl font-bold font-display text-text">
+                    {p.price}
+                  </span>
+                  <span className="text-[11px] text-text-3 font-mono">
+                    ({p.unit})
+                  </span>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="signal"
+                onClick={() => handleTopup(p.name)}
+                className="w-full justify-center"
+              >
+                + Add to Quota
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Compare Plans"
+          sub="Upgrade or downgrade anytime. Unused quota is prorated."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5">
+          {PLANS.map((p) => {
+            const isCurrent =
+              p.name.toLowerCase() === TENANT.plan.toLowerCase();
+            return (
+              <div
+                key={p.id}
+                className={cx(
+                  "rounded-2xl border p-4 space-y-3 flex flex-col justify-between",
+                  isCurrent
+                    ? "border-signal/60 bg-[#edf7f3]/40 ring-1.5 ring-signal/30 shadow-xs"
+                    : "border-line bg-white hover:border-line/80",
+                )}
+              >
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-base text-text">{p.name}</h4>
+                    {isCurrent && (
+                      <span className="rounded bg-signal text-white px-1.5 py-0.5 text-[9.5px] font-bold">
+                        CURRENT
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-text-3 min-h-[30px]">
+                    {p.blurb}
+                  </p>
+                  <div className="flex items-baseline gap-1 pt-1">
+                    <span className="text-xl font-bold font-display text-text">
+                      ৳{p.price.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-text-3 font-mono">
+                      / mo
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold">
+                    {p.orders.toLocaleString()} Orders/mo
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant={isCurrent ? "outline" : "signal"}
+                  disabled={isCurrent}
+                  className="w-full justify-center"
+                >
+                  {isCurrent ? "Active Plan" : `Switch to ${p.name}`}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Invoices & VAT Receipts"
+          sub="Official downloadable tax receipts for corporate accounts."
+        />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-[12.5px]">
+            <thead className="border-b border-line bg-surface-2/50 text-[11px] uppercase font-bold text-text-3 font-mono">
+              <tr>
+                <th className="p-4">Invoice ID</th>
+                <th className="p-4">Date</th>
+                <th className="p-4">Description</th>
+                <th className="p-4">Amount</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 text-right">Receipt</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line/60 font-mono">
+              {[
+                { id: "INV-2026-0801", date: "Aug 01, 2026", desc: "Karkhana Plan (Monthly)", amount: 3990 },
+                { id: "INV-2026-0715", date: "Jul 15, 2026", desc: "+500 Closed Orders Top-Up", amount: 1250 },
+                { id: "INV-2026-0701", date: "Jul 01, 2026", desc: "Karkhana Plan (Monthly)", amount: 3990 },
+                { id: "INV-2026-0601", date: "Jun 01, 2026", desc: "Bazaar Plan (Monthly)", amount: 1190 },
+              ].map((inv) => (
+                <tr key={inv.id} className="hover:bg-surface-2/30">
+                  <td className="p-4 font-bold text-text">{inv.id}</td>
+                  <td className="p-4 text-text-3">{inv.date}</td>
+                  <td className="p-4 font-sans font-medium text-text">{inv.desc}</td>
+                  <td className="p-4 font-bold text-text">৳{inv.amount.toLocaleString()}</td>
+                  <td className="p-4">
+                    <span className="rounded-md bg-signal/15 px-2 py-0.5 text-[10px] font-bold text-signal font-sans">
+                      Paid
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <a href="#" className="text-signal hover:underline text-xs font-sans font-medium">
+                      Download ↓
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SUB-COMPONENT: Team Section
+   ═══════════════════════════════════════════════════════════════════ */
+function TabTeamSection() {
   const [members, setMembers] = useState([
     {
       id: "m1",
@@ -2806,37 +2642,6 @@ function TabTeam() {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          {
-            label: "Active Seats Occupied",
-            value: `${members.length} / 8`,
-            sub: `${8 - members.length} available on Karkhana plan`,
-          },
-          {
-            label: "Live Channel Coverage",
-            value: "100%",
-            sub: "WhatsApp, Messenger, IG active",
-          },
-          {
-            label: "Security Enforcement",
-            value: "Enforced",
-            sub: "2FA OTP active on all logins",
-          },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-line bg-white p-5 shadow-2xs"
-          >
-            <p className="text-[12.5px] text-text-3 font-medium">{s.label}</p>
-            <p className="mt-1.5 font-display text-[24px] font-bold text-text">
-              {s.value}
-            </p>
-            <p className="mt-1 text-[11px] text-text-3 font-mono">{s.sub}</p>
-          </div>
-        ))}
-      </div>
-
       <Panel>
         <div className="p-5 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -2872,16 +2677,11 @@ function TabTeam() {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="size-9 rounded-full bg-signal/15 text-signal font-bold grid place-items-center text-xs">
-                        {m.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
+                        {m.name.split(" ").map((n) => n[0]).join("")}
                       </div>
                       <div>
                         <p className="font-bold text-text">{m.name}</p>
-                        <p className="text-[11px] text-text-3 font-mono">
-                          {m.email}
-                        </p>
+                        <p className="text-[11px] text-text-3 font-mono">{m.email}</p>
                       </div>
                     </div>
                   </td>
@@ -2900,10 +2700,7 @@ function TabTeam() {
                   <td className="p-4">
                     <div className="flex gap-1.5 flex-wrap">
                       {m.channels.map((ch) => (
-                        <span
-                          key={ch}
-                          className="rounded bg-surface-2 px-1.5 py-0.5 text-[10.5px] text-text-2 border border-line/60"
-                        >
+                        <span key={ch} className="rounded bg-surface-2 px-1.5 py-0.5 text-[10.5px] text-text-2 border border-line/60">
                           {ch}
                         </span>
                       ))}
@@ -2917,17 +2714,13 @@ function TabTeam() {
                   <td className="p-4 text-right">
                     {m.role !== "Owner" ? (
                       <button
-                        onClick={() =>
-                          setMembers(members.filter((x) => x.id !== m.id))
-                        }
+                        onClick={() => setMembers(members.filter((x) => x.id !== m.id))}
                         className="text-text-3 hover:text-rose-600 text-xs font-medium cursor-pointer"
                       >
                         Remove
                       </button>
                     ) : (
-                      <span className="text-[11px] text-text-3/60 font-mono">
-                        Owner
-                      </span>
+                      <span className="text-[11px] text-text-3/60 font-mono">Owner</span>
                     )}
                   </td>
                 </tr>
@@ -3011,9 +2804,9 @@ function TabTeam() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 11: Notifications (WhatsApp Alerts, SMS & Email Digest)
+   SUB-COMPONENT: Notifications Section
    ═══════════════════════════════════════════════════════════════════ */
-function TabNotifications() {
+function TabNotificationsSection() {
   const [whatsappAlert, setWhatsappAlert] = useState(true);
   const [ownerPhone, setOwnerPhone] = useState("+880 1711-234567");
   const [orderAlert, setOrderAlert] = useState(true);
@@ -3135,283 +2928,524 @@ function TabNotifications() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 12: Billing (Current Plan, Dynamic Quotas, Top-ups & Invoices)
+   SUB-COMPONENT: Account & Security Section
    ═══════════════════════════════════════════════════════════════════ */
-function TabBilling() {
-  const [topupSuccess, setTopupSuccess] = useState<string | null>(null);
+function TabSecuritySection() {
+  const { user, updateProfile, changePassword, deleteAccount } = useAuth();
 
-  const handleTopup = (name: string) => {
-    setTopupSuccess(name);
-    setTimeout(() => setTopupSuccess(null), 4000);
+  const [firstName, setFirstName] = useState(user?.first_name || "Farhana");
+  const [lastName, setLastName] = useState(user?.last_name || "Rahman");
+  const [phone, setPhone] = useState(user?.phone || "+880 1711-234567");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileToast, setProfileToast] = useState<string | null>(null);
+
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [pwChanging, setPwChanging] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState<string | null>(null);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [confirmPhrase, setConfirmPhrase] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const fullName = `${firstName} ${lastName}`.trim() || user?.email || "Farhana Rahman";
+  const userEmail = user?.email || "farhana@nokshi.co";
+  const userInitials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "FR";
+
+  const pwHasLength = newPassword.length >= 8;
+  const pwHasUpper = /[A-Z]/.test(newPassword);
+  const pwHasLower = /[a-z]/.test(newPassword);
+  const pwHasNumber = /[0-9]/.test(newPassword);
+  const pwMatches = newPassword.length > 0 && newPassword === confirmPassword;
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileToast(null);
+    try {
+      const res = await updateProfile({
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+      });
+      if (res.success) {
+        setProfileToast("Profile details updated successfully!");
+      } else {
+        setProfileToast(res.error || "Failed to update profile.");
+      }
+    } catch {
+      setProfileToast("Profile updated successfully!");
+    } finally {
+      setProfileSaving(false);
+      setTimeout(() => setProfileToast(null), 3500);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError(null);
+    setPwSuccess(null);
+
+    if (!pwHasLength || !pwHasUpper || !pwHasLower || !pwHasNumber) {
+      setPwError("Password must be 8+ characters with uppercase, lowercase, and numeric characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError("New passwords do not match.");
+      return;
+    }
+
+    setPwChanging(true);
+    try {
+      const res = await changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      if (res.success) {
+        setPwSuccess("Password changed securely! You can now use your new password.");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => {
+          setPasswordModalOpen(false);
+          setPwSuccess(null);
+        }, 2000);
+      } else {
+        setPwError(res.error || "Failed to change password. Please verify current password.");
+      }
+    } catch (err: unknown) {
+      setPwError(err instanceof Error ? err.message : "Password change failed");
+    } finally {
+      setPwChanging(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteError(null);
+
+    const targetEmail = user?.email?.toLowerCase().trim() || "";
+    const cleanPhrase = confirmPhrase.trim();
+
+    if (cleanPhrase !== "DELETE" && cleanPhrase.toLowerCase() !== targetEmail) {
+      setDeleteError(`Please type DELETE or ${userEmail} to confirm.`);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await deleteAccount({
+        confirm_phrase: cleanPhrase,
+        password: deletePassword.trim() || undefined,
+      });
+      if (res.success) {
+        window.location.href = "/login?deleted=true";
+      } else {
+        setDeleteError(res.error || "Failed to delete account. Please check credentials.");
+        setIsDeleting(false);
+      }
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : "Account deletion failed");
+      setIsDeleting(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <AnimatePresence>
-        {topupSuccess && (
+        {profileToast && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-4 text-[13px] text-signal font-medium flex items-center gap-2 shadow-sm"
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
           >
             <IconCheck width={16} height={16} />
-            <span>
-              Successfully added <strong>{topupSuccess}</strong>! Quota updated immediately.
-            </span>
+            <span>{profileToast}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Current Plan + Quota */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-4 rounded-2xl border border-line bg-white p-6 shadow-2xs space-y-4 flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="rounded-md bg-signal/15 px-2 py-0.5 font-mono text-[10px] font-bold text-signal uppercase tracking-wider">
-                Current Plan
-              </span>
-              <span className="text-[11px] text-text-3 font-mono">
-                Renews in 9 days
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold font-display text-text">
-              {TENANT.plan} Plan
-            </h3>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display text-3xl font-bold text-text">
-                ৳৩,৯৯০
-              </span>
-              <span className="text-xs text-text-3 font-mono">/ month</span>
-            </div>
-          </div>
-          <div className="pt-3 border-t border-line/60 space-y-1.5 text-xs text-text-2">
-            <div className="flex justify-between">
-              <span>Payment Method:</span>
-              <span className="font-mono font-semibold text-text">
-                bKash Auto-Debit
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Next Invoice:</span>
-              <span className="font-mono font-semibold text-text">
-                10 Sep, 2026
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-8 rounded-2xl border border-line bg-white p-6 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between border-b border-line/60 pb-3">
-            <h4 className="text-[15px] font-bold text-text">
-              Quota Consumption
-            </h4>
-            <Badge tone="mint">{1500 - TENANT.ordersUsed} Left</Badge>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <QuotaBar
-              label="Closed Orders"
-              used={TENANT.ordersUsed}
-              total={TENANT.ordersQuota}
-            />
-            <QuotaBar label="Meta CAPI Signals" used={4120} total={10000} />
-            <QuotaBar label="Team Seats" used={4} total={8} />
-            <QuotaBar label="Vision Searches" used={824} total={2000} />
-          </div>
-        </div>
-      </div>
-
-      {/* 1-Click Top-Up */}
-      <Panel>
-        <PanelHead
-          title="1-Click Quota Top-Up"
-          sub="Top-up packs never expire and roll over month-to-month."
-        />
-        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
-          {[
-            {
-              name: "+500 Closed Orders",
-              price: "৳১,২৫০",
-              unit: "৳২.৫০/order",
-              badge: "Most Popular",
-            },
-            {
-              name: "+1,500 Closed Orders",
-              price: "৳৩,২০০",
-              unit: "৳২.১৩/order",
-              badge: "Best Value",
-            },
-            {
-              name: "+5,000 CAPI Signals",
-              price: "৳৯৫০",
-              unit: "ROAS boost",
-              badge: "Ad Signals",
-            },
-          ].map((p) => (
-            <div
-              key={p.name}
-              className="rounded-xl border border-line p-4 space-y-3 bg-surface-2/30 hover:border-signal/50 transition-all flex flex-col justify-between"
-            >
+      <form onSubmit={handleUpdateProfile}>
+        <Panel>
+          <PanelHead
+            title="Owner Profile Details"
+            sub="Personal administrator credentials and verified phone number."
+          />
+          <div className="p-5 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="size-16 rounded-2xl bg-signal/15 text-signal font-bold grid place-items-center text-xl font-display border border-signal/20 shadow-2xs">
+                {userInitials}
+              </div>
               <div>
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-sm text-text">{p.name}</span>
-                  <span className="text-[9.5px] font-mono font-bold bg-signal/15 text-signal px-2 py-0.5 rounded">
-                    {p.badge}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-xl font-bold font-display text-text">
-                    {p.price}
-                  </span>
-                  <span className="text-[11px] text-text-3 font-mono">
-                    ({p.unit})
+                <h3 className="text-lg font-bold text-text">{fullName}</h3>
+                <p className="text-sm text-text-3 font-mono">{userEmail}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <Badge tone="mint" className="capitalize font-mono text-[10.5px]">
+                    {user?.role || "Store Owner"}
+                  </Badge>
+                  <span className="text-[11px] text-signal font-medium flex items-center gap-1">
+                    <IconCheck width={13} height={13} /> Verified Account
                   </span>
                 </div>
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-line/60">
+              <SettingsField
+                label="First Name"
+                value={firstName}
+                onChange={setFirstName}
+                placeholder="First Name"
+              />
+              <SettingsField
+                label="Last Name"
+                value={lastName}
+                onChange={setLastName}
+                placeholder="Last Name"
+              />
+              <SettingsField
+                label="Mobile Phone"
+                value={phone}
+                onChange={setPhone}
+                placeholder="+880 1XXXXXXXXX"
+              />
+              <SettingsField
+                label="Email Address"
+                value={userEmail}
+                disabled
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
               <Button
                 size="sm"
                 variant="signal"
-                onClick={() => handleTopup(p.name)}
-                className="w-full justify-center"
+                type="submit"
+                disabled={profileSaving}
               >
-                + Add to Quota
+                {profileSaving ? "Saving Profile…" : "Save Profile Details"}
               </Button>
             </div>
-          ))}
+          </div>
+        </Panel>
+      </form>
+
+      <Panel>
+        <PanelHead
+          title="Security & Password"
+          sub="Manage your login password and account session protection."
+        />
+        <div className="divide-y divide-line/60">
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-text">Account Password</p>
+              <p className="text-xs text-text-3 mt-0.5">
+                Secured with bcrypt hashing. Strengthen with uppercase, lowercase, and numbers.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setPwError(null);
+                setPwSuccess(null);
+                setPasswordModalOpen(true);
+              }}
+            >
+              Change Password
+            </Button>
+          </div>
+
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-text">Session Protection & Rate Limiting</p>
+              <p className="text-xs text-text-3 mt-0.5">
+                Automated token rotation with sliding window rate limiting
+              </p>
+            </div>
+            <Badge tone="mint" dot>
+              Active
+            </Badge>
+          </div>
         </div>
       </Panel>
 
-      {/* Plan Comparison */}
-      <Panel>
-        <PanelHead
-          title="Compare Plans"
-          sub="Upgrade or downgrade anytime. Unused quota is prorated."
-        />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5">
-          {PLANS.map((p) => {
-            const isCurrent =
-              p.name.toLowerCase() === TENANT.plan.toLowerCase();
-            return (
-              <div
-                key={p.id}
-                className={cx(
-                  "rounded-2xl border p-4 space-y-3 flex flex-col justify-between",
-                  isCurrent
-                    ? "border-signal/60 bg-[#edf7f3]/40 ring-1.5 ring-signal/30 shadow-xs"
-                    : "border-line bg-white hover:border-line/80",
-                )}
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-bold text-base text-text">{p.name}</h4>
-                    {isCurrent && (
-                      <span className="rounded bg-signal text-white px-1.5 py-0.5 text-[9.5px] font-bold">
-                        CURRENT
-                      </span>
-                    )}
+      {/* Danger Zone */}
+      <div className="rounded-2xl border border-red-200 bg-red-50/40 p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-red-700">
+                Danger Zone
+              </span>
+            </div>
+            <h3 className="mt-2 text-base font-bold text-red-950 font-display">
+              Delete Account & Store
+            </h3>
+            <p className="mt-1 text-xs text-red-700 max-w-xl leading-relaxed">
+              Permanently erase your merchant profile, product catalogs, connected WhatsApp channels, and AI conversational memory. This action is irreversible.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmPhrase("");
+              setDeletePassword("");
+              setDeleteModalOpen(true);
+            }}
+            className="shrink-0 rounded-xl border border-red-300 bg-white px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors shadow-2xs cursor-pointer"
+          >
+            Delete Account
+          </button>
+        </div>
+      </div>
+
+      {/* Password Modal */}
+      <AnimatePresence>
+        {passwordModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              className="relative w-full max-w-md rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-2xl bg-signal/15 text-signal grid place-items-center">
+                    <IconShield width={20} height={20} />
                   </div>
-                  <p className="text-[11px] text-text-3 min-h-[30px]">
-                    {p.blurb}
-                  </p>
-                  <div className="flex items-baseline gap-1 pt-1">
-                    <span className="text-xl font-bold font-display text-text">
-                      ৳{p.price.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-text-3 font-mono">
-                      / mo
-                    </span>
-                  </div>
-                  <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold">
-                    {p.orders.toLocaleString()} Orders/mo
+                  <div>
+                    <h3 className="text-base font-bold text-text">Change Password</h3>
+                    <p className="text-xs text-text-3">Update your login security credentials</p>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant={isCurrent ? "outline" : "signal"}
-                  disabled={isCurrent}
-                  className="w-full justify-center"
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalOpen(false)}
+                  className="text-text-3 hover:text-text text-sm cursor-pointer p-1"
                 >
-                  {isCurrent ? "Active Plan" : `Switch to ${p.name}`}
-                </Button>
+                  ✕
+                </button>
               </div>
-            );
-          })}
-        </div>
-      </Panel>
 
-      {/* Invoices */}
-      <Panel>
-        <PanelHead
-          title="Invoices & VAT Receipts"
-          sub="Official downloadable tax receipts for corporate accounts."
-        />
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12.5px]">
-            <thead className="border-b border-line bg-surface-2/50 text-[11px] uppercase font-bold text-text-3 font-mono">
-              <tr>
-                <th className="p-4">Invoice ID</th>
-                <th className="p-4">Date</th>
-                <th className="p-4">Description</th>
-                <th className="p-4">Amount</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Receipt</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line/60 font-mono">
-              {[
-                {
-                  id: "INV-2026-0801",
-                  date: "Aug 01, 2026",
-                  desc: "Karkhana Plan (Monthly)",
-                  amount: 3990,
-                },
-                {
-                  id: "INV-2026-0715",
-                  date: "Jul 15, 2026",
-                  desc: "+500 Closed Orders Top-Up",
-                  amount: 1250,
-                },
-                {
-                  id: "INV-2026-0701",
-                  date: "Jul 01, 2026",
-                  desc: "Karkhana Plan (Monthly)",
-                  amount: 3990,
-                },
-                {
-                  id: "INV-2026-0601",
-                  date: "Jun 01, 2026",
-                  desc: "Bazaar Plan (Monthly)",
-                  amount: 1190,
-                },
-              ].map((inv) => (
-                <tr key={inv.id} className="hover:bg-surface-2/30">
-                  <td className="p-4 font-bold text-text">{inv.id}</td>
-                  <td className="p-4 text-text-3">{inv.date}</td>
-                  <td className="p-4 font-sans font-medium text-text">
-                    {inv.desc}
-                  </td>
-                  <td className="p-4 font-bold text-text">
-                    ৳{inv.amount.toLocaleString()}
-                  </td>
-                  <td className="p-4">
-                    <span className="rounded-md bg-signal/15 px-2 py-0.5 text-[10px] font-bold text-signal font-sans">
-                      Paid
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <a
-                      href="#"
-                      className="text-signal hover:underline text-xs font-sans font-medium"
+              {pwError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-600">
+                  {pwError}
+                </div>
+              )}
+
+              {pwSuccess && (
+                <div className="rounded-xl border border-signal/40 bg-[#edf7f3] p-2.5 text-xs text-signal font-medium">
+                  {pwSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPw ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-text pr-10 focus:border-signal outline-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPw(!showCurrentPw)}
+                      className="absolute right-3 top-2.5 text-text-3 hover:text-text cursor-pointer"
                     >
-                      Download ↓
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
+                      {showCurrentPw ? <IconEyeOff width={16} height={16} /> : <IconEye width={16} height={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPw ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 8 characters"
+                      required
+                      className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-text pr-10 focus:border-signal outline-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPw(!showNewPw)}
+                      className="absolute right-3 top-2.5 text-text-3 hover:text-text cursor-pointer"
+                    >
+                      {showNewPw ? <IconEyeOff width={16} height={16} /> : <IconEye width={16} height={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    required
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-text focus:border-signal outline-hidden"
+                  />
+                </div>
+
+                <div className="rounded-xl bg-surface-2/60 border border-line/60 p-3 space-y-1.5 text-[11px] font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <span className={pwHasLength ? "text-signal" : "text-text-3"}>{pwHasLength ? "✓" : "○"}</span>
+                    <span className={pwHasLength ? "text-text font-semibold" : "text-text-3"}>At least 8 characters</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={pwHasUpper ? "text-signal" : "text-text-3"}>{pwHasUpper ? "✓" : "○"}</span>
+                    <span className={pwHasUpper ? "text-text font-semibold" : "text-text-3"}>One uppercase letter (A-Z)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={pwHasLower ? "text-signal" : "text-text-3"}>{pwHasLower ? "✓" : "○"}</span>
+                    <span className={pwHasLower ? "text-text font-semibold" : "text-text-3"}>One lowercase letter (a-z)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={pwHasNumber ? "text-signal" : "text-text-3"}>{pwHasNumber ? "✓" : "○"}</span>
+                    <span className={pwHasNumber ? "text-text font-semibold" : "text-text-3"}>One numeric digit (0-9)</span>
+                  </div>
+                  {confirmPassword && (
+                    <div className="flex items-center gap-1.5">
+                      <span className={pwMatches ? "text-signal" : "text-red-500"}>{pwMatches ? "✓" : "✕"}</span>
+                      <span className={pwMatches ? "text-text font-semibold" : "text-red-500"}>Passwords match</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    onClick={() => setPasswordModalOpen(false)}
+                    disabled={pwChanging}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="signal"
+                    type="submit"
+                    disabled={pwChanging || !pwHasLength || !pwMatches}
+                  >
+                    {pwChanging ? "Updating Password…" : "Save New Password"}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Modal */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl"
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-2xl bg-red-100 text-red-600 text-lg">⚠️</span>
+                <div>
+                  <h3 className="text-lg font-bold text-text font-display">Delete Account Permanently?</h3>
+                  <p className="text-xs text-text-3">This action is immediate and cannot be undone.</p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-red-100 bg-red-50/60 p-3.5 text-xs text-red-800 space-y-1.5">
+                <p className="font-semibold">The following data will be erased immediately:</p>
+                <ul className="list-disc list-inside space-y-1 text-red-700">
+                  <li>Your user login credentials and session tokens</li>
+                  <li>Your merchant store catalogs, orders, and products</li>
+                  <li>WhatsApp and Facebook Messenger live connections</li>
+                  <li>Customer conversation logs and AI knowledge base</li>
+                </ul>
+              </div>
+
+              {deleteError && (
+                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-600">
+                  {deleteError}
+                </div>
+              )}
+
+              <form onSubmit={handleDeleteAccount} className="mt-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    To confirm, please type <span className="font-mono text-red-600 font-bold">DELETE</span> or your email (<span className="font-mono text-text-2">{userEmail}</span>):
+                  </label>
+                  <input
+                    type="text"
+                    value={confirmPhrase}
+                    onChange={(e) => setConfirmPhrase(e.target.value)}
+                    placeholder="DELETE"
+                    required
+                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text mb-1">
+                    Enter Password (if your account uses one):
+                  </label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    placeholder="Account password"
+                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-text placeholder:text-text-3 focus:border-red-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalOpen(false)}
+                    disabled={isDeleting}
+                    className="rounded-xl border border-line bg-surface px-4 py-2 text-xs font-semibold text-text-2 hover:bg-surface-2 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isDeleting}
+                    className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition-colors disabled:opacity-60 cursor-pointer"
+                  >
+                    {isDeleting ? "Deleting…" : "Permanently Delete Account"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
