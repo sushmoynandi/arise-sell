@@ -219,7 +219,9 @@ interface SettingsContextType {
   isLoading: boolean;
   isSaving: boolean;
   updateSettings: (partial: Partial<MerchantSettings>) => Promise<boolean>;
-  createStore: (partial: Partial<MerchantSettings>) => Promise<boolean>;
+  createStore: (
+    partial: Partial<MerchantSettings>,
+  ) => Promise<{ success: boolean; error?: string }>;
   refreshSettings: () => Promise<void>;
 }
 
@@ -229,7 +231,7 @@ const SettingsContext = createContext<SettingsContextType>({
   isLoading: false,
   isSaving: false,
   updateSettings: async () => false,
-  createStore: async () => false,
+  createStore: async () => ({ success: false }),
   refreshSettings: async () => {},
 });
 
@@ -272,7 +274,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [loadSettings]);
 
   const createStore = useCallback(
-    async (partial: Partial<MerchantSettings>): Promise<boolean> => {
+    async (
+      partial: Partial<MerchantSettings>,
+    ): Promise<{ success: boolean; error?: string }> => {
       setIsSaving(true);
       try {
         const res = await api.merchants.createStore(
@@ -285,12 +289,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             has_store: true,
             hasStore: true,
           }));
-          return true;
+          return { success: true };
         }
-        return false;
-      } catch (err) {
-        console.error("Failed to create store:", err);
-        return false;
+        return { success: false, error: "Failed to create store" };
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to create store";
+        console.error("Failed to create store:", msg);
+        return { success: false, error: msg };
       } finally {
         setIsSaving(false);
       }

@@ -127,6 +127,14 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         last_login=datetime.now(timezone.utc),
     )
     db.add(user)
+    await db.flush()
+
+    biz.settings_data = {
+        "owner_id": str(user.id),
+        "owner_email": clean_email,
+        "owner_name": f"{first_name} {last_name}".strip() or "Store Owner",
+    }
+
     await db.commit()
     await db.refresh(user)
 
@@ -568,6 +576,14 @@ async def google_auth(
                 has_password=False,
             )
             db.add(user)
+            await db.flush()
+
+            biz.settings_data = {
+                "owner_id": str(user.id),
+                "owner_email": profile.email.lower(),
+                "owner_name": f"{profile.first_name} {profile.last_name}".strip() or "Store Owner",
+            }
+
             await db.commit()
             await db.refresh(user)
     except Exception:

@@ -44,6 +44,9 @@ class User(Base, TimestampMixin, TenantMixin):
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     auth_provider: Mapped[str] = mapped_column(String(32), default="local", nullable=False)
     has_password: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    plan: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    ai_quota: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ai_used: Mapped[int | None] = mapped_column(Integer, default=0, nullable=True)
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     scheduled_deletion_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

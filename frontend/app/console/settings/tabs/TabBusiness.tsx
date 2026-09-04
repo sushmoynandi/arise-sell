@@ -160,8 +160,8 @@ export function TabBusiness() {
       };
 
       if (isNoStore) {
-        const ok = await createStore(payload);
-        if (ok) {
+        const result = await createStore(payload);
+        if (result.success) {
           setSavedToastMessage(
             "Store created successfully! Welcome to your new store workspace.",
           );
@@ -169,10 +169,11 @@ export function TabBusiness() {
           setTimeout(() => setSavedToast(false), 4000);
         } else {
           setSavedToastMessage(
-            "Failed to create store. Please check your store name.",
+            result.error ||
+              "Failed to create store. Please check your store name.",
           );
           setSavedToast(true);
-          setTimeout(() => setSavedToast(false), 4000);
+          setTimeout(() => setSavedToast(false), 5000);
         }
       } else {
         await updateSettings(payload);

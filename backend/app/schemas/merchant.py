@@ -83,6 +83,7 @@ class TeamMemberResponse(BaseModel):
     platforms: list[str] = []
     permissions: list[str] = []
     is_owner: bool = False
+    avatar_url: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -167,6 +168,7 @@ class CreateStoreRequest(BaseModel):
 
     name: str
     name_bn: str | None = None
+    plan: str | None = None
     kind: str | None = None
     tagline: str | None = None
     website: str | None = None
@@ -197,6 +199,11 @@ class DeleteStoreRequest(BaseModel):
 
 
 class DeleteStoreResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     success: bool = True
     deleted_store_name: str
     message: str = "Store and all associated channels, products, and customer conversations have been permanently deleted."
+    new_store_created: bool = False
+    active_store_name: str | None = None
+    active_store_id: str | None = None

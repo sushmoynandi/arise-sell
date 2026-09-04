@@ -38,6 +38,7 @@ export interface TeamMemberData {
   platforms: string[];
   permissions: string[];
   is_owner: boolean;
+  avatar_url?: string | null;
 }
 
 class ApiClient {
@@ -392,6 +393,10 @@ class ApiClient {
   // --- Merchant Settings ---
   public merchants = {
     getProfile: () => this.request<unknown>("/merchants/profile"),
+    quickCreateStore: () =>
+      this.request<unknown>("/merchants/quick-create-store", {
+        method: "POST",
+      }),
     createStore: (storeData: Record<string, unknown>) =>
       this.request<unknown>("/merchants/store", {
         method: "POST",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useEffect, type ReactNode } from "react";
+import { Suspense, useState, useEffect, useMemo, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
@@ -10,7 +10,6 @@ import { Avatar, Wordmark } from "@/components/ui/primitives";
 import { useAuth } from "@/lib/auth-context";
 import api, { type StoreWorkspace } from "@/lib/api-client";
 import {
-  CHANNEL_ICON,
   NAV_ICON,
   IconBell,
   IconBot,
@@ -425,7 +424,34 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     }
   };
 
+  const [isCreatingStore, setIsCreatingStore] = useState(false);
+
+  const handleCreateDefaultStore = async () => {
+    if (isCreatingStore) return;
+    try {
+      setIsCreatingStore(true);
+      await api.merchants.quickCreateStore();
+      setStoreDropdownOpen(false);
+      window.location.href = "/console";
+    } catch (err: unknown) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to create store. Please try again.",
+      );
+      setIsCreatingStore(false);
+    }
+  };
+
   const activeWorkspace = workspaces.find((w) => w.is_active) || workspaces[0];
+  const ownedWorkspaces = useMemo(
+    () => workspaces.filter((w) => w.is_owner),
+    [workspaces],
+  );
+  const teammateWorkspaces = useMemo(
+    () => workspaces.filter((w) => !w.is_owner),
+    [workspaces],
+  );
   const isOwner = activeWorkspace
     ? Boolean(activeWorkspace.is_owner)
     : Boolean(user?.is_superadmin || user?.role === "owner");
@@ -475,6 +501,11 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
   });
 
   const pendingSetupTasks = setupChecklist.tasks.filter((t) => !t.completed);
+  const hasSetupRequired = Boolean(
+    isAdminOrOwner &&
+    !setupChecklist.is_complete &&
+    pendingSetupTasks.length > 0,
+  );
 
   // Dynamic Tenant Info
   const [tenantInfo, setTenantInfo] = useState({
@@ -492,17 +523,48 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
   const activeStorePlan =
     activeWorkspace?.plan || tenantInfo.plan || TENANT.plan;
 
+  const maxAllowedStores = useMemo(() => {
+    const limits: Record<string, number> = {
+      free: 1,
+      grow: 1,
+      growth: 1,
+      basic: 1,
+      go: 1,
+      pro: 1,
+      business: 2,
+      scale: 5,
+      custom: 10,
+      enterprise: 10,
+      karkhana: 10,
+    };
+    let max = 1;
+    for (const w of ownedWorkspaces) {
+      const k = (w.plan || "free").toLowerCase().trim();
+      if ((limits[k] || 1) > max) max = limits[k] || 1;
+    }
+    if (activeStorePlan) {
+      const k = activeStorePlan.toLowerCase().trim();
+      if ((limits[k] || 1) > max) max = limits[k] || 1;
+    }
+    return max;
+  }, [ownedWorkspaces, activeStorePlan]);
+  const isStoreLimitReached = ownedWorkspaces.length >= maxAllowedStores;
+
   // Dynamic Team Members from backend
   const [teamMembers, setTeamMembers] = useState<
     Array<{
+      id?: string;
       name: string;
+      email?: string;
       role: string;
-      initials: string;
-      online: boolean;
-      hue: number;
+      initials?: string;
+      online?: boolean;
+      hue?: number;
       platforms?: readonly string[] | string[];
+      avatar_url?: string | null;
+      is_owner?: boolean;
     }>
-  >([...TEAM]);
+  >([]);
 
   // Dynamic Notifications from backend
   const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
@@ -609,12 +671,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           if (Array.isArray(res) && res.length > 0) {
             setTeamMembers(
               res as Array<{
+                id?: string;
                 name: string;
+                email?: string;
                 role: string;
-                initials: string;
-                online: boolean;
-                hue: number;
+                initials?: string;
+                online?: boolean;
+                hue?: number;
                 platforms?: string[];
+                avatar_url?: string | null;
+                is_owner?: boolean;
               }>,
             );
           }
@@ -648,7 +714,72 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     ? `${user.first_name} ${user.last_name || ""}`.trim()
     : user?.email?.split("@")[0] || "Admin";
 
-  const online = teamMembers.filter((t) => t.online);
+  const cleanUserEmail = user?.email?.trim().toLowerCase();
+  const activeWorkspaceRole = activeWorkspace?.role;
+  const effectiveTeamMembers = useMemo(() => {
+    const userRoleDisplay = isOwner
+      ? "Owner"
+      : activeWorkspaceRole || user?.role || "Member";
+
+    let list = [...teamMembers];
+    if (list.length === 0) {
+      if (user) {
+        list = [
+          {
+            id: String(user.id || "me"),
+            name: displayName,
+            email: user.email,
+            role: userRoleDisplay,
+            initials: displayName.slice(0, 2).toUpperCase(),
+            online: true,
+            hue: 82,
+            avatar_url: user.avatar_url,
+            is_owner: isOwner,
+          },
+        ];
+      } else {
+        list = [...TEAM];
+      }
+    } else if (user && cleanUserEmail) {
+      const hasUser = list.some(
+        (m) => m.email && m.email.trim().toLowerCase() === cleanUserEmail,
+      );
+      if (!hasUser) {
+        list.unshift({
+          id: String(user.id || "me"),
+          name: displayName,
+          email: user.email,
+          role: userRoleDisplay,
+          initials: displayName.slice(0, 2).toUpperCase(),
+          online: true,
+          hue: 82,
+          avatar_url: user.avatar_url,
+          is_owner: isOwner,
+        });
+      }
+    }
+    return list;
+  }, [
+    teamMembers,
+    user,
+    displayName,
+    isOwner,
+    cleanUserEmail,
+    activeWorkspaceRole,
+  ]);
+
+  const onlineMembers = useMemo(() => {
+    return effectiveTeamMembers.filter((m) =>
+      Boolean(
+        m.online ||
+        (cleanUserEmail &&
+          m.email &&
+          m.email.trim().toLowerCase() === cleanUserEmail),
+      ),
+    );
+  }, [effectiveTeamMembers, cleanUserEmail]);
+
+  const onlineCount = onlineMembers.length;
   const pct = tenantInfo.remainingPercent;
   const quotaTone = getQuotaTone(pct);
   const unreadCount = notifs.filter((n) => n.unread).length;
@@ -813,9 +944,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     <span className="block truncate text-[13.5px] sm:text-[14px] font-bold text-text group-hover:text-signal transition-colors">
                       {activeStoreName}
                     </span>
-                    {isTeammateInActiveStore && (
+                    {isTeammateInActiveStore ? (
                       <span className="block truncate text-[10.5px] font-mono font-medium text-emerald-600 dark:text-emerald-400">
                         {activeWorkspace.role} · Owner Paid
+                      </span>
+                    ) : (
+                      <span className="block truncate text-[10.5px] font-mono font-medium text-text-3">
+                        Owner ·{" "}
+                        {activeStorePlan
+                          ? activeStorePlan.toUpperCase()
+                          : "PRO"}
                       </span>
                     )}
                   </span>
@@ -854,66 +992,319 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     className={cx(
                       "absolute z-[70] rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2 shadow-[0_16px_36px_rgba(15,20,25,0.12)] space-y-1",
                       collapsed
-                        ? "left-[calc(100%+12px)] bottom-0 w-[260px] origin-bottom-left"
+                        ? "left-[calc(100%+12px)] bottom-0 w-[270px] origin-bottom-left"
                         : "left-0 right-0 bottom-full mb-2 w-full origin-bottom",
                     )}
                   >
-                    <p className="px-2 pt-1 pb-0.5 text-[10.5px] font-mono font-semibold uppercase tracking-wider text-text-3 select-none">
-                      Workspaces
-                    </p>
-
-                    <div className="max-h-52 overflow-y-auto space-y-0.5">
-                      {workspaces.map((w) => {
-                        const isActive = w.id === activeWorkspace?.id;
-                        return (
-                          <button
-                            key={w.id}
-                            type="button"
-                            onClick={() => {
-                              if (!isActive) handleSwitchWorkspace(w.id);
-                              else setStoreDropdownOpen(false);
-                            }}
-                            disabled={switchingStoreId === w.id}
+                    {/* Workspaces Categorized List */}
+                    <div className="max-h-60 overflow-y-auto space-y-2 pr-0.5">
+                      {/* Owned Stores Section */}
+                      <div>
+                        <div className="px-2 pt-1 pb-1 flex items-center justify-between select-none">
+                          <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-text-3">
+                            {lang === "bn"
+                              ? "আপনার নিজস্ব স্টোর"
+                              : "Your Stores"}
+                          </span>
+                          <span
                             className={cx(
-                              "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all cursor-pointer select-none group",
-                              isActive
-                                ? "bg-signal/10 text-signal font-semibold"
-                                : "text-text hover:bg-surface-2",
+                              "text-[9.5px] font-mono font-semibold px-1.5 py-0.2 rounded",
+                              isStoreLimitReached
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                                : "text-text-3 bg-surface-2",
                             )}
                           >
-                            <span
-                              className={cx(
-                                "grid size-7 shrink-0 place-items-center rounded-lg text-xs font-bold font-display",
-                                isActive
-                                  ? "bg-signal text-white"
-                                  : "bg-surface-2 border border-line text-text-2 group-hover:text-text",
+                            {ownedWorkspaces.length} / {maxAllowedStores}
+                          </span>
+                        </div>
+
+                        {ownedWorkspaces.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {ownedWorkspaces.map((w) => {
+                              const isActive = w.id === activeWorkspace?.id;
+                              const isSwitching = switchingStoreId === w.id;
+                              return (
+                                <button
+                                  key={w.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (!isActive && !isSwitching)
+                                      handleSwitchWorkspace(w.id);
+                                    else setStoreDropdownOpen(false);
+                                  }}
+                                  disabled={isSwitching}
+                                  className={cx(
+                                    "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all cursor-pointer select-none group relative",
+                                    isActive
+                                      ? "bg-signal/10 text-signal font-semibold ring-1 ring-signal/20"
+                                      : "text-text hover:bg-surface-2",
+                                  )}
+                                >
+                                  <span
+                                    className={cx(
+                                      "grid size-7 shrink-0 place-items-center rounded-lg text-xs font-bold font-display transition-all",
+                                      isActive
+                                        ? "bg-signal text-white shadow-xs"
+                                        : "bg-surface-2 border border-line text-text-2 group-hover:text-text group-hover:border-signal/40",
+                                    )}
+                                  >
+                                    {w.name.charAt(0).toUpperCase()}
+                                  </span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-semibold leading-tight">
+                                      {w.name}
+                                    </p>
+                                    <p className="truncate text-[10px] font-mono text-text-3 mt-0.5">
+                                      <span className="text-text-2 font-medium">
+                                        Owner
+                                      </span>
+                                      {w.plan && (
+                                        <span className="ml-1 uppercase text-[9px] px-1 py-0.2 rounded bg-surface-2 border border-line/60">
+                                          {w.plan}
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
+                                  {isSwitching ? (
+                                    <span className="text-[10px] font-mono text-signal animate-pulse shrink-0">
+                                      {lang === "bn"
+                                        ? "পরিবর্তন..."
+                                        : "Switching..."}
+                                    </span>
+                                  ) : isActive ? (
+                                    <span className="flex items-center gap-1.5 shrink-0 text-[10px] font-mono font-bold text-signal">
+                                      <span className="size-2 rounded-full bg-signal shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
+                                      <span>
+                                        {lang === "bn" ? "সক্রিয়" : "Active"}
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10.5px] font-mono text-text-3 shrink-0">
+                                      {lang === "bn" ? "যান" : "Switch"} &rarr;
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleCreateDefaultStore}
+                            disabled={isCreatingStore}
+                            className="w-full text-left flex items-center gap-2.5 rounded-xl border border-dashed border-signal/40 bg-signal/5 hover:bg-signal/10 p-2.5 text-xs text-signal font-medium transition-all group cursor-pointer my-1 select-none disabled:opacity-70 disabled:cursor-wait"
+                          >
+                            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-signal/15 text-signal group-hover:bg-signal group-hover:text-white transition-all shadow-xs">
+                              {isCreatingStore ? (
+                                <svg
+                                  className="size-3.5 animate-spin text-signal group-hover:text-white"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8H4z"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                >
+                                  <path d="M12 5v14M5 12h14" />
+                                </svg>
                               )}
-                            >
-                              {w.name.charAt(0).toUpperCase()}
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-semibold leading-tight">
-                                {w.name}
+                              <p className="text-xs font-semibold text-text leading-tight group-hover:text-signal transition-colors">
+                                {isCreatingStore
+                                  ? lang === "bn"
+                                    ? "স্টোর তৈরি হচ্ছে..."
+                                    : "Creating Store..."
+                                  : lang === "bn"
+                                    ? "নতুন নিজস্ব স্টোর তৈরি করুন"
+                                    : "Create a New Store"}
                               </p>
-                              <p className="truncate text-[10px] font-mono text-text-3">
-                                {w.is_owner ? "Owner" : w.role || "Teammate"}
+                              <p className="text-[10px] font-mono text-text-3 mt-0.5">
+                                {isCreatingStore
+                                  ? lang === "bn"
+                                    ? "১-ক্লিকে সেটআপ সম্পন্ন হচ্ছে..."
+                                    : "Setting up with 1-click..."
+                                  : lang === "bn"
+                                    ? "আপনার নিজস্ব ব্রাঞ্চ সেটআপ করুন"
+                                    : "Set up your personal branch"}
                               </p>
                             </div>
-                            {isActive && (
-                              <span className="size-2 rounded-full bg-signal shrink-0" />
-                            )}
+                            <span className="text-xs text-signal opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                              &rarr;
+                            </span>
                           </button>
-                        );
-                      })}
+                        )}
+
+                        {ownedWorkspaces.length > 0 && !isStoreLimitReached && (
+                          <button
+                            type="button"
+                            onClick={handleCreateDefaultStore}
+                            disabled={isCreatingStore}
+                            className="w-full flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-signal font-medium hover:bg-signal/10 transition-colors cursor-pointer mt-1 disabled:opacity-70 disabled:cursor-wait"
+                          >
+                            {isCreatingStore ? (
+                              <svg
+                                className="size-3.5 animate-spin text-signal shrink-0"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v8H4z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                className="text-signal shrink-0"
+                              >
+                                <path d="M12 5v14M5 12h14" />
+                              </svg>
+                            )}
+                            <span className="truncate">
+                              {isCreatingStore
+                                ? lang === "bn"
+                                  ? "স্টোর তৈরি হচ্ছে..."
+                                  : "Creating Store..."
+                                : lang === "bn"
+                                  ? "আরেকটি স্টোর যুক্ত করুন"
+                                  : "Connect Another Store"}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Teammate Stores Section */}
+                      {teammateWorkspaces.length > 0 && (
+                        <div className="pt-1.5 border-t border-line/60">
+                          <div className="px-2 pt-1 pb-1 flex items-center justify-between select-none">
+                            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-text-3">
+                              {lang === "bn"
+                                ? "টিমমেট স্টোরসমূহ"
+                                : "Teammate Stores"}
+                            </span>
+                            <span className="text-[9px] font-mono font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded">
+                              Owner Paid
+                            </span>
+                          </div>
+                          <div className="space-y-0.5">
+                            {teammateWorkspaces.map((w) => {
+                              const isActive = w.id === activeWorkspace?.id;
+                              const isSwitching = switchingStoreId === w.id;
+                              return (
+                                <button
+                                  key={w.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (!isActive && !isSwitching)
+                                      handleSwitchWorkspace(w.id);
+                                    else setStoreDropdownOpen(false);
+                                  }}
+                                  disabled={isSwitching}
+                                  className={cx(
+                                    "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all cursor-pointer select-none group relative",
+                                    isActive
+                                      ? "bg-signal/10 text-signal font-semibold ring-1 ring-signal/20"
+                                      : "text-text hover:bg-surface-2",
+                                  )}
+                                >
+                                  <span
+                                    className={cx(
+                                      "grid size-7 shrink-0 place-items-center rounded-lg text-xs font-bold font-display transition-all",
+                                      isActive
+                                        ? "bg-signal text-white shadow-xs"
+                                        : "bg-surface-2 border border-line text-text-2 group-hover:text-text group-hover:border-signal/40",
+                                    )}
+                                  >
+                                    {w.name.charAt(0).toUpperCase()}
+                                  </span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-semibold leading-tight">
+                                      {w.name}
+                                    </p>
+                                    <p className="truncate text-[10px] font-mono text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
+                                      {w.role || "Staff"} · Owner Paid
+                                    </p>
+                                  </div>
+                                  {isSwitching ? (
+                                    <span className="text-[10px] font-mono text-signal animate-pulse shrink-0">
+                                      {lang === "bn"
+                                        ? "পরিবর্তন..."
+                                        : "Switching..."}
+                                    </span>
+                                  ) : isActive ? (
+                                    <span className="flex items-center gap-1.5 shrink-0 text-[10px] font-mono font-bold text-signal">
+                                      <span className="size-2 rounded-full bg-signal shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
+                                      <span>
+                                        {lang === "bn" ? "সক্রিয়" : "Active"}
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10.5px] font-mono text-text-3 shrink-0">
+                                      {lang === "bn" ? "যান" : "Switch"} &rarr;
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {workspaces.length === 0 && (
+                        <div className="px-3 py-3 text-center text-xs text-text-3 font-mono">
+                          {lang === "bn"
+                            ? "কোনো স্টোর পাওয়া যায়নি"
+                            : "No stores found"}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Owner-only: Connect Another Store */}
-                    {isOwner && (
-                      <div className="border-t border-line/60 pt-1 mt-1">
-                        <Link
-                          href="/console/settings?tab=business"
-                          onClick={() => setStoreDropdownOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-text-2 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                    {/* Footer Actions */}
+                    {!isOwner && ownedWorkspaces.length > 0 && (
+                      <div className="border-t border-line/60 pt-1.5 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (switchingStoreId) return;
+                            handleSwitchWorkspace(ownedWorkspaces[0].id);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-signal font-medium hover:bg-signal/10 transition-colors cursor-pointer text-left"
                         >
                           <svg
                             width="14"
@@ -923,12 +1314,17 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                             stroke="currentColor"
                             strokeWidth="2"
                             strokeLinecap="round"
-                            className="text-text-3"
+                            className="text-signal shrink-0"
                           >
-                            <path d="M12 5v14M5 12h14" />
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
                           </svg>
-                          <span>Connect Another Store</span>
-                        </Link>
+                          <span className="truncate">
+                            {lang === "bn"
+                              ? `আপনার নিজস্ব স্টোরে যান (${ownedWorkspaces[0].name})`
+                              : `Go to Your Store (${ownedWorkspaces[0].name})`}
+                          </span>
+                        </button>
                       </div>
                     )}
                   </motion.div>
@@ -1134,22 +1530,47 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                   setStoreDropdownOpen(false);
                 }}
                 className={cx(
-                  "hidden sm:flex items-center -space-x-2 rounded-full p-1 transition-all cursor-pointer select-none",
+                  "hidden sm:flex h-8.5 items-center -space-x-2 rounded-full px-1 transition-all cursor-pointer select-none",
                   teamOpen
-                    ? "ring-2 ring-signal/40 bg-surface-2"
+                    ? "ring-2 ring-emerald-500/40 bg-surface-2"
                     : "hover:opacity-90",
                 )}
                 title="Active Team Presence"
                 aria-label="Active Team Members"
               >
-                {online.map((m) => (
-                  <span
-                    key={m.name}
-                    className="ring-2 ring-surface rounded-full overflow-hidden transition-transform hover:scale-110 hover:z-10 shadow-2xs"
-                  >
-                    <Avatar name={m.name} hue={m.hue} size={26} />
-                  </span>
-                ))}
+                {(onlineMembers.length > 0
+                  ? onlineMembers.slice(0, 4)
+                  : effectiveTeamMembers.slice(0, 3)
+                ).map((m, idx) => {
+                  const isCurrent = Boolean(
+                    cleanUserEmail &&
+                    m.email &&
+                    m.email.trim().toLowerCase() === cleanUserEmail,
+                  );
+                  const isOnline = Boolean(m.online || isCurrent);
+                  const mAvatar =
+                    isCurrent && user?.avatar_url
+                      ? user.avatar_url
+                      : m.avatar_url;
+                  return (
+                    <span
+                      key={m.id || m.email || m.name || idx}
+                      className={cx(
+                        "relative inline-flex size-7 shrink-0 items-center justify-center rounded-full overflow-hidden transition-transform hover:scale-110 hover:z-10 shadow-xs",
+                        isOnline
+                          ? "ring-2 ring-emerald-500"
+                          : "ring-2 ring-line",
+                      )}
+                    >
+                      <Avatar
+                        src={mAvatar}
+                        name={m.name}
+                        hue={m.hue ?? 82}
+                        size={28}
+                      />
+                    </span>
+                  );
+                })}
               </button>
 
               {/* Team Presence Popover */}
@@ -1165,7 +1586,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.98 }}
                       transition={{ duration: 0.12, ease: "easeOut" }}
-                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2.5 z-[60] w-[280px] rounded-2xl border border-line bg-white/98 backdrop-blur-xl p-3.5 shadow-2xl space-y-2.5 animate-in fade-in"
+                      className="absolute left-1/2 -translate-x-1/2 top-full mt-2.5 z-[60] w-[310px] rounded-2xl border border-line bg-white/98 backdrop-blur-xl p-3.5 shadow-2xl space-y-2.5 animate-in fade-in"
                     >
                       {/* Top Caret Notch (points directly to team button) */}
                       <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 size-3 rotate-45 border-l border-t border-line bg-white" />
@@ -1179,49 +1600,76 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                           </span>
                         </div>
                         <span className="rounded-md bg-signal/15 px-2 py-0.5 font-mono text-[10px] font-bold text-signal">
-                          {online.length} Online
+                          {onlineCount} Online
                         </span>
                       </div>
 
-                      {/* Active Member List */}
+                      {/* All Members List (Owner + All Teammates with Online/Offline status) */}
                       <div className="relative max-h-72 overflow-y-auto space-y-1 pr-0.5">
-                        {online.map((m) => {
-                          const platforms = m.platforms ?? [];
+                        {effectiveTeamMembers.map((m, idx) => {
+                          const isCurrent = Boolean(
+                            cleanUserEmail &&
+                            m.email &&
+                            m.email.trim().toLowerCase() === cleanUserEmail,
+                          );
+                          const isOnline = Boolean(m.online || isCurrent);
+                          const mAvatar =
+                            isCurrent && user?.avatar_url
+                              ? user.avatar_url
+                              : m.avatar_url;
+
                           return (
                             <div
-                              key={m.name}
+                              key={m.id || m.email || m.name || idx}
                               className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-surface-2 transition-colors group"
                             >
                               <div className="relative shrink-0">
-                                <Avatar name={m.name} hue={m.hue} size={32} />
-                                <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-white" />
+                                <Avatar
+                                  src={mAvatar}
+                                  name={m.name}
+                                  hue={m.hue ?? 82}
+                                  size={32}
+                                />
+                                <span
+                                  className={cx(
+                                    "absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-white",
+                                    isOnline
+                                      ? "bg-signal ring-signal/20 animate-pulse"
+                                      : "bg-text-3/40",
+                                  )}
+                                />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-[12.5px] font-semibold text-text truncate leading-tight">
-                                  {m.name}
-                                </p>
-                                <div className="flex items-center justify-between gap-1 mt-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-[12.5px] font-semibold text-text truncate leading-tight">
+                                    {m.name}
+                                  </p>
+                                  {isCurrent && (
+                                    <span className="text-[9.5px] font-medium text-text-3 bg-surface-2 border border-line/60 px-1.5 py-0.2 rounded shrink-0">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 mt-0.5">
                                   <span className="text-[10.5px] text-text-3 font-mono truncate">
                                     {m.role}
                                   </span>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    {platforms.map((p) => {
-                                      const ChannelIcon =
-                                        CHANNEL_ICON[
-                                          p as keyof typeof CHANNEL_ICON
-                                        ] || CHANNEL_ICON.all;
-                                      return (
-                                        <span
-                                          key={p}
-                                          className="text-text-3 group-hover:text-signal transition-colors hover:scale-110"
-                                          title={`Channel: ${p.charAt(0).toUpperCase() + p.slice(1)}`}
-                                        >
-                                          <ChannelIcon width={12} height={12} />
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
                                 </div>
+                              </div>
+
+                              {/* Right side: Online / Offline status badge (replaces globe icons) */}
+                              <div className="shrink-0">
+                                {isOnline ? (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-signal/10 border border-signal/20 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-signal">
+                                    <span className="size-1.5 rounded-full bg-signal ring-2 ring-signal/30 animate-pulse" />
+                                    Online
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 border border-line px-2 py-0.5 font-mono text-[10.5px] font-medium text-text-3">
+                                    <span className="size-1.5 rounded-full bg-text-3/40" />
+                                    Offline
+                                  </span>
+                                )}
                               </div>
                             </div>
                           );
@@ -1413,22 +1861,27 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                   setStoreDropdownOpen(false);
                 }}
                 className={cx(
-                  "relative rounded-full p-0.5 transition-all cursor-pointer select-none",
+                  "relative inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-all cursor-pointer select-none",
                   profileOpen
-                    ? "ring-2 ring-signal ring-offset-2 ring-offset-surface"
-                    : "hover:ring-2 hover:ring-signal/40 hover:ring-offset-1 hover:ring-offset-surface",
+                    ? "bg-surface-2 ring-2 ring-emerald-500/30"
+                    : "hover:opacity-90",
                 )}
                 title={`${displayName} · ${user?.email || "Account & Profile"}`}
                 aria-label="User profile menu"
               >
-                <div className="relative shrink-0">
+                <div className="relative inline-flex size-8 shrink-0 items-center justify-center rounded-full ring-2 ring-emerald-500 shadow-xs">
                   <Avatar
                     src={user?.avatar_url}
                     name={displayName}
                     hue={user?.hue || 155}
                     size={32}
                   />
-                  <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-signal ring-2 ring-surface" />
+                  {hasSetupRequired && (
+                    <span className="absolute -bottom-0.5 -right-0.5 flex size-2.5">
+                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                      <span className="relative inline-flex size-2.5 rounded-full bg-amber-500 ring-2 ring-white" />
+                    </span>
+                  )}
                 </div>
               </button>
 

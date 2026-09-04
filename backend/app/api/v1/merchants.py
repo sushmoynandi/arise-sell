@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -34,41 +34,47 @@ from app.schemas.merchant import (
 router = APIRouter(prefix="/merchants", tags=["Merchant Settings"])
 
 
-def _build_tenant_response(biz: Business) -> TenantResponse:
+PLAN_AI_QUOTAS: dict[str, int] = {
+    "free": 100,
+    "basic": 200,
+    "grow": 500,
+    "growth": 500,
+    "go": 500,
+    "pro": 10000,
+    "business": 10000,
+    "scale": 15000,
+    "custom": 50000,
+    "enterprise": 50000,
+    "karkhana": 25000,
+}
+
+
+def get_plan_ai_quota(plan: str | None) -> int:
+    if not plan:
+        return 500
+    return PLAN_AI_QUOTAS.get(plan.strip().lower(), 500)
+
+
+def _build_tenant_response(biz: Business, user: User | None = None) -> TenantResponse:
     extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
 
-    # Calculate live AI reply usage from live store + db
+    # Calculate live AI reply usage from live store + db + user account
     from app.services.live_store import get_ai_messages_count
     live_ai_count = get_ai_messages_count()
-    ai_used = max(biz.orders_used or 0, live_ai_count or 0)
+    user_ai_used = user.ai_used or 0 if user else 0
+    ai_used = max(user_ai_used, biz.orders_used or 0, live_ai_count or 0)
 
-    # Determine plan quota from commercial tiers
-    PLAN_LIMITS = {
-        "free": 100,
-        "basic": 200,
-        "growth": 500,
-        "go": 500,
-        "pro": 10000,
-        "business": 2500,
-        "scale": 5000,
-        "enterprise": 50000,
-        "karkhana": 25000,
-    }
-    raw_plan = (biz.plan or "Free").strip()
+    # Determine plan quota: User account level plan/quota takes precedence
+    user_plan = user.plan if user and user.plan else None
+    raw_plan = (user_plan or biz.plan or "Free").strip()
     plan_name = raw_plan.capitalize()
-    tier_limit = PLAN_LIMITS.get(raw_plan.lower())
-    if tier_limit is not None:
-        quota_limit = (
-            biz.orders_quota
-            if biz.orders_quota and biz.orders_quota > tier_limit
-            else tier_limit
-        )
+    tier_limit = get_plan_ai_quota(raw_plan)
+
+    account_quota = user.ai_quota if (user and user.ai_quota) else biz.orders_quota
+    if account_quota and account_quota > 0:
+        quota_limit = max(account_quota, tier_limit)
     else:
-        quota_limit = (
-            biz.orders_quota
-            if biz.orders_quota and biz.orders_quota > 0
-            else 500
-        )
+        quota_limit = tier_limit
 
     remaining = max(0, quota_limit - ai_used)
     remaining_pct = (
@@ -183,63 +189,104 @@ async def get_merchant_profile(
     db: AsyncSession = Depends(get_db),
 ):
     """Retrieve full business settings profile for the authenticated tenant."""
-    if not user.business_id:
-        return TenantResponse(
-            has_store=False,
-            name="",
-            nameBn="",
-            kind="",
-            since="",
-            plan="free",
-            ordersUsed=0,
-            ordersQuota=0,
-            messagesUsed=0,
-            messagesQuota=0,
-            remainingQuota=0,
-            remainingPercent=0,
-            pages=0,
-            logoHue=82,
-            slug="",
-            currency="BDT",
-            timezone="Asia/Dhaka",
-            website="",
-            support_email="",
-            phone="",
-            address="",
-            trade_license="",
-        )
-
-    stmt = select(Business).where(Business.id == user.business_id)
-    res = await db.execute(stmt)
-    biz = res.scalar_one_or_none()
+    biz = None
+    if user.business_id:
+        stmt = select(Business).where(Business.id == user.business_id)
+        res = await db.execute(stmt)
+        biz = res.scalar_one_or_none()
 
     if not biz:
-        return TenantResponse(
-            has_store=False,
-            name="",
-            nameBn="",
-            kind="",
-            since="",
-            plan="free",
-            ordersUsed=0,
-            ordersQuota=0,
-            messagesUsed=0,
-            messagesQuota=0,
-            remainingQuota=0,
-            remainingPercent=0,
-            pages=0,
-            logoHue=82,
-            slug="",
-            currency="BDT",
-            timezone="Asia/Dhaka",
-            website="",
-            support_email="",
-            phone="",
-            address="",
-            trade_license="",
-        )
+        clean_user_email = user.email.strip().lower()
+        stmt = select(Business)
+        res = await db.execute(stmt)
+        all_businesses = res.scalars().all()
 
-    return _build_tenant_response(biz)
+        owned_store = None
+        for b in all_businesses:
+            extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+            owner_id = str(extra.get("owner_id", ""))
+            owner_email = str(extra.get("owner_email", "")).strip().lower()
+            support_email = str(extra.get("support_email", "")).strip().lower()
+            if (
+                (owner_id and owner_id == str(user.id))
+                or (owner_email and owner_email == clean_user_email)
+                or (support_email and support_email == clean_user_email)
+            ):
+                owned_store = b
+                break
+
+        if owned_store:
+            user.business_id = owned_store.id
+            user.role = "owner"
+            await db.commit()
+            await db.refresh(user)
+            return _build_tenant_response(owned_store, user)
+        else:
+            first_name = user.first_name.strip() if user.first_name else ""
+            default_name = f"{first_name}'s Store" if first_name else "My Store"
+            base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", default_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
+            unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+
+            assigned_plan = user.plan or "growth"
+            quota = user.ai_quota or get_plan_ai_quota(assigned_plan)
+            used_msgs = user.ai_used or 0
+
+            new_biz = Business(
+                name=default_name,
+                name_bn=default_name,
+                kind="Ecommerce",
+                slug=unique_slug,
+                plan=assigned_plan,
+                orders_quota=quota,
+                orders_used=used_msgs,
+                currency="BDT",
+                timezone="Asia/Dhaka",
+                settings_data={
+                    "tagline": "Crafted with passion",
+                    "website": "",
+                    "support_email": user.email.lower(),
+                    "phone": user.phone or "",
+                    "whatsapp_number": user.phone or "",
+                    "address": "Dhaka, Bangladesh",
+                    "city_division": "Dhaka",
+                    "postal_code": "1200",
+                    "trade_license": "",
+                    "dateFormat": "DD/MM/YYYY",
+                    "taxMode": "inclusive_75",
+                    "orderPrefix": "ORD-",
+                    "isOpenForOrders": True,
+                    "scheduleMode": "custom",
+                    "openTime": "09:00 AM",
+                    "closeTime": "10:00 PM",
+                    "weeklyOffDay": "None (Open 7 Days)",
+                    "enableAwayMsg": True,
+                    "awayMessage": "ধন্যবাদ! আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।",
+                    "owner_id": str(user.id),
+                    "owner_email": user.email.lower(),
+                    "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
+                    "plan": assigned_plan,
+                    "team_members": [],
+                },
+            )
+            db.add(new_biz)
+            await db.flush()
+
+            user.business_id = new_biz.id
+            user.role = "owner"
+            await db.commit()
+            await db.refresh(user)
+            await db.refresh(new_biz)
+            return _build_tenant_response(new_biz, user)
+
+    # Sync store plan with user account tier if user has a configured plan
+    if user.plan and (biz.plan or "").strip().lower() != user.plan.strip().lower():
+        biz.plan = user.plan
+        biz.orders_quota = max(biz.orders_quota or 0, user.ai_quota or get_plan_ai_quota(user.plan))
+        db.add(biz)
+        await db.commit()
+        await db.refresh(biz)
+
+    return _build_tenant_response(biz, user)
 
 
 @router.get("/settings", response_model=TenantResponse)
@@ -249,6 +296,21 @@ async def get_merchant_settings(
 ):
     """Retrieve full settings profile for tenant."""
     return await get_merchant_profile(user, db)
+
+
+PLAN_STORE_LIMITS = {
+    "free": 1,
+    "grow": 1,
+    "growth": 1,
+    "basic": 1,
+    "go": 1,
+    "pro": 1,
+    "business": 2,
+    "scale": 5,
+    "custom": 10,
+    "enterprise": 10,
+    "karkhana": 10,
+}
 
 
 @router.post("/store", response_model=TenantResponse)
@@ -263,6 +325,44 @@ async def create_store(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Store name is required",
+        )
+
+    # 1. Enforce Subscription Plan Store Limits (Hybrid Quota)
+    clean_user_email = user.email.strip().lower()
+    stmt = select(Business)
+    res = await db.execute(stmt)
+    all_businesses = res.scalars().all()
+
+    owned_stores: list[Business] = []
+    user_highest_plan = "growth"
+
+    for b in all_businesses:
+        extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+        owner_id = str(extra.get("owner_id", ""))
+        owner_email = str(extra.get("owner_email", "")).strip().lower()
+        support_email = str(extra.get("support_email", "")).strip().lower()
+
+        is_owner = bool(
+            (b.id == user.business_id and user.role == "owner")
+            or (owner_id and owner_id == str(user.id))
+            or (owner_email and owner_email == clean_user_email)
+            or (support_email and support_email == clean_user_email)
+        )
+        if is_owner:
+            owned_stores.append(b)
+            b_plan = (b.plan or "growth").strip().lower()
+            if PLAN_STORE_LIMITS.get(b_plan, 1) > PLAN_STORE_LIMITS.get(user_highest_plan, 1):
+                user_highest_plan = b_plan
+
+    max_stores = PLAN_STORE_LIMITS.get(user_highest_plan, 1)
+    if len(owned_stores) >= max_stores:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Store limit reached: Your current {user_highest_plan.capitalize()} plan allows up to "
+                f"{max_stores} store{'s' if max_stores > 1 else ''}. "
+                f"Please upgrade to the Business plan (2 stores) or Enterprise (10 stores) to create additional stores."
+            ),
         )
 
     # 1. Generate clean URL slug
@@ -301,14 +401,20 @@ async def create_store(
         "team_members": [],
     }
 
+    assigned_plan = req.plan or user.plan or user_highest_plan or "growth"
+    tier_quota = get_plan_ai_quota(assigned_plan)
+    quota = user.ai_quota or tier_quota
+    used_msgs = user.ai_used or 0
+
     # 3. Create Business tenant
     biz = Business(
         name=clean_name,
         name_bn=req.name_bn or clean_name,
         kind=req.kind or "Ecommerce",
         slug=unique_slug,
-        plan="growth",
-        orders_quota=1000,
+        plan=assigned_plan,
+        orders_quota=quota,
+        orders_used=used_msgs,
         currency=req.currency or "BDT",
         timezone=req.timezone or "Asia/Dhaka",
         settings_data=extra_settings,
@@ -323,7 +429,131 @@ async def create_store(
     await db.refresh(biz)
     await db.refresh(user)
 
-    return _build_tenant_response(biz)
+    return _build_tenant_response(biz, user)
+
+
+@router.post("/quick-create-store", response_model=TenantResponse)
+async def quick_create_default_store(
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """1-Click instant default store creation for the authenticated user."""
+    # 1. Enforce Subscription Plan Store Limits (Hybrid Quota)
+    clean_user_email = user.email.strip().lower()
+    stmt = select(Business)
+    res = await db.execute(stmt)
+    all_businesses = res.scalars().all()
+
+    owned_stores: list[Business] = []
+    user_highest_plan = "growth"
+
+    for b in all_businesses:
+        extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+        owner_id = str(extra.get("owner_id", ""))
+        owner_email = str(extra.get("owner_email", "")).strip().lower()
+        support_email = str(extra.get("support_email", "")).strip().lower()
+
+        is_owner = bool(
+            (b.id == user.business_id and user.role == "owner")
+            or (owner_id and owner_id == str(user.id))
+            or (owner_email and owner_email == clean_user_email)
+            or (support_email and support_email == clean_user_email)
+        )
+        if is_owner:
+            owned_stores.append(b)
+            b_plan = (b.plan or "growth").strip().lower()
+            if PLAN_STORE_LIMITS.get(b_plan, 1) > PLAN_STORE_LIMITS.get(user_highest_plan, 1):
+                user_highest_plan = b_plan
+
+    max_stores = PLAN_STORE_LIMITS.get(user_highest_plan, 1)
+    if len(owned_stores) >= max_stores:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Store limit reached: Your current {user_highest_plan.capitalize()} plan allows up to "
+                f"{max_stores} store{'s' if max_stores > 1 else ''}. "
+                f"Please upgrade to the Business plan (2 stores) or Enterprise (10 stores) to create additional stores."
+            ),
+        )
+
+    # 2. Determine default store name
+    owner_name = f"{user.first_name} {user.last_name}".strip()
+    first_name = user.first_name.strip() if user.first_name else ""
+    if first_name:
+        base_name = f"{first_name}'s Store"
+    elif user.email:
+        base_name = f"{user.email.split('@')[0].capitalize()}'s Store"
+    else:
+        base_name = "My Store"
+
+    if len(owned_stores) > 0:
+        clean_name = f"{base_name} {len(owned_stores) + 1}"
+    else:
+        clean_name = base_name
+
+    # 3. Generate clean URL slug
+    base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", clean_name.lower()).strip("-")
+    if not base_slug:
+        base_slug = f"store-{uuid.uuid4().hex[:6]}"
+    unique_slug = base_slug
+    existing = await db.execute(select(Business).where(Business.slug == unique_slug))
+    if existing.scalar_one_or_none():
+        unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+
+    # 4. Package default store settings
+    extra_settings = {
+        "tagline": "Crafted with passion",
+        "website": "",
+        "support_email": user.email.lower(),
+        "phone": user.phone or "",
+        "whatsapp_number": user.phone or "",
+        "address": "Dhaka, Bangladesh",
+        "city_division": "Dhaka",
+        "postal_code": "1200",
+        "trade_license": "",
+        "dateFormat": "DD/MM/YYYY",
+        "taxMode": "inclusive_75",
+        "orderPrefix": "ORD-",
+        "isOpenForOrders": True,
+        "scheduleMode": "custom",
+        "openTime": "09:00 AM",
+        "closeTime": "10:00 PM",
+        "weeklyOffDay": "None (Open 7 Days)",
+        "enableAwayMsg": True,
+        "awayMessage": "ধন্যবাদ! আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।",
+        "owner_id": str(user.id),
+        "owner_email": user.email.lower(),
+        "owner_name": owner_name or "Store Owner",
+        "team_members": [],
+    }
+
+    assigned_plan = user.plan or user_highest_plan or "growth"
+    tier_quota = get_plan_ai_quota(assigned_plan)
+    quota = user.ai_quota or tier_quota
+    used_msgs = user.ai_used or 0
+
+    biz = Business(
+        name=clean_name,
+        name_bn=clean_name,
+        kind="Ecommerce",
+        slug=unique_slug,
+        plan=assigned_plan,
+        orders_quota=quota,
+        orders_used=used_msgs,
+        currency="BDT",
+        timezone="Asia/Dhaka",
+        settings_data=extra_settings,
+    )
+    db.add(biz)
+    await db.flush()
+
+    user.business_id = biz.id
+    user.role = "owner"
+    await db.commit()
+    await db.refresh(biz)
+    await db.refresh(user)
+
+    return _build_tenant_response(biz, user)
 
 
 @router.patch("/settings", response_model=TenantResponse)
@@ -353,7 +583,11 @@ async def update_merchant_settings(
             orders_quota=1000,
             currency=req.currency or "BDT",
             timezone=req.timezone or "Asia/Dhaka",
-            settings_data={},
+            settings_data={
+                "owner_id": str(user.id),
+                "owner_email": user.email.strip().lower(),
+                "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
+            },
         )
         db.add(biz)
         await db.flush()
@@ -509,7 +743,7 @@ async def update_merchant_settings(
     await db.commit()
     await db.refresh(biz)
 
-    return _build_tenant_response(biz)
+    return _build_tenant_response(biz, user)
 
 
 PLAN_SEAT_LIMITS = {
@@ -550,10 +784,21 @@ async def list_team_members(
         owner_name = f"{owner_user.first_name} {owner_user.last_name}".strip()
         owner_email = owner_user.email
         owner_id = str(owner_user.id)
+        owner_avatar = owner_user.avatar_url
     else:
         owner_name = extra.get("owner_name") or f"{user.first_name} {user.last_name}".strip()
         owner_email = extra.get("owner_email") or user.email
         owner_id = extra.get("owner_id") or str(user.id)
+        owner_avatar = user.avatar_url if str(user.id) == owner_id else None
+
+    now = datetime.now(timezone.utc)
+    clean_user_email = user.email.strip().lower()
+    is_owner_active = (owner_email.lower() == clean_user_email)
+    if not is_owner_active and owner_user:
+        if owner_user.online:
+            is_owner_active = True
+        elif owner_user.last_login:
+            is_owner_active = (now - owner_user.last_login).total_seconds() < 7200
 
     owner_initials = "".join([part[0] for part in owner_name.split()[:2]]).upper() or "OW"
 
@@ -564,15 +809,29 @@ async def list_team_members(
             email=owner_email,
             role="Owner",
             initials=owner_initials,
-            online=True,
+            online=is_owner_active,
             hue=82,
             platforms=["Messenger", "WhatsApp", "Instagram"],
             permissions=["all", "chat", "orders", "courier", "catalog", "invoices", "settings"],
             is_owner=True,
+            avatar_url=owner_avatar,
         )
     ]
 
     seen_emails = {owner_email.lower()}
+
+    # Query all users in DB matching saved member emails
+    member_emails = [
+        str(m.get("email", "")).strip().lower()
+        for m in saved_members
+        if str(m.get("email", "")).strip().lower()
+    ]
+    matched_users_by_email: dict[str, User] = {}
+    if member_emails:
+        users_stmt = select(User).where(func.lower(User.email).in_(member_emails))
+        users_res = await db.execute(users_stmt)
+        for u in users_res.scalars().all():
+            matched_users_by_email[u.email.strip().lower()] = u
 
     # 2. Add teammates saved in settings_data["team_members"]
     for idx, m in enumerate(saved_members):
@@ -581,20 +840,41 @@ async def list_team_members(
             continue
         seen_emails.add(m_email)
 
-        m_name = m.get("name", "Teammate")
+        matched_db_u = matched_users_by_email.get(m_email)
+        m_name = (
+            f"{matched_db_u.first_name} {matched_db_u.last_name}".strip()
+            if (matched_db_u and (matched_db_u.first_name or matched_db_u.last_name))
+            else (m.get("name") or "Teammate")
+        )
         m_initials = "".join([part[0] for part in m_name.split()[:2]]).upper() or "TM"
+        m_avatar = matched_db_u.avatar_url if (matched_db_u and matched_db_u.avatar_url) else m.get("avatar_url")
+
+        is_member_active = False
+        if m_email == clean_user_email:
+            is_member_active = True
+        elif matched_db_u:
+            if matched_db_u.online:
+                is_member_active = True
+            elif matched_db_u.last_login:
+                is_member_active = (now - matched_db_u.last_login).total_seconds() < 7200
+            else:
+                is_member_active = bool(m.get("online", True))
+        else:
+            is_member_active = bool(m.get("online", True))
+
         members.append(
             TeamMemberResponse(
-                id=str(m.get("id", f"tm_{idx}")),
+                id=str(matched_db_u.id if matched_db_u else m.get("id", f"tm_{idx}")),
                 name=m_name,
                 email=m_email,
                 role=m.get("role", "Moderator"),
                 initials=m_initials,
-                online=bool(m.get("online", True)),
-                hue=int(m.get("hue", 155)),
+                online=is_member_active,
+                hue=int(matched_db_u.hue if (matched_db_u and matched_db_u.hue is not None) else m.get("hue", 155)),
                 platforms=m.get("channels", ["Messenger", "WhatsApp", "Instagram"]),
                 permissions=m.get("permissions", ["chat", "orders"]),
                 is_owner=False,
+                avatar_url=m_avatar,
             )
         )
 
@@ -607,8 +887,13 @@ async def list_team_members(
         if u_email in seen_emails:
             continue
         seen_emails.add(u_email)
-        u_name = f"{u.first_name} {u.last_name}".strip()
-        u_initials = f"{u.first_name[0]}{u.last_name[0]}" if u.first_name and u.last_name else "TM"
+        u_name = f"{u.first_name} {u.last_name}".strip() or "Teammate"
+        u_initials = f"{u.first_name[0]}{u.last_name[0]}" if (u.first_name and u.last_name) else "TM"
+        is_u_active = (
+            (u_email == clean_user_email)
+            or bool(u.online)
+            or bool(u.last_login and (now - u.last_login).total_seconds() < 7200)
+        )
         members.append(
             TeamMemberResponse(
                 id=str(u.id),
@@ -616,11 +901,12 @@ async def list_team_members(
                 email=u_email,
                 role=u.role.capitalize(),
                 initials=u_initials,
-                online=bool(u.online),
+                online=is_u_active,
                 hue=int(u.hue or 82),
                 platforms=u.platforms or ["Messenger", "WhatsApp", "Instagram"],
                 permissions=["chat", "orders"] if u.role != "owner" else ["all", "chat", "orders", "courier", "catalog", "invoices", "settings"],
                 is_owner=(u.role == "owner"),
+                avatar_url=u.avatar_url,
             )
         )
 
@@ -710,6 +996,11 @@ async def invite_team_member(
 
     await db.commit()
 
+    u_stmt = select(User).where(func.lower(User.email) == clean_email)
+    u_res = await db.execute(u_stmt)
+    existing_u = u_res.scalars().first()
+    invitee_avatar = existing_u.avatar_url if existing_u else None
+
     return TeamMemberResponse(
         id=member_id,
         name=clean_name,
@@ -721,6 +1012,7 @@ async def invite_team_member(
         platforms=new_member["channels"],
         permissions=new_member["permissions"],
         is_owner=False,
+        avatar_url=invitee_avatar,
     )
 
 
@@ -786,6 +1078,11 @@ async def update_team_member(
     initials = "".join([part[0] for part in member.get("name", "TM").split()[:2]]).upper() or "TM"
     hue = member.get("hue") or ((abs(hash(member.get("email", ""))) % 300) + 20)
 
+    u_stmt = select(User).where(func.lower(User.email) == str(member.get("email", "")).lower())
+    u_res = await db.execute(u_stmt)
+    existing_u = u_res.scalars().first()
+    updated_avatar = existing_u.avatar_url if existing_u else member.get("avatar_url")
+
     return TeamMemberResponse(
         id=member.get("id", member_id),
         name=member.get("name", ""),
@@ -797,6 +1094,7 @@ async def update_team_member(
         platforms=member.get("channels", ["Messenger", "WhatsApp", "Instagram"]),
         permissions=member.get("permissions", ["chat", "orders"]),
         is_owner=False,
+        avatar_url=updated_avatar,
     )
 
 
@@ -878,12 +1176,14 @@ async def list_my_stores(
         extra = b.settings_data if isinstance(b.settings_data, dict) else {}
         owner_id = str(extra.get("owner_id", ""))
         owner_email = str(extra.get("owner_email", "")).strip().lower()
+        support_email = str(extra.get("support_email", "")).strip().lower()
         team_members = extra.get("team_members", [])
 
         is_owner = bool(
             (b.id == user.business_id and user.role == "owner")
             or (owner_id and owner_id == str(user.id))
             or (owner_email and owner_email == clean_user_email)
+            or (support_email and support_email == clean_user_email)
         )
 
         matched_member = next(
@@ -915,7 +1215,7 @@ async def list_my_stores(
             perms = ["all", "chat", "orders", "courier", "catalog", "invoices", "settings"]
         else:
             role_name = (matched_member.get("role") if matched_member else None) or "Moderator"
-            plan_covered = True  # <--- Covered by owner! Teammate does NOT need to buy a plan
+            plan_covered = True  # Covered by owner! Teammate does NOT need to buy a plan
             owner_display = extra.get("owner_name") or "Store Owner"
             perms = (matched_member.get("permissions") if matched_member else None) or ["chat", "orders"]
 
@@ -959,14 +1259,16 @@ async def switch_store_workspace(
         raise HTTPException(status_code=404, detail="Target store not found.")
 
     clean_user_email = user.email.strip().lower()
-    extra = target_biz.settings_data if isinstance(target_biz.settings_data, dict) else {}
+    extra = dict(target_biz.settings_data) if isinstance(target_biz.settings_data, dict) else {}
     owner_id = str(extra.get("owner_id", ""))
     owner_email = str(extra.get("owner_email", "")).strip().lower()
+    support_email = str(extra.get("support_email", "")).strip().lower()
     team_members = extra.get("team_members", [])
 
     is_owner = bool(
         (owner_id and owner_id == str(user.id))
         or (owner_email and owner_email == clean_user_email)
+        or (support_email and support_email == clean_user_email)
         or (target_biz.id == user.business_id and user.role == "owner")
     )
 
@@ -982,6 +1284,13 @@ async def switch_store_workspace(
         )
 
     new_role = "owner" if is_owner else (str(matched_member.get("role", "moderator")).lower() if matched_member else "moderator")
+
+    if is_owner and (not owner_email or not owner_id):
+        extra["owner_id"] = str(user.id)
+        extra["owner_email"] = clean_user_email
+        extra["owner_name"] = f"{user.first_name} {user.last_name}".strip() or "Store Owner"
+        target_biz.settings_data = extra
+        flag_modified(target_biz, "settings_data")
 
     user.business_id = target_biz.id
     user.role = new_role
@@ -1116,6 +1425,7 @@ async def delete_store(
             )
 
     deleted_store_name = biz.name
+    current_plan = biz.plan or "growth"
 
     # 4. Remove staff/teammates belonging only to this store (exclude owner)
     teammates_stmt = select(User).where(User.business_id == biz.id, User.id != user.id)
@@ -1124,17 +1434,146 @@ async def delete_store(
     for staff in staff_members:
         await db.delete(staff)
 
-    # 5. Dissociate current owner from this store so user account is NOT deleted
-    user.business_id = None
+    # 5. Check if user owns other stores
+    clean_user_email = user.email.strip().lower()
+    all_biz_stmt = select(Business)
+    all_biz_res = await db.execute(all_biz_stmt)
+    all_businesses = all_biz_res.scalars().all()
+
+    other_owned_stores: list[Business] = []
+    for b in all_businesses:
+        if b.id == biz.id:
+            continue
+        extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+        owner_id = str(extra.get("owner_id", ""))
+        owner_email = str(extra.get("owner_email", "")).strip().lower()
+        support_email = str(extra.get("support_email", "")).strip().lower()
+
+        is_owner = bool(
+            (owner_id and owner_id == str(user.id))
+            or (owner_email and owner_email == clean_user_email)
+            or (support_email and support_email == clean_user_email)
+        )
+        if is_owner:
+            other_owned_stores.append(b)
+
+    # 6. Preserve Account-Level Subscription Plan & AI Quota / Tokens
+    # AI tokens belong to the user account, not to a single store!
+    from app.services.live_store import get_ai_messages_count
+    live_ai_count = get_ai_messages_count()
+
+    account_plan = (user.plan or biz.plan or "growth").strip()
+    tier_quota = get_plan_ai_quota(account_plan)
+    account_quota = user.ai_quota or (biz.orders_quota if biz.orders_quota and biz.orders_quota > tier_quota else tier_quota)
+    account_used = max(user.ai_used or 0, biz.orders_used or 0, live_ai_count or 0)
+
+    # Persist directly onto the user's permanent account
+    user.plan = account_plan
+    user.ai_quota = account_quota
+    user.ai_used = account_used
     db.add(user)
-    await db.flush()
 
-    # 6. Delete the business entity (cascades to channels, products, conversations, orders)
-    await db.delete(biz)
-    await db.commit()
+    if len(other_owned_stores) > 0:
+        # Case A: User has > 1 store -> Directly delete this store and switch to remaining owned store
+        remaining_store = other_owned_stores[0]
+        remaining_store.plan = account_plan
+        remaining_store.orders_quota = account_quota
+        remaining_store.orders_used = account_used
+        extra_rem = dict(remaining_store.settings_data or {})
+        extra_rem["plan"] = account_plan
+        remaining_store.settings_data = extra_rem
+        db.add(remaining_store)
 
-    return DeleteStoreResponse(
-        success=True,
-        deleted_store_name=deleted_store_name,
-        message=f"Store '{deleted_store_name}' and all associated channels, catalogs, and orders have been permanently deleted. Your user account remains active.",
-    )
+        user.business_id = remaining_store.id
+        user.role = "owner"
+        db.add(user)
+        await db.flush()
+
+        await db.delete(biz)
+        await db.commit()
+        await db.refresh(user)
+        await db.refresh(remaining_store)
+
+        return DeleteStoreResponse(
+            success=True,
+            deleted_store_name=deleted_store_name,
+            new_store_created=False,
+            active_store_name=remaining_store.name,
+            active_store_id=str(remaining_store.id),
+            message=f"Store '{deleted_store_name}' deleted. Switched to remaining store '{remaining_store.name}'. Remaining AI message tokens preserved.",
+        )
+    else:
+        # Case B: User had only 1 store -> Auto-create a brand new default store
+        first_name = user.first_name.strip() if user.first_name else ""
+        if first_name:
+            default_name = f"{first_name}'s Store"
+        elif user.email:
+            default_name = f"{user.email.split('@')[0].capitalize()}'s Store"
+        else:
+            default_name = "My Store"
+
+        base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", default_name.lower()).strip("-")
+        if not base_slug:
+            base_slug = f"store-{uuid.uuid4().hex[:6]}"
+        unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+
+        owner_name = f"{user.first_name} {user.last_name}".strip()
+
+        # The new store inherits the account's plan, quota, and usage so remaining messages are 100% PRESERVED
+        new_biz = Business(
+            name=default_name,
+            name_bn=default_name,
+            kind="Ecommerce",
+            slug=unique_slug,
+            plan=account_plan,
+            orders_quota=account_quota,
+            orders_used=account_used,
+            currency="BDT",
+            timezone="Asia/Dhaka",
+            settings_data={
+                "tagline": "Crafted with passion",
+                "website": "",
+                "support_email": user.email.lower(),
+                "phone": user.phone or "",
+                "whatsapp_number": user.phone or "",
+                "address": "Dhaka, Bangladesh",
+                "city_division": "Dhaka",
+                "postal_code": "1200",
+                "trade_license": "",
+                "dateFormat": "DD/MM/YYYY",
+                "taxMode": "inclusive_75",
+                "orderPrefix": "ORD-",
+                "isOpenForOrders": True,
+                "scheduleMode": "custom",
+                "openTime": "09:00 AM",
+                "closeTime": "10:00 PM",
+                "weeklyOffDay": "None (Open 7 Days)",
+                "enableAwayMsg": True,
+                "awayMessage": "ধন্যবাদ! আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।",
+                "owner_id": str(user.id),
+                "owner_email": user.email.lower(),
+                "owner_name": owner_name or "Store Owner",
+                "plan": account_plan,
+                "team_members": [],
+            },
+        )
+        db.add(new_biz)
+        await db.flush()
+
+        user.business_id = new_biz.id
+        user.role = "owner"
+        db.add(user)
+
+        await db.delete(biz)
+        await db.commit()
+        await db.refresh(user)
+        await db.refresh(new_biz)
+
+        return DeleteStoreResponse(
+            success=True,
+            deleted_store_name=deleted_store_name,
+            new_store_created=True,
+            active_store_name=new_biz.name,
+            active_store_id=str(new_biz.id),
+            message=f"Store '{deleted_store_name}' deleted. A fresh new default store '{new_biz.name}' has been created with all remaining AI messages preserved.",
+        )

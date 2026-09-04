@@ -20,6 +20,7 @@ import {
   NAV_ICON,
 } from "@/components/ui/icons";
 import { useAuth } from "@/lib/auth-context";
+import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api-client";
 import { cx } from "@/lib/format";
 import { EnhancedField, PhoneCountryField, TAB_ICONS } from "../components";
@@ -263,6 +264,7 @@ export interface TeammateMember {
   channels: string[];
   permissions: string[];
   is_owner?: boolean;
+  avatar_url?: string | null;
 }
 
 export function TabAccount({
@@ -274,6 +276,25 @@ export function TabAccount({
 } = {}) {
   const { user, updateProfile, changePassword, forgotPassword } = useAuth();
   const { settings } = useSettings();
+  const { lang } = useLang();
+
+  const [isCreatingStore, setIsCreatingStore] = useState(false);
+
+  const handleQuickCreateStore = async () => {
+    if (isCreatingStore) return;
+    try {
+      setIsCreatingStore(true);
+      await api.merchants.quickCreateStore();
+      window.location.href = "/console";
+    } catch (err: unknown) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to create store. Please try again.",
+      );
+      setIsCreatingStore(false);
+    }
+  };
 
   const [firstName, setFirstName] = useState(user?.first_name || "Nazmul");
   const [lastName, setLastName] = useState(user?.last_name || "Hossain");
@@ -918,7 +939,7 @@ export function TabAccount({
         confirm_phrase: confirmStoreName.trim(),
       });
       if (res.success) {
-        window.location.href = "/console/settings?tab=business";
+        window.location.href = "/console";
       } else {
         setDeleteError(
           res.message || "Failed to delete store. Please try again.",
@@ -976,12 +997,13 @@ export function TabAccount({
                   ? m.permissions
                   : ["chat", "orders"],
               is_owner: m.is_owner ?? m.role.toLowerCase() === "owner",
+              avatar_url: m.avatar_url || (m.is_owner ? avatarUrl : null),
             })),
           );
         }
       })
       .catch(() => {});
-  }, []);
+  }, [avatarUrl]);
 
   const currentPlan = resolvePlanTier(
     propPlanName || user?.plan || settings?.plan,
@@ -2241,10 +2263,10 @@ export function TabAccount({
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          {isOwner && avatarUrl ? (
+                          {m.avatar_url || (isOwner && avatarUrl) ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={avatarUrl}
+                              src={m.avatar_url || avatarUrl!}
                               alt={m.name}
                               className="size-9 rounded-full object-cover border border-line shadow-2xs"
                             />
@@ -2405,77 +2427,226 @@ export function TabAccount({
         </Panel>
       </div>
 
-      {/* Danger Zone */}
+      {/* Danger Zone / Store Workspace */}
       <div
         className={cx(
           "rounded-2xl border p-5 sm:p-6 shadow-2xs transition-colors",
-          isStoreOwner
-            ? "border-red-200/70 bg-red-50/30"
-            : "border-line bg-surface-2/40 opacity-90",
+          settings.has_store === false || !settings.name
+            ? "border-signal/30 bg-signal/5"
+            : isStoreOwner
+              ? "border-red-200/70 bg-red-50/30"
+              : "border-line bg-surface-2/40 opacity-90",
         )}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <Badge
-                tone={isStoreOwner ? "coral" : "neutral"}
+                tone={
+                  settings.has_store === false || !settings.name
+                    ? "signal"
+                    : isStoreOwner
+                      ? "coral"
+                      : "neutral"
+                }
                 className="font-mono text-[10px] uppercase tracking-wider"
               >
-                {isStoreOwner ? "Danger Zone" : "Restricted"}
+                {settings.has_store === false || !settings.name
+                  ? lang === "bn"
+                    ? "স্টোর সেটআপ"
+                    : "Store Setup"
+                  : isStoreOwner
+                    ? lang === "bn"
+                      ? "বিপদজনক অঞ্চল"
+                      : "Danger Zone"
+                    : lang === "bn"
+                      ? "সীমাবদ্ধ"
+                      : "Restricted"}
               </Badge>
               <span
                 className={cx(
                   "text-[11px] font-medium px-2 py-0.5 rounded-full border",
-                  isStoreOwner
-                    ? "text-red-700 bg-red-100/70 border-red-200"
-                    : "text-text-3 bg-surface-2 border-line",
+                  settings.has_store === false || !settings.name
+                    ? "text-signal bg-signal/10 border-signal/20"
+                    : isStoreOwner
+                      ? "text-red-700 bg-red-100/70 border-red-200"
+                      : "text-text-3 bg-surface-2 border-line",
                 )}
               >
-                {isStoreOwner ? "Store Deletion" : "Owner Permission Required"}
+                {settings.has_store === false || !settings.name
+                  ? lang === "bn"
+                    ? "ব্যক্তিগত স্টোর"
+                    : "Personal Store"
+                  : isStoreOwner
+                    ? lang === "bn"
+                      ? "স্টোর ডিলিট"
+                      : "Store Deletion"
+                    : lang === "bn"
+                      ? "অনুমতি সীমাবদ্ধ"
+                      : "Owner Permission Required"}
               </span>
             </div>
             <h3 className="mt-2 text-base font-bold text-text font-display">
               {settings.has_store === false || !settings.name
-                ? "Store Workspace"
-                : `Delete Store: ${storeName}`}
+                ? lang === "bn"
+                  ? "ব্যক্তিগত স্টোর ওয়ার্কস্পেস"
+                  : "Personal Store Workspace"
+                : lang === "bn"
+                  ? `স্টোর মুছে ফেলুন: ${storeName}`
+                  : `Delete Store: ${storeName}`}
             </h3>
             <p className="mt-1.5 text-[13px] text-text-3 max-w-5xl leading-relaxed">
               {settings.has_store === false || !settings.name ? (
                 <>
-                  Your user account currently has no active store attached. You
-                  can set up and create a new store in the{" "}
-                  <a
-                    href="/console/settings?tab=business"
-                    className="text-signal font-semibold underline"
-                  >
-                    General Settings
-                  </a>{" "}
-                  tab anytime.
+                  {lang === "bn" ? (
+                    <>
+                      আপনার ইউজার অ্যাকাউন্টে বর্তমানে কোনো সক্রিয় নিজস্ব স্টোর
+                      যুক্ত নেই। ১-ক্লিকে নতুন স্টোর তৈরি করতে{" "}
+                      <strong className="text-signal font-semibold">
+                        নিচের বাম পাশের নেভিগেশন বার (Bottom-Left Navbar)
+                      </strong>
+                      -এর স্টোর সুইচারে ক্লিক করে{" "}
+                      <span className="font-semibold text-text">
+                        "নতুন নিজস্ব স্টোর তৈরি করুন"
+                      </span>{" "}
+                      সিলেক্ট করুন অথবা পাশের ১-ক্লিক বাটনে চাপ দিন।
+                    </>
+                  ) : (
+                    <>
+                      Your user account currently has no active personal store
+                      attached. To create your own brand new store with 1-click,
+                      click the store switcher in the{" "}
+                      <strong className="text-signal font-semibold">
+                        bottom-left navigation bar
+                      </strong>{" "}
+                      anytime and select{" "}
+                      <span className="font-semibold text-text">
+                        "Create a New Store"
+                      </span>
+                      , or use the 1-click button on the right.
+                    </>
+                  )}
                 </>
               ) : isStoreOwner ? (
                 <>
-                  Permanently delete this merchant store, including connected
-                  WhatsApp &amp; Messenger channels, product catalogs, customer
-                  threads, orders, and courier integrations. Your user account (
-                  <span className="font-mono text-text">{userEmail}</span>)
-                  remains active, and you can create a new store anytime.
+                  {lang === "bn" ? (
+                    <>
+                      এই মার্চেন্ট স্টোরটি স্থায়ীভাবে মুছে ফেলুন। এর সাথে
+                      সংযুক্ত হোয়াটসঅ্যাপ ও মেসেঞ্জার চ্যানেল, পণ্য ক্যাটালগ,
+                      গ্রাহক চ্যাট, অর্ডার এবং কুরিয়ার ইন্টিগ্রেশন মুছে যাবে।
+                      আপনার ইউজার অ্যাকাউন্ট (
+                      <span className="font-mono text-text">{userEmail}</span>)
+                      সক্রিয় থাকবে এবং আপনি যেকোনো সময় নতুন স্টোর খুলতে পারবেন।
+                    </>
+                  ) : (
+                    <>
+                      Permanently delete this merchant store, including
+                      connected WhatsApp &amp; Messenger channels, product
+                      catalogs, customer threads, orders, and courier
+                      integrations. Your user account (
+                      <span className="font-mono text-text">{userEmail}</span>)
+                      remains active, and you can create a new store anytime.
+                    </>
+                  )}
                 </>
               ) : (
                 <>
-                  Only the store owner has permission to permanently delete this
-                  store workspace. You are currently signed in with the role of{" "}
-                  <span className="font-semibold text-text capitalize">
-                    {user?.role || "Moderator"}
-                  </span>
-                  . Please contact the store owner if this store needs to be
-                  removed.
+                  {lang === "bn" ? (
+                    <>
+                      শুধুমাত্র স্টোর ওনারের এই স্টোর মুছে ফেলার অনুমতি রয়েছে।
+                      আপনি বর্তমানে{" "}
+                      <span className="font-semibold text-text capitalize">
+                        {user?.role || "Moderator"}
+                      </span>{" "}
+                      হিসেবে সংযুক্ত আছেন। আপনার নিজস্ব ব্র্যান্ডের স্টোর চালু
+                      করতে{" "}
+                      <strong className="text-signal font-semibold">
+                        নিচের বাম পাশের নেভিগেশন বার
+                      </strong>
+                      -এর স্টোর সুইচার থেকে{" "}
+                      <span className="font-semibold text-text">
+                        "নতুন নিজস্ব স্টোর তৈরি করুন"
+                      </span>{" "}
+                      সিলেক্ট করুন।
+                    </>
+                  ) : (
+                    <>
+                      Only the store owner has permission to permanently delete
+                      this store workspace. You are currently signed in with the
+                      role of{" "}
+                      <span className="font-semibold text-text capitalize">
+                        {user?.role || "Moderator"}
+                      </span>
+                      . To launch your own personal store, click the store
+                      switcher in the{" "}
+                      <strong className="text-signal font-semibold">
+                        bottom-left navigation bar
+                      </strong>{" "}
+                      and select{" "}
+                      <span className="font-semibold text-text">
+                        "Create a New Store"
+                      </span>
+                      .
+                    </>
+                  )}
                 </>
               )}
             </p>
           </div>
           {settings.has_store === false || !settings.name ? (
-            <div className="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-4.5 py-2.5 text-xs font-semibold text-text-3 select-none">
-              <span>No Store Connected</span>
+            <div className="shrink-0 flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleQuickCreateStore}
+                disabled={isCreatingStore}
+                className="shrink-0 flex items-center gap-2 rounded-xl border border-signal/40 bg-signal px-4.5 py-2.5 text-xs sm:text-[13px] font-bold text-white hover:bg-signal/90 transition-all shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+              >
+                {isCreatingStore ? (
+                  <>
+                    <svg
+                      className="size-3.5 animate-spin text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
+                    </svg>
+                    <span>
+                      {lang === "bn" ? "তৈরি হচ্ছে..." : "Creating Store..."}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    <span>
+                      {lang === "bn"
+                        ? "নতুন স্টোর তৈরি করুন"
+                        : "Create Store (1-Click)"}
+                    </span>
+                  </>
+                )}
+              </button>
             </div>
           ) : isStoreOwner ? (
             <button
@@ -2487,7 +2658,7 @@ export function TabAccount({
               }}
               className="shrink-0 rounded-xl border border-red-300 bg-white px-4.5 py-2.5 text-xs sm:text-[13px] font-bold text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-2xs hover:shadow-xs cursor-pointer text-center"
             >
-              Delete Store
+              {lang === "bn" ? "স্টোর মুছে ফেলুন" : "Delete Store"}
             </button>
           ) : (
             <div
@@ -2495,7 +2666,7 @@ export function TabAccount({
               className="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-4.5 py-2.5 text-xs font-semibold text-text-3 select-none cursor-not-allowed"
             >
               <IconLock className="size-3.5 text-text-3" />
-              <span>Owner Only</span>
+              <span>{lang === "bn" ? "অনুমতি সীমাবদ্ধ" : "Owner Only"}</span>
             </div>
           )}
         </div>
