@@ -22,6 +22,8 @@ interface BackendPlan {
   yearlyDiscountPercent?: number;
   billingPeriod?: string;
   messageLimit: number;
+  maxStores?: number;
+  maxSeats?: number;
   catalogLimit?: number;
   courierChannels?: number;
   features: string[];
@@ -358,27 +360,22 @@ export default function ChoosePlanPage() {
                             {t("limit", "টি")}
                           </span>
                         </div>
-                        {plan.catalogLimit && plan.catalogLimit > 0 && (
-                          <div className="flex items-center justify-between text-[12px] border-t border-line/60 pt-1.5">
-                            <span className="text-text-3">
-                              {t("Catalog Items", "ক্যাটালগ পণ্য")}
-                            </span>
-                            <span className="font-mono font-semibold text-text-2">
-                              {plan.catalogLimit.toLocaleString("en-IN")}{" "}
-                              {t("products", "টি")}
-                            </span>
-                          </div>
-                        )}
-                        {plan.courierChannels && plan.courierChannels > 0 && (
-                          <div className="flex items-center justify-between text-[12px] border-t border-line/60 pt-1.5">
-                            <span className="text-text-3">
-                              {t("Courier Channels", "কুরিয়ার চ্যানেল")}
-                            </span>
-                            <span className="font-mono font-semibold text-text-2">
-                              {plan.courierChannels} {t("channels", "টি")}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-between text-[12px] border-t border-line/60 pt-1.5">
+                          <span className="text-text-3">
+                            {t("Store Capacity", "স্টোর ধারণক্ষমতা")}
+                          </span>
+                          <span className="font-mono font-semibold text-text-2">
+                            {plan.maxStores || 1} {t("Stores", "টি স্টোর")}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[12px] border-t border-line/60 pt-1.5">
+                          <span className="text-text-3">
+                            {t("Team Member Seats", "টিম মেম্বার সিট")}
+                          </span>
+                          <span className="font-mono font-semibold text-text-2">
+                            {plan.maxSeats || 1} {t("Seats", "জন টিমমেট")}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Features List */}

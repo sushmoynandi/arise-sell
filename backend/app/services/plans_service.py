@@ -92,13 +92,16 @@ async def get_stored_plans() -> list[dict[str, Any]]:
                 SELECT plan_code, name, name_bn, tagline, price_bdt, yearly_price_bdt,
                        yearly_discount_percent, billing_period, message_limit, catalog_limit,
                        courier_channels, features, badge, popular, active_merchants, status,
-                       show_on_home
+                       show_on_home, max_stores, max_seats
                 FROM subscription_plans
                 ORDER BY price_bdt ASC;
             """)
             plans: list[dict[str, Any]] = []
             for r in rows:
                 feats = json.loads(r["features"]) if isinstance(r["features"], str) else (r["features"] or [])
+                p_name_lower = (r["name"] or "").lower()
+                def_stores = 2 if "business" in p_name_lower else (10 if any(k in p_name_lower for k in ["enter", "scale", "custom", "vip"]) else 1)
+                def_seats = 1 if "free" in p_name_lower else (4 if "pro" in p_name_lower else (8 if "business" in p_name_lower else (30 if any(k in p_name_lower for k in ["enter", "scale", "custom", "vip"]) else 2)))
                 plans.append({
                     "id": r["plan_code"],
                     "name": r["name"],
@@ -109,6 +112,8 @@ async def get_stored_plans() -> list[dict[str, Any]]:
                     "yearlyDiscountPercent": r["yearly_discount_percent"],
                     "billingPeriod": r["billing_period"],
                     "messageLimit": r["message_limit"],
+                    "maxStores": int(r["max_stores"]) if r["max_stores"] is not None else def_stores,
+                    "maxSeats": int(r["max_seats"]) if r["max_seats"] is not None else def_seats,
                     "catalogLimit": r["catalog_limit"],
                     "courierChannels": r["courier_channels"],
                     "features": feats,
@@ -166,6 +171,8 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
         "yearlyDiscountPercent": yearly_discount or 0,
         "billingPeriod": data.get("billingPeriod", "both"),
         "messageLimit": int(data.get("messageLimit", 200)),
+        "maxStores": int(data.get("maxStores", 1)),
+        "maxSeats": int(data.get("maxSeats", 1)),
         "catalogLimit": int(data.get("catalogLimit", 250)),
         "courierChannels": int(data.get("courierChannels", 2)),
         "features": data.get("features", []),
@@ -184,11 +191,11 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
             await conn.execute("""
                 INSERT INTO subscription_plans (
                     id, plan_code, name, name_bn, tagline, price_bdt, yearly_price_bdt,
-                    yearly_discount_percent, billing_period, message_limit, catalog_limit,
-                    courier_channels, features, badge, popular, active_merchants, status,
+                    yearly_discount_percent, billing_period, message_limit, max_stores, max_seats,
+                    catalog_limit, courier_channels, features, badge, popular, active_merchants, status,
                     show_on_home, created_at, updated_at
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
                     NOW(), NOW()
                 ) ON CONFLICT (plan_code) DO UPDATE SET
                     name = EXCLUDED.name,
@@ -199,6 +206,8 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
                     yearly_discount_percent = EXCLUDED.yearly_discount_percent,
                     billing_period = EXCLUDED.billing_period,
                     message_limit = EXCLUDED.message_limit,
+                    max_stores = EXCLUDED.max_stores,
+                    max_seats = EXCLUDED.max_seats,
                     catalog_limit = EXCLUDED.catalog_limit,
                     courier_channels = EXCLUDED.courier_channels,
                     features = EXCLUDED.features,
@@ -209,7 +218,8 @@ async def create_stored_plan(data: dict[str, Any]) -> dict[str, Any]:
                     updated_at = NOW();
             """, row_id, plan_id, new_plan["name"], new_plan["nameBn"], new_plan["tagline"],
             price_bdt, yearly_price, new_plan["yearlyDiscountPercent"], new_plan["billingPeriod"],
-            new_plan["messageLimit"], new_plan["catalogLimit"], new_plan["courierChannels"],
+            new_plan["messageLimit"], new_plan["maxStores"], new_plan["maxSeats"],
+            new_plan["catalogLimit"], new_plan["courierChannels"],
             json.dumps(new_plan["features"]), new_plan["badge"], new_plan["popular"],
             new_plan["activeMerchants"], new_plan["status"], new_plan["showOnHome"]
             )

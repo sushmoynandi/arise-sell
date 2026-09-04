@@ -21,8 +21,10 @@ export type AdminPlan = {
   yearlyDiscountPercent?: number;
   billingPeriod: PlanBillingPeriod;
   messageLimit: number;
-  catalogLimit: number;
-  courierChannels: number;
+  maxStores?: number;
+  maxSeats?: number;
+  catalogLimit?: number;
+  courierChannels?: number;
   features: string[];
   badge?: string;
   popular?: boolean;

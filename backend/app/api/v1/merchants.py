@@ -298,7 +298,7 @@ async def get_merchant_settings(
     return await get_merchant_profile(user, db)
 
 
-PLAN_STORE_LIMITS = {
+PLAN_STORE_LIMITS: dict[str, int] = {
     "free": 1,
     "grow": 1,
     "growth": 1,
@@ -311,6 +311,38 @@ PLAN_STORE_LIMITS = {
     "enterprise": 10,
     "karkhana": 10,
 }
+
+
+async def get_dynamic_plan_store_limit(plan_name: str) -> int:
+    try:
+        from app.services.plans_service import get_stored_plans
+        plans = await get_stored_plans()
+        clean = (plan_name or "").strip().lower()
+        matched = next(
+            (p for p in plans if p.get("id") == plan_name or p.get("name", "").strip().lower() == clean),
+            None,
+        )
+        if matched and matched.get("maxStores"):
+            return int(matched["maxStores"])
+    except Exception:
+        pass
+    return PLAN_STORE_LIMITS.get((plan_name or "growth").strip().lower(), 1)
+
+
+async def get_dynamic_plan_seat_limit(plan_name: str) -> int:
+    try:
+        from app.services.plans_service import get_stored_plans
+        plans = await get_stored_plans()
+        clean = (plan_name or "").strip().lower()
+        matched = next(
+            (p for p in plans if p.get("id") == plan_name or p.get("name", "").strip().lower() == clean),
+            None,
+        )
+        if matched and matched.get("maxSeats"):
+            return int(matched["maxSeats"])
+    except Exception:
+        pass
+    return PLAN_SEAT_LIMITS.get((plan_name or "free").strip().lower(), 2)
 
 
 @router.post("/store", response_model=TenantResponse)
@@ -354,7 +386,8 @@ async def create_store(
             if PLAN_STORE_LIMITS.get(b_plan, 1) > PLAN_STORE_LIMITS.get(user_highest_plan, 1):
                 user_highest_plan = b_plan
 
-    max_stores = PLAN_STORE_LIMITS.get(user_highest_plan, 1)
+    target_plan = user.plan or user_highest_plan
+    max_stores = await get_dynamic_plan_store_limit(target_plan)
     if len(owned_stores) >= max_stores:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -465,7 +498,8 @@ async def quick_create_default_store(
             if PLAN_STORE_LIMITS.get(b_plan, 1) > PLAN_STORE_LIMITS.get(user_highest_plan, 1):
                 user_highest_plan = b_plan
 
-    max_stores = PLAN_STORE_LIMITS.get(user_highest_plan, 1)
+    target_plan = user.plan or user_highest_plan
+    max_stores = await get_dynamic_plan_store_limit(target_plan)
     if len(owned_stores) >= max_stores:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -947,8 +981,7 @@ async def invite_team_member(
     team_members = list(extra.get("team_members", []))
 
     # 1. Enforce Plan Seat Limits
-    plan_key = (biz.plan or "free").lower()
-    max_seats = PLAN_SEAT_LIMITS.get(plan_key, 2)
+    max_seats = await get_dynamic_plan_seat_limit(biz.plan or "free")
     current_occupied = len(team_members) + 1  # 1 owner + teammates
 
     if current_occupied >= max_seats:

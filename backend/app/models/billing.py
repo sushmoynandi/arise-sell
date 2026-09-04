@@ -28,6 +28,8 @@ class SubscriptionPlan(Base, TimestampMixin):
     yearly_discount_percent: Mapped[int] = mapped_column(Integer, default=17, nullable=False)
     billing_period: Mapped[str] = mapped_column(String(32), default="both", nullable=False)
     message_limit: Mapped[int] = mapped_column(Integer, default=200, nullable=False)
+    max_stores: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    max_seats: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     catalog_limit: Mapped[int] = mapped_column(Integer, default=250, nullable=False)
     courier_channels: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
     features: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)

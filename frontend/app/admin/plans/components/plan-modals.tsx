@@ -71,8 +71,8 @@ export function PlanModals({
     useState<string>("");
   const [billingPeriod, setBillingPeriod] = useState<PlanBillingPeriod>("both");
   const [messageLimit, setMessageLimit] = useState<string>("");
-  const [catalogLimit, setCatalogLimit] = useState<string>("");
-  const [courierChannels, setCourierChannels] = useState<string>("");
+  const [maxStores, setMaxStores] = useState<string>("1");
+  const [maxSeats, setMaxSeats] = useState<string>("1");
   const [badge, setBadge] = useState("");
   const [featuresStr, setFeaturesStr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -228,8 +228,10 @@ export function PlanModals({
         yearlyDiscountPercent: Number(yearlyDiscountPercent) || 0,
         billingPeriod,
         messageLimit: Number(messageLimit) || 0,
-        catalogLimit: Number(catalogLimit) || 0,
-        courierChannels: Number(courierChannels) || 1,
+        maxStores: Math.max(1, Number(maxStores) || 1),
+        maxSeats: Math.max(1, Number(maxSeats) || 1),
+        catalogLimit: 250,
+        courierChannels: 2,
         badge: badge || undefined,
         popular: false,
         activeMerchants: 0,
@@ -250,8 +252,8 @@ export function PlanModals({
       setYearlyDiscountPercent("");
       setBillingPeriod("both");
       setMessageLimit("");
-      setCatalogLimit("");
-      setCourierChannels("");
+      setMaxStores("1");
+      setMaxSeats("1");
       setBadge("");
       setFeaturesStr("");
       onCloseCreate();
@@ -476,19 +478,21 @@ export function PlanModals({
                 </div>
               </div>
 
-              {/* Catalog SKUs, Courier Channels, Badge Tag in the same row */}
+              {/* Max Stores, Max Team Seats, Badge Tag in the same row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">
-                    Catalog SKUs
+                  <label className="block font-bold text-text mb-1 flex items-center justify-between">
+                    <span>Max Stores</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">Store limit</span>
                   </label>
                   <input
                     type="number"
-                    value={localEdit.catalogLimit ?? 250}
+                    min={1}
+                    value={localEdit.maxStores ?? 1}
                     onChange={(e) =>
                       setLocalEdit({
                         ...localEdit,
-                        catalogLimit: Number(e.target.value),
+                        maxStores: Math.max(1, Number(e.target.value) || 1),
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -496,16 +500,18 @@ export function PlanModals({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-text mb-1">
-                    Courier Channels
+                  <label className="block font-bold text-text mb-1 flex items-center justify-between">
+                    <span>Max Team Seats</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">Members</span>
                   </label>
                   <input
                     type="number"
-                    value={localEdit.courierChannels ?? 2}
+                    min={1}
+                    value={localEdit.maxSeats ?? 1}
                     onChange={(e) =>
                       setLocalEdit({
                         ...localEdit,
-                        courierChannels: Number(e.target.value),
+                        maxSeats: Math.max(1, Number(e.target.value) || 1),
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -780,30 +786,34 @@ export function PlanModals({
                 </div>
               </div>
 
-              {/* Catalog SKUs, Courier Channels, Badge Tag in the same row */}
+              {/* Max Stores, Max Team Seats, Badge Tag in the same row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block font-bold text-text mb-1">
-                    Catalog SKUs
+                  <label className="block font-bold text-text mb-1 flex items-center justify-between">
+                    <span>Max Stores</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">Store limit</span>
                   </label>
                   <input
                     type="number"
-                    value={catalogLimit}
-                    onChange={(e) => setCatalogLimit(e.target.value)}
-                    placeholder="e.g. 250"
+                    min={1}
+                    value={maxStores}
+                    onChange={(e) => setMaxStores(e.target.value)}
+                    placeholder="e.g. 1 or 2"
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-text mb-1">
-                    Courier Channels
+                  <label className="block font-bold text-text mb-1 flex items-center justify-between">
+                    <span>Max Team Seats</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">Members</span>
                   </label>
                   <input
                     type="number"
-                    value={courierChannels}
-                    onChange={(e) => setCourierChannels(e.target.value)}
-                    placeholder="e.g. 2"
+                    min={1}
+                    value={maxSeats}
+                    onChange={(e) => setMaxSeats(e.target.value)}
+                    placeholder="e.g. 2 or 4"
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>

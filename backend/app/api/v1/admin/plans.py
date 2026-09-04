@@ -34,6 +34,8 @@ class PlanRequest(BaseModel):
     yearlyDiscountPercent: int | None = None
     billingPeriod: str = "both"
     messageLimit: int = 200
+    maxStores: int = 1
+    maxSeats: int = 1
     catalogLimit: int = 250
     courierChannels: int = 2
     features: list[str] = []
