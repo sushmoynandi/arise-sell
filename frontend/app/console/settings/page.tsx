@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import PageHeader from "@/components/console/PageHeader";
 import { Badge, Button, Panel, PanelHead } from "@/components/ui/primitives";
 import { IconCheck, IconTruck } from "@/components/ui/icons";
 import { TENANT } from "@/data/tenant";
@@ -11,29 +10,205 @@ import { PLANS } from "@/data/plans";
 import { cx } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 
-/* ─── Tab definitions ─── */
+/* ─── Tab definitions (Logical Flow: Store -> AI & Growth -> Logistics -> Operations) ─── */
 const TABS = [
-  { id: "account", label: "Account Info" },
-  { id: "business", label: "Business Settings" },
+  { id: "business", label: "General" },
+  { id: "account", label: "Account" },
   { id: "branding", label: "Branding" },
-  { id: "billing", label: "Billing" },
-  { id: "notifications", label: "Notifications" },
-  { id: "meta", label: "Meta Ad Conversions" },
-  { id: "courier", label: "Courier" },
+  { id: "preferences", label: "AI Persona" },
+  { id: "meta", label: "Meta CAPI" },
   { id: "product-feed", label: "Product Feed" },
-  { id: "team", label: "Team & Roles" },
-  { id: "preferences", label: "AI Preferences" },
+  { id: "courier", label: "Couriers" },
+  { id: "team", label: "Team" },
+  { id: "notifications", label: "Notifications" },
+  { id: "billing", label: "Billing" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+
+/* ─── Tab Icons for Glass Segmented Bar ─── */
+const TAB_ICONS: Record<
+  TabId,
+  (props: { className?: string }) => React.ReactNode
+> = {
+  account: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  business: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  ),
+  branding: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+    </svg>
+  ),
+  billing: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  ),
+  notifications: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </svg>
+  ),
+  meta: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m4.93 4.93 4.24 4.24" />
+      <path d="m14.83 9.17 4.24-4.24" />
+      <path d="m14.83 14.83 4.24 4.24" />
+      <path d="m9.17 14.83-4.24 4.24" />
+      <circle cx="12" cy="12" r="4" />
+    </svg>
+  ),
+  courier: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <rect x="1" y="3" width="15" height="13" rx="2" />
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+  ),
+  "product-feed": (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="m7.5 4.27 9 5.15" />
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
+    </svg>
+  ),
+  team: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  preferences: (p) => (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04" />
+      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04" />
+    </svg>
+  ),
+};
 
 /* ─── Inner component that uses searchParams ─── */
 function SettingsInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tabFromUrl = (searchParams.get("tab") as TabId) || "account";
+  const tabFromUrl = (searchParams.get("tab") as TabId) || "business";
   const [activeTab, setActiveTab] = useState<TabId>(
-    TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : "account",
+    TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : "business",
   );
 
   const switchTab = (id: TabId) => {
@@ -43,46 +218,57 @@ function SettingsInner() {
 
   return (
     <>
-      <PageHeader
-        title="Settings"
-        sub="Manage your account, business configuration, billing, team permissions, and AI behavior."
-        actions={
-          <Badge tone="mint" dot>
-            {TENANT.plan} Plan
-          </Badge>
-        }
-      />
-
-      {/* ─── Horizontal Tab Bar ─── */}
-      <div className="sticky top-16 z-20 border-b border-line bg-canvas/90 backdrop-blur-xl">
-        <div className="flex items-center gap-0 overflow-x-auto px-5 lg:px-8 scrollbar-none">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => switchTab(tab.id)}
-              className={cx(
-                "relative shrink-0 cursor-pointer px-4 py-3 text-[13px] font-medium transition-colors whitespace-nowrap",
-                activeTab === tab.id
-                  ? "text-signal font-bold"
-                  : "text-text-3 hover:text-text",
-              )}
-            >
-              {tab.label}
-              {activeTab === tab.id && (
-                <motion.div
-                  layoutId="settings-tab-indicator"
-                  className="absolute bottom-0 left-2 right-2 h-[2.5px] rounded-full bg-signal"
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                />
-              )}
-            </button>
-          ))}
+      {/* ─── Frosted Glass Segmented Control Navigation Bar ─── */}
+      <div className="sticky top-16 z-20 border-b border-line/60 bg-surface/75 backdrop-blur-xl shadow-xs transition-all">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+          {/* Glass Segmented Pill Container (Fits neatly within max-w-6xl) */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 rounded-2xl bg-canvas/50 border border-line/60 shadow-2xs backdrop-blur-md w-full">
+            {TABS.map((tab) => {
+              const Icon = TAB_ICONS[tab.id];
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => switchTab(tab.id)}
+                  className={cx(
+                    "relative shrink-0 cursor-pointer px-2.5 lg:px-3 py-1.5 text-[12px] lg:text-[12.5px] font-medium transition-all rounded-xl whitespace-nowrap flex items-center justify-center gap-1.5 select-none group flex-1",
+                    isActive
+                      ? "text-signal font-semibold"
+                      : "text-text-3 hover:text-text hover:bg-surface-2/50",
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="settings-active-glass-pill"
+                      className="absolute inset-0 rounded-xl bg-white shadow-xs border border-line/60 ring-1 ring-black/5 dark:bg-surface-2 dark:border-line"
+                      transition={{
+                        type: "spring",
+                        bounce: 0.15,
+                        duration: 0.35,
+                      }}
+                    />
+                  )}
+                  <span
+                    className={cx(
+                      "relative z-10 transition-colors",
+                      isActive
+                        ? "text-signal"
+                        : "text-text-3 group-hover:text-text",
+                    )}
+                  >
+                    {Icon && <Icon className="size-3.5 shrink-0" />}
+                  </span>
+                  <span className="relative z-10">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* ─── Tab Content ─── */}
-      <div className="p-5 lg:p-8 max-w-6xl mx-auto">
+      <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
