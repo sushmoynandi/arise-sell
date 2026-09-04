@@ -92,7 +92,8 @@ export function PlanCard({
               {p.messageLimit.toLocaleString()} Messages / mo
             </p>
             <span className="text-[10.5px] font-mono font-medium text-text-2 bg-surface-2 border border-line px-2 py-0.5 rounded-md shrink-0">
-              {p.maxStores || 1} Store{(p.maxStores || 1) > 1 ? "s" : ""} · {p.maxSeats || 1} Seat{(p.maxSeats || 1) > 1 ? "s" : ""}
+              {p.maxStores || 1} Store{(p.maxStores || 1) > 1 ? "s" : ""} ·{" "}
+              {p.maxSeats || 1} Seat{(p.maxSeats || 1) > 1 ? "s" : ""}
             </span>
           </div>
         </div>

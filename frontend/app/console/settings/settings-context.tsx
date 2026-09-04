@@ -18,8 +18,20 @@ export interface MerchantSettings {
   kind: string;
   since?: string;
   plan?: string;
+  planPriceBDT?: number;
+  maxStores?: number;
+  maxSeats?: number;
+  currentStoresCount?: number;
+  currentSeatsCount?: number;
+  nextBillingDate?: string;
+  paymentMethod?: string;
   ordersUsed?: number;
   ordersQuota?: number;
+  messagesUsed?: number;
+  messagesQuota?: number;
+  remainingQuota?: number;
+  remainingPercent?: number;
+
   pages?: number;
   logoHue?: number;
   slug?: string;

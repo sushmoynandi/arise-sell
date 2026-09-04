@@ -24,10 +24,14 @@ class InvoiceResponse(BaseModel):
     merchantName: str
     plan: str
     amountBDT: float
+    originalAmountBDT: float | None = None
+    discountBDT: float | None = None
     method: str
     txId: str
     date: str
     status: str
+    invoiceNo: str | None = None
+    description: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -35,3 +39,14 @@ class InvoiceResponse(BaseModel):
 class TopUpRequest(BaseModel):
     pack: str
     payment_method: PayMethod = "bkash"
+
+
+class TopUpResponse(BaseModel):
+    success: bool
+    plan: str
+    orders_quota: int
+    messages_quota: int
+    added_quota: int
+    amount_bdt: float
+    message: str
+

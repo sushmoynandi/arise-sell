@@ -81,6 +81,52 @@ def _build_tenant_response(biz: Business, user: User | None = None) -> TenantRes
         round((remaining / quota_limit) * 100) if quota_limit > 0 else 0
     )
 
+    # Dynamic plan resource entitlement limits
+    p_lower = raw_plan.lower()
+    PLAN_PRICES = {
+        "free": 0.0,
+        "go": 349.0,
+        "grow": 349.0,
+        "growth": 349.0,
+        "basic": 349.0,
+        "pro": 999.0,
+        "business": 2499.0,
+        "scale": 9999.0,
+        "enterprize": 9999.0,
+        "enterprise": 9999.0,
+        "custom": 9999.0,
+    }
+    PLAN_STORES = {
+        "free": 1,
+        "go": 1,
+        "grow": 1,
+        "growth": 1,
+        "pro": 1,
+        "business": 2,
+        "scale": 4,
+        "enterprize": 4,
+        "enterprise": 4,
+        "custom": 10,
+    }
+    PLAN_SEATS = {
+        "free": 1,
+        "go": 2,
+        "grow": 2,
+        "growth": 2,
+        "pro": 4,
+        "business": 8,
+        "scale": 20,
+        "enterprize": 20,
+        "enterprise": 20,
+        "custom": 30,
+    }
+    plan_price = PLAN_PRICES.get(p_lower, 0.0 if "free" in p_lower else (2499.0 if "business" in p_lower else (999.0 if "pro" in p_lower else (9999.0 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else 349.0))))
+    max_stores = PLAN_STORES.get(p_lower, 2 if "business" in p_lower else (10 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else 1))
+    max_seats = PLAN_SEATS.get(p_lower, 8 if "business" in p_lower else (4 if "pro" in p_lower else (20 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else (1 if "free" in p_lower else 2))))
+
+    tm_list = extra.get("team_members", [])
+    seats_used = 1 + (len(tm_list) if isinstance(tm_list, list) else 0)
+
     base_data: dict[str, Any] = {
         "has_store": True,
         "name": biz.name,
@@ -88,6 +134,13 @@ def _build_tenant_response(biz: Business, user: User | None = None) -> TenantRes
         "kind": biz.kind or "Ecommerce",
         "since": "2021",
         "plan": plan_name,
+        "planPriceBDT": plan_price,
+        "maxStores": max_stores,
+        "maxSeats": max_seats,
+        "currentSeatsCount": seats_used,
+        "currentStoresCount": 1,
+        "nextBillingDate": extra.get("next_billing_date", "10 Oct, 2026"),
+        "paymentMethod": extra.get("payment_method", "bKash Auto-Debit"),
         "ordersUsed": ai_used,
         "ordersQuota": quota_limit,
         "messagesUsed": ai_used,
@@ -128,6 +181,11 @@ def _build_tenant_response(biz: Business, user: User | None = None) -> TenantRes
     base_data["nameBn"] = biz.name_bn or biz.name
     base_data["kind"] = biz.kind or base_data.get("kind", "Ecommerce")
     base_data["slug"] = biz.slug
+    base_data["plan"] = plan_name
+    base_data["planPriceBDT"] = plan_price
+    base_data["maxStores"] = max_stores
+    base_data["maxSeats"] = max_seats
+    base_data["currentSeatsCount"] = seats_used
     base_data["currency"] = biz.currency or "BDT"
     base_data["timezone"] = biz.timezone or "Asia/Dhaka"
     base_data["logoHue"] = biz.logo_hue if biz.logo_hue is not None else 82

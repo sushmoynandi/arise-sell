@@ -70,6 +70,14 @@ class TenantResponse(BaseModel):
     website_orders_api_key: str | None = None
     website_orders_template: str | None = None
     setup_checklist: SetupChecklistResponse | None = None
+    planPriceBDT: float | None = None
+    maxStores: int | None = None
+    maxSeats: int | None = None
+    currentStoresCount: int | None = None
+    currentSeatsCount: int | None = None
+    nextBillingDate: str | None = None
+    paymentMethod: str | None = None
+
 
 
 class TeamMemberResponse(BaseModel):

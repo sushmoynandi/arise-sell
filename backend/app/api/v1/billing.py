@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import datetime
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -12,8 +13,9 @@ from app.core.database import get_db
 from app.core.deps import get_current_active_user
 from app.models.user import User
 from app.models.tenant import Business
+from app.models.billing import Invoice
 from app.schemas.auth import SelectPlanRequest, SelectPlanResponse
-from app.schemas.billing import InvoiceResponse
+from app.schemas.billing import InvoiceResponse, TopUpRequest, TopUpResponse
 from app.services.plans_service import get_stored_plans
 
 router = APIRouter(prefix="/billing", tags=["Billing & Subscriptions"])
@@ -21,12 +23,12 @@ router = APIRouter(prefix="/billing", tags=["Billing & Subscriptions"])
 
 @router.get("/plans")
 async def list_plans() -> list[dict[str, Any]]:
-    """Return the active commercial plans configured by admin (max 4)."""
+    """Return all active commercial plans configured in the system."""
     plans = await get_stored_plans()
-    home_plans = [p for p in plans if p.get("showOnHome") is True and p.get("status") == "active"]
-    if not home_plans:
-        home_plans = [p for p in plans if p.get("status") == "active"]
-    return home_plans[:4]
+    active_plans = [p for p in plans if p.get("status") == "active"]
+    if not active_plans:
+        active_plans = plans
+    return active_plans
 
 
 @router.post("/select-plan", response_model=SelectPlanResponse)
@@ -51,6 +53,7 @@ async def select_plan(
     if matched:
         plan_name = matched.get("name", req.plan_id)
         quota = int(matched.get("messageLimit") or 200)
+        price_bdt = float(matched.get("priceBDT", 0.0))
     else:
         QUOTA_MAP = {
             "free": 100,
@@ -66,11 +69,15 @@ async def select_plan(
         }
         plan_name = req.plan_id.capitalize()
         quota = QUOTA_MAP.get(req.plan_id.lower(), 500)
+        price_bdt = 2499.0 if "business" in req.plan_id.lower() else (999.0 if "pro" in req.plan_id.lower() else 349.0)
 
     # Save to user's permanent account
     user.plan = plan_name
     user.ai_quota = quota
     db.add(user)
+
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    inv_no = f"INV-{datetime.now().strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
 
     if not user.business_id:
         clean_store_name = f"{user.first_name}'s Store" if user.first_name else "My Store"
@@ -99,6 +106,22 @@ async def select_plan(
         await db.flush()
         user.business_id = biz.id
         user.role = "owner"
+
+        # Record initial plan invoice
+        sub_inv = Invoice(
+            invoice_no=inv_no,
+            merchant_name=biz.name,
+            plan_name=f"{plan_name} Plan (Subscription)",
+            amount_bdt=price_bdt,
+            original_amount_bdt=price_bdt,
+            payment_method="bKash Auto-Debit",
+            tx_id=f"BKH{uuid.uuid4().hex[:8].upper()}",
+            invoice_date=now_str,
+            status="paid",
+            business_id=biz.id,
+        )
+        db.add(sub_inv)
+
         await db.commit()
         await db.refresh(biz)
         await db.refresh(user)
@@ -125,6 +148,21 @@ async def select_plan(
     extra["plan"] = plan_name
     biz.settings_data = extra
     db.add(biz)
+
+    # Record plan change invoice in database
+    sub_inv = Invoice(
+        invoice_no=inv_no,
+        merchant_name=biz.name,
+        plan_name=f"{plan_name} Plan (Subscription)",
+        amount_bdt=price_bdt,
+        original_amount_bdt=price_bdt,
+        payment_method="bKash Auto-Debit",
+        tx_id=f"BKH{uuid.uuid4().hex[:8].upper()}",
+        invoice_date=now_str,
+        status="paid",
+        business_id=biz.id,
+    )
+    db.add(sub_inv)
 
     # Also sync any other stores owned by this user
     all_biz = (await db.execute(select(Business))).scalars().all()
@@ -155,16 +193,163 @@ async def select_plan(
 
 
 @router.get("/invoices", response_model=list[InvoiceResponse])
-async def list_invoices():
+async def list_invoices(
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return stored merchant tax invoices, generating an initial subscription invoice if empty."""
+    biz = None
+    if user.business_id:
+        biz = await db.get(Business, user.business_id)
+
+    if not biz:
+        clean_user_email = user.email.strip().lower()
+        all_biz = (await db.execute(select(Business))).scalars().all()
+        for b in all_biz:
+            extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+            if (
+                extra.get("owner_id") == str(user.id)
+                or extra.get("owner_email", "").strip().lower() == clean_user_email
+            ):
+                biz = b
+                break
+
+    if not biz:
+        return []
+
+    stmt = select(Invoice).where(Invoice.business_id == biz.id).order_by(Invoice.created_at.desc())
+    res = await db.execute(stmt)
+    invoices = list(res.scalars().all())
+
+    if not invoices:
+        # Auto-create initial active plan subscription invoice
+        plans = await get_stored_plans()
+        current_plan_name = (biz.plan or user.plan or "Business").capitalize()
+        matched = next(
+            (p for p in plans if p.get("name", "").strip().lower() == current_plan_name.strip().lower()),
+            None,
+        )
+        price_bdt = (
+            float(matched.get("priceBDT", 2499.0))
+            if matched
+            else (2499.0 if "business" in current_plan_name.lower() else (999.0 if "pro" in current_plan_name.lower() else 349.0))
+        )
+
+        now = datetime.now()
+        inv_no = f"INV-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
+        init_inv = Invoice(
+            invoice_no=inv_no,
+            merchant_name=biz.name,
+            plan_name=f"{current_plan_name} Plan (Monthly Subscription)",
+            amount_bdt=price_bdt,
+            original_amount_bdt=price_bdt,
+            payment_method="bKash Auto-Debit",
+            tx_id=f"BKH{uuid.uuid4().hex[:8].upper()}",
+            invoice_date=now.strftime("%Y-%m-%d"),
+            status="paid",
+            business_id=biz.id,
+        )
+        db.add(init_inv)
+        await db.commit()
+        await db.refresh(init_inv)
+        invoices = [init_inv]
+
     return [
         InvoiceResponse(
-            id="INV-2026-0890",
-            merchantName="Nokshi & Co.",
-            plan="Business Pro",
-            amountBDT=350.0,
-            method="bKash Merchant API",
-            txId="BKH91827364",
-            date="2026-08-30",
-            status="paid",
+            id=inv.invoice_no,
+            invoiceNo=inv.invoice_no,
+            merchantName=inv.merchant_name,
+            plan=inv.plan_name,
+            amountBDT=float(inv.amount_bdt),
+            originalAmountBDT=float(inv.original_amount_bdt) if inv.original_amount_bdt is not None else float(inv.amount_bdt),
+            discountBDT=float(inv.discount_bdt) if inv.discount_bdt is not None else 0.0,
+            method=inv.payment_method,
+            txId=inv.tx_id,
+            date=inv.invoice_date,
+            status=inv.status,
+            description=f"{inv.plan_name} · Ref: {inv.tx_id}",
         )
+        for inv in invoices
     ]
+
+
+@router.post("/topup", response_model=TopUpResponse)
+async def create_topup(
+    req: TopUpRequest,
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Credit quota to merchant account & store and generate an invoice in PostgreSQL."""
+    biz = None
+    if user.business_id:
+        biz = await db.get(Business, user.business_id)
+
+    if not biz:
+        clean_user_email = user.email.strip().lower()
+        all_biz = (await db.execute(select(Business))).scalars().all()
+        for b in all_biz:
+            extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+            if (
+                extra.get("owner_id") == str(user.id)
+                or extra.get("owner_email", "").strip().lower() == clean_user_email
+            ):
+                biz = b
+                break
+
+    clean_pack = req.pack.lower()
+    if "1500" in clean_pack or "1,500" in clean_pack:
+        added_quota = 1500
+        price_bdt = 3200.0
+    elif "5000" in clean_pack or "5,000" in clean_pack:
+        if "capi" in clean_pack or "signal" in clean_pack:
+            added_quota = 5000
+            price_bdt = 950.0
+        else:
+            added_quota = 5000
+            price_bdt = 8500.0
+    else:
+        # Default +500
+        added_quota = 500
+        price_bdt = 1250.0
+
+    # Credit user account
+    user.ai_quota = (user.ai_quota or 0) + added_quota
+    db.add(user)
+
+    now = datetime.now()
+    now_str = now.strftime("%Y-%m-%d")
+    inv_no = f"INV-TOPUP-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
+
+    if biz:
+        biz.orders_quota = (biz.orders_quota or 0) + added_quota
+        db.add(biz)
+
+        topup_inv = Invoice(
+            invoice_no=inv_no,
+            merchant_name=biz.name,
+            plan_name=f"{req.pack} Quota Top-Up",
+            amount_bdt=price_bdt,
+            original_amount_bdt=price_bdt,
+            payment_method="bKash Direct",
+            tx_id=f"BKH{uuid.uuid4().hex[:8].upper()}",
+            invoice_date=now_str,
+            status="paid",
+            business_id=biz.id,
+        )
+        db.add(topup_inv)
+
+    await db.commit()
+    if biz:
+        await db.refresh(biz)
+    await db.refresh(user)
+
+    return TopUpResponse(
+        success=True,
+        plan=biz.plan if biz else (user.plan or "Business"),
+        orders_quota=biz.orders_quota if biz else (user.ai_quota or 0),
+        messages_quota=user.ai_quota or 0,
+        added_quota=added_quota,
+        amount_bdt=price_bdt,
+        message=f"Successfully added {req.pack} to your quota! Quota updated immediately.",
+    )
+

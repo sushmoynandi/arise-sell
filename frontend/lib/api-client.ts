@@ -27,6 +27,42 @@ export interface StoreWorkspace {
   permissions: string[];
 }
 
+export interface BillingPlan {
+  id: string;
+  name: string;
+  nameBn?: string;
+  tagline?: string;
+  priceBDT: number;
+  yearlyPriceBDT?: number;
+  yearlyDiscountPercent?: number;
+  billingPeriod?: string;
+  messageLimit: number;
+  maxStores: number;
+  maxSeats: number;
+  catalogLimit?: number;
+  courierChannels?: number;
+  features: string[];
+  badge?: string | null;
+  popular?: boolean;
+  status?: string;
+  showOnHome?: boolean;
+}
+
+export interface BillingInvoice {
+  id: string;
+  invoiceNo?: string;
+  merchantName: string;
+  plan: string;
+  amountBDT: number;
+  originalAmountBDT?: number;
+  discountBDT?: number;
+  method: string;
+  txId: string;
+  date: string;
+  status: string;
+  description?: string;
+}
+
 export interface TeamMemberData {
   id: string;
   name: string;
@@ -471,8 +507,8 @@ class ApiClient {
 
   // --- Billing ---
   public billing = {
-    listPlans: () => this.request<unknown[]>("/billing/plans"),
-    listInvoices: () => this.request<unknown[]>("/billing/invoices"),
+    listPlans: () => this.request<BillingPlan[]>("/billing/plans"),
+    listInvoices: () => this.request<BillingInvoice[]>("/billing/invoices"),
     selectPlan: (data: { plan_id: string; billing_period?: string }) =>
       this.request<{
         success: boolean;
@@ -484,7 +520,15 @@ class ApiClient {
         body: JSON.stringify(data),
       }),
     createTopup: (pack: string, payment_method: string) =>
-      this.request("/billing/topup", {
+      this.request<{
+        success: boolean;
+        plan: string;
+        orders_quota: number;
+        messages_quota: number;
+        added_quota: number;
+        amount_bdt: number;
+        message: string;
+      }>("/billing/topup", {
         method: "POST",
         body: JSON.stringify({ pack, payment_method }),
       }),

@@ -483,7 +483,9 @@ export function PlanModals({
                 <div>
                   <label className="block font-bold text-text mb-1 flex items-center justify-between">
                     <span>Max Stores</span>
-                    <span className="text-[11px] text-text-3 font-normal font-mono">Store limit</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">
+                      Store limit
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -502,7 +504,9 @@ export function PlanModals({
                 <div>
                   <label className="block font-bold text-text mb-1 flex items-center justify-between">
                     <span>Max Team Seats</span>
-                    <span className="text-[11px] text-text-3 font-normal font-mono">Members</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">
+                      Members
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -791,7 +795,9 @@ export function PlanModals({
                 <div>
                   <label className="block font-bold text-text mb-1 flex items-center justify-between">
                     <span>Max Stores</span>
-                    <span className="text-[11px] text-text-3 font-normal font-mono">Store limit</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">
+                      Store limit
+                    </span>
                   </label>
                   <input
                     type="number"
@@ -806,7 +812,9 @@ export function PlanModals({
                 <div>
                   <label className="block font-bold text-text mb-1 flex items-center justify-between">
                     <span>Max Team Seats</span>
-                    <span className="text-[11px] text-text-3 font-normal font-mono">Members</span>
+                    <span className="text-[11px] text-text-3 font-normal font-mono">
+                      Members
+                    </span>
                   </label>
                   <input
                     type="number"

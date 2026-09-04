@@ -288,11 +288,9 @@ export default function AdminSubscriptionsPage() {
         yearlySubs =
           plan.yearlySubscribers || Math.max(1, Math.round(planStores * 0.28));
       } else {
-        monthlySubs =
-          plan.monthlySubscribers || Math.round(planStores * 0.8);
+        monthlySubs = plan.monthlySubscribers || Math.round(planStores * 0.8);
         yearlySubs =
-          plan.yearlySubscribers ||
-          Math.max(0, Math.round(planStores * 0.08));
+          plan.yearlySubscribers || Math.max(0, Math.round(planStores * 0.08));
       }
 
       const grossValue = monthlySubs * monthlyRate + yearlySubs * yearlyRate;
