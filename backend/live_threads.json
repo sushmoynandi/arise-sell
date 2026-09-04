@@ -369,6 +369,17 @@
           "detail": "Sent from Web Dashboard Inbox",
           "tone": "signal"
         }
+      },
+      {
+        "id": "m-39",
+        "from": "human",
+        "body": "hi",
+        "at": "13:04",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
       }
     ],
     "insights": {
