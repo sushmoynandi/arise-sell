@@ -371,3 +371,14 @@ def get_live_threads() -> list[dict[str, Any]]:
     global LIVE_THREADS
     LIVE_THREADS = _load_threads()
     return LIVE_THREADS
+
+
+def get_ai_messages_count() -> int:
+    """Return total count of AI-generated messages/replies across active conversation threads."""
+    threads = get_live_threads()
+    count = 0
+    for t in threads:
+        for m in t.get("messages", []):
+            if m.get("from") in ["agent", "bot"] or "AI" in m.get("action", {}).get("label", ""):
+                count += 1
+    return count

@@ -352,22 +352,51 @@ export function Meter({
 
 export function Avatar({
   name,
+  src,
   hue = 82,
   size = 32,
+  className,
 }: {
   name: string;
+  src?: string | null;
   hue?: number;
   size?: number;
+  className?: string;
 }) {
-  const ini = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+  const ini =
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase() || "U";
+
+  if (src) {
+    return (
+      <span
+        className={cx(
+          "relative inline-block overflow-hidden rounded-full shrink-0 select-none ring-1 ring-black/5 dark:ring-white/10",
+          className,
+        )}
+        style={{ width: size, height: size }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={name}
+          className="size-full object-cover rounded-full"
+        />
+      </span>
+    );
+  }
+
   return (
     <span
-      className="grid shrink-0 place-items-center rounded-full font-medium"
+      className={cx(
+        "grid shrink-0 place-items-center rounded-full font-medium select-none",
+        className,
+      )}
       style={{
         width: size,
         height: size,

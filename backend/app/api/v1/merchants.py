@@ -12,21 +12,71 @@ from app.core.database import get_db
 from app.core.deps import get_current_active_user
 from app.models.user import User
 from app.models.tenant import Business
-from app.schemas.merchant import TenantResponse, TeamMemberResponse, UpdateSettingsRequest
+from app.schemas.merchant import (
+    TenantResponse,
+    TeamMemberResponse,
+    UpdateSettingsRequest,
+    SetupChecklistResponse,
+    SetupTaskItem,
+    NotificationItem,
+)
 
 router = APIRouter(prefix="/merchants", tags=["Merchant Settings"])
 
 
 def _build_tenant_response(biz: Business) -> TenantResponse:
     extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
+
+    # Calculate live AI reply usage from live store + db
+    from app.services.live_store import get_ai_messages_count
+    live_ai_count = get_ai_messages_count()
+    ai_used = max(biz.orders_used or 0, live_ai_count or 0)
+
+    # Determine plan quota from commercial tiers
+    PLAN_LIMITS = {
+        "free": 100,
+        "basic": 200,
+        "growth": 500,
+        "go": 500,
+        "pro": 10000,
+        "business": 2500,
+        "scale": 5000,
+        "enterprise": 50000,
+        "karkhana": 25000,
+    }
+    raw_plan = (biz.plan or "Free").strip()
+    plan_name = raw_plan.capitalize()
+    tier_limit = PLAN_LIMITS.get(raw_plan.lower())
+    if tier_limit is not None:
+        quota_limit = (
+            biz.orders_quota
+            if biz.orders_quota and biz.orders_quota > tier_limit
+            else tier_limit
+        )
+    else:
+        quota_limit = (
+            biz.orders_quota
+            if biz.orders_quota and biz.orders_quota > 0
+            else 500
+        )
+
+    remaining = max(0, quota_limit - ai_used)
+    remaining_pct = (
+        round((remaining / quota_limit) * 100) if quota_limit > 0 else 0
+    )
+
     base_data: dict[str, Any] = {
         "name": biz.name,
         "nameBn": biz.name_bn or biz.name,
         "kind": biz.kind or "Ecommerce",
         "since": "2021",
-        "plan": (biz.plan or "Growth").capitalize(),
-        "ordersUsed": biz.orders_used,
-        "ordersQuota": biz.orders_quota,
+        "plan": plan_name,
+        "ordersUsed": ai_used,
+        "ordersQuota": quota_limit,
+        "messagesUsed": ai_used,
+        "messagesQuota": quota_limit,
+        "remainingQuota": remaining,
+        "remainingPercent": remaining_pct,
         "pages": 3,
         "logoHue": biz.logo_hue,
         "slug": biz.slug or "nokshi",
@@ -61,9 +111,57 @@ def _build_tenant_response(biz: Business) -> TenantResponse:
     base_data["nameBn"] = biz.name_bn or biz.name
     base_data["kind"] = biz.kind or base_data.get("kind", "Ecommerce")
     base_data["slug"] = biz.slug
-    base_data["currency"] = biz.currency
-    base_data["timezone"] = biz.timezone
-    base_data["logoHue"] = biz.logo_hue
+    base_data["currency"] = biz.currency or "BDT"
+    base_data["timezone"] = biz.timezone or "Asia/Dhaka"
+    base_data["logoHue"] = biz.logo_hue if biz.logo_hue is not None else 82
+    # Dynamic setup checklist calculated from merchant profile & settings
+    courier_done = bool(
+        extra.get("courier_connected")
+        or extra.get("steadfast_api_key")
+        or extra.get("pathao_api_key")
+        or extra.get("courier_api_key")
+        or "courier" in extra.get("completed_setup_ids", [])
+    )
+    persona_done = bool(
+        extra.get("persona_configured")
+        or extra.get("ai_voice")
+        or "persona" in extra.get("completed_setup_ids", [])
+    )
+    business_done = bool(
+        biz.name and (extra.get("phone") or extra.get("address") or extra.get("contact_phone"))
+    )
+
+    tasks = [
+        SetupTaskItem(
+            id="courier",
+            title="Connect Courier API",
+            hint="Steadfast / Pathao for auto parcel booking",
+            href="/console/settings?tab=courier",
+            completed=courier_done,
+        ),
+        SetupTaskItem(
+            id="persona",
+            title="Train AI Sales Persona",
+            hint="Store voice, catalog FAQ & discount limits",
+            href="/console/brain",
+            completed=persona_done,
+        ),
+        SetupTaskItem(
+            id="business",
+            title="Store & Contact Details",
+            hint="Contact number, address & return policy",
+            href="/console/settings?tab=business",
+            completed=business_done,
+        ),
+    ]
+
+    completed_count = sum(1 for t in tasks if t.completed)
+    base_data["setup_checklist"] = SetupChecklistResponse(
+        total=len(tasks),
+        completed=completed_count,
+        is_complete=(completed_count == len(tasks)),
+        tasks=tasks,
+    )
 
     return TenantResponse(**base_data)
 
@@ -168,3 +266,69 @@ async def list_team_members(
         )
         for u in users
     ]
+
+
+@router.get("/notifications", response_model=list[NotificationItem])
+async def list_merchant_notifications(
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve notifications tailored to the tenant and role."""
+    stmt = select(Business).where(Business.id == user.business_id)
+    res = await db.execute(stmt)
+    biz = res.scalar_one_or_none()
+
+    extra = biz.settings_data if biz and isinstance(biz.settings_data, dict) else {}
+    read_ids = set(extra.get("read_notifications", []))
+    biz_name = biz.name if biz else "Store"
+
+    return [
+        NotificationItem(
+            id="n1",
+            title="Admin Announcement: Maintenance Scheduled",
+            body="Infrastructure upgrade tonight at 3:00 AM. AI automated order booking will remain active without downtime.",
+            time="20m ago",
+            unread="n1" not in read_ids,
+            type="admin",
+        ),
+        NotificationItem(
+            id="n2",
+            title="Steadfast Courier API v2.4 Active",
+            body="Automated 1-click parcel generation & 24h COD instant payout tracking now enabled for your account.",
+            time="2h ago",
+            unread="n2" not in read_ids,
+            type="courier",
+        ),
+        NotificationItem(
+            id="n3",
+            title=f"{biz_name} Catalog Synced Successfully",
+            body="Automated stock sync complete across active sales channels with zero conflict.",
+            time="1d ago",
+            unread="n3" not in read_ids,
+            type="system",
+        ),
+    ]
+
+
+@router.post("/notifications/mark-read")
+async def mark_notifications_read(
+    req: dict[str, list[str]],
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mark specified notifications as read for this tenant."""
+    stmt = select(Business).where(Business.id == user.business_id)
+    res = await db.execute(stmt)
+    biz = res.scalar_one_or_none()
+    if not biz:
+        return {"success": True}
+
+    extra = dict(biz.settings_data) if isinstance(biz.settings_data, dict) else {}
+    read_ids = set(extra.get("read_notifications", []))
+    to_mark = req.get("ids", [])
+    read_ids.update(to_mark)
+    extra["read_notifications"] = list(read_ids)
+    biz.settings_data = extra
+    flag_modified(biz, "settings_data")
+    await db.commit()
+    return {"success": True, "read": list(read_ids)}
