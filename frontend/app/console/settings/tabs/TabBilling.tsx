@@ -487,20 +487,37 @@ export function TabBilling() {
           </div>
         </div>
 
-        {/* Dynamic Plans Grid: Only show plans with showOnHome: true, sort Custom to the far right */}
+        {/* Dynamic Plans Grid: Show plans with showOnHome: true, PLUS user's active plan if not included. Sort Custom/Enterprise to far right */}
         {(() => {
           const homePlans = plans.filter(
             (p) => p.showOnHome === true && p.status !== "archived",
           );
-          const displayPlans =
+          const basePlans =
             homePlans.length > 0
-              ? homePlans
+              ? [...homePlans]
               : plans.filter((p) => p.status === "active");
 
-          const sortedPlans = [...displayPlans].sort((a, b) => {
+          // Always include user's active plan (e.g. Enterprize / Custom) even if showOnHome is false
+          const activePlanMatch = plans.find(
+            (p) =>
+              p.name.toLowerCase() === planName.toLowerCase() ||
+              p.id.toLowerCase() === planName.toLowerCase(),
+          );
+          if (
+            activePlanMatch &&
+            !basePlans.some(
+              (p) =>
+                p.id === activePlanMatch.id ||
+                p.name.toLowerCase() === activePlanMatch.name.toLowerCase(),
+            )
+          ) {
+            basePlans.push(activePlanMatch);
+          }
+
+          const sortedPlans = [...basePlans].sort((a, b) => {
             const aCustom = isCustomPlan(a);
             const bCustom = isCustomPlan(b);
-            if (aCustom && !bCustom) return 1; // Custom goes to the rightmost column
+            if (aCustom && !bCustom) return 1; // Custom / Enterprise goes to the rightmost column
             if (!aCustom && bCustom) return -1;
             return (a.priceBDT || 0) - (b.priceBDT || 0);
           });
@@ -565,7 +582,7 @@ export function TabBilling() {
                       </p>
 
                       <div className="flex items-baseline gap-1 pt-1">
-                        {isCustom ? (
+                        {isCustom && !isCurrent && (p.priceBDT <= 0 || p.name.toLowerCase().includes("custom")) ? (
                           <div className="flex flex-col">
                             <span className="text-xl font-bold font-display text-text">
                               Contact Sales
@@ -590,25 +607,19 @@ export function TabBilling() {
                         <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                           <span>Quota:</span>
                           <span className="text-signal font-bold">
-                            {isCustom && p.messageLimit >= 10000
-                              ? `${p.messageLimit.toLocaleString()}+ Messages (Custom)`
-                              : `${p.messageLimit.toLocaleString()} Messages`}
+                            {p.messageLimit.toLocaleString()} Messages
                           </span>
                         </div>
                         <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                           <span>Stores:</span>
                           <span className="text-text font-bold">
-                            {isCustom && p.maxStores >= 4
-                              ? `${p.maxStores}+ Stores (Flexible)`
-                              : `${p.maxStores} ${p.maxStores > 1 ? "Stores" : "Store"}`}
+                            {p.maxStores} {p.maxStores > 1 ? "Stores" : "Store"}
                           </span>
                         </div>
                         <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                           <span>Seats:</span>
                           <span className="text-text font-bold">
-                            {isCustom && p.maxSeats >= 20
-                              ? `${p.maxSeats}+ Seats`
-                              : `${p.maxSeats} ${p.maxSeats > 1 ? "Seats" : "Seat"}`}
+                            {p.maxSeats} {p.maxSeats > 1 ? "Seats" : "Seat"}
                           </span>
                         </div>
                       </div>
