@@ -44,6 +44,8 @@ from app.schemas.auth import (
     GoogleAuthRequest,
     DeleteAccountRequest,
     DeleteAccountResponse,
+    ChangePasswordRequest,
+    UpdateProfileRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -234,7 +236,98 @@ async def get_me(
         is_superadmin=is_super,
         plan=plan_name,
         has_plan=has_plan,
+        phone=getattr(user, "phone", None),
+        avatar_url=getattr(user, "avatar_url", None),
+        hue=int(getattr(user, "hue", 82) or 82),
     )
+
+
+@router.patch("/profile", response_model=UserBrief)
+async def update_profile(
+    req: UpdateProfileRequest,
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update current user profile information."""
+    stmt = select(User).where(User.id == user.id)
+    res = await db.execute(stmt)
+    db_user = res.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if req.first_name is not None:
+        db_user.first_name = req.first_name.strip()
+    if req.last_name is not None:
+        db_user.last_name = req.last_name.strip()
+    if req.phone is not None:
+        db_user.phone = req.phone.strip()
+    if req.avatar_url is not None:
+        db_user.avatar_url = req.avatar_url.strip()
+    if req.hue is not None:
+        db_user.hue = req.hue
+
+    await db.commit()
+    await db.refresh(db_user)
+
+    try:
+        plan_name, has_plan = await _resolve_user_plan(db_user, db)
+    except Exception:
+        plan_name, has_plan = "growth", True
+
+    clean_email = str(getattr(db_user, "email", "")).strip().lower()
+    is_super = bool(
+        getattr(db_user, "is_superadmin", False) or
+        getattr(db_user, "role", "") == "superadmin" or
+        clean_email in ["admin@arisesell.com", "admin@nextproduct.ai"]
+    )
+
+    return UserBrief(
+        id=db_user.id,
+        email=db_user.email,
+        first_name=db_user.first_name,
+        last_name=db_user.last_name,
+        is_verified=bool(getattr(db_user, "is_verified", True)),
+        role="superadmin" if is_super else str(getattr(db_user, "role", "owner") or "owner"),
+        is_superadmin=is_super,
+        plan=plan_name,
+        has_plan=has_plan,
+        phone=db_user.phone,
+        avatar_url=db_user.avatar_url,
+        hue=int(getattr(db_user, "hue", 82) or 82),
+    )
+
+
+@router.post("/change-password")
+async def change_password(
+    req: ChangePasswordRequest,
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change account password securely."""
+    stmt = select(User).where(User.id == user.id)
+    res = await db.execute(stmt)
+    db_user = res.scalar_one_or_none()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if db_user.hashed_password:
+        if not verify_password(req.current_password, db_user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect.",
+            )
+
+    valid, err_msg = validate_password_strength(req.new_password)
+    if not valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err_msg)
+
+    db_user.hashed_password = hash_password(req.new_password)
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": "Password changed successfully.",
+    }
 
 
 @router.post("/forgot-password")

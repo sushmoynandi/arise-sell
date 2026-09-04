@@ -66,8 +66,33 @@ class UserBrief(BaseModel):
     is_superadmin: bool = False
     plan: str | None = None
     has_plan: bool = False
+    phone: str | None = None
+    avatar_url: str | None = None
+    hue: int = 82
 
     model_config = {"from_attributes": True}
+
+
+class ChangePasswordRequest(BaseModel):
+    """Change password payload."""
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+    confirm_password: str | None = None
+
+    @model_validator(mode="after")
+    def check_passwords_match(self) -> ChangePasswordRequest:
+        if self.confirm_password is not None and self.new_password != self.confirm_password:
+            raise ValueError("New passwords do not match")
+        return self
+
+
+class UpdateProfileRequest(BaseModel):
+    """Update profile information payload."""
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+    avatar_url: str | None = None
+    hue: int | None = None
 
 
 class TokenResponse(BaseModel):

@@ -172,6 +172,26 @@ class ApiClient {
         body: JSON.stringify(body),
       }),
     me: () => this.request<Record<string, unknown>>("/auth/me"),
+    updateProfile: (body: {
+      first_name?: string;
+      last_name?: string;
+      phone?: string;
+      avatar_url?: string;
+      hue?: number;
+    }) =>
+      this.request<Record<string, unknown>>("/auth/profile", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    changePassword: (body: {
+      current_password: string;
+      new_password: string;
+      confirm_password?: string;
+    }) =>
+      this.request<{ success: boolean; message: string }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     deleteAccount: (body: { password?: string; confirm_phrase: string }) =>
       this.request<{ success: boolean; message: string }>("/auth/account", {
         method: "DELETE",

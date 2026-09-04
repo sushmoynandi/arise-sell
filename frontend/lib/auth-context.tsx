@@ -22,6 +22,9 @@ export interface UserProfile {
   is_superadmin?: boolean;
   plan?: string | null;
   has_plan?: boolean;
+  phone?: string | null;
+  avatar_url?: string | null;
+  hue?: number;
 }
 
 interface AuthContextType {
@@ -42,6 +45,18 @@ interface AuthContextType {
     full_name?: string;
     store_name?: string;
   }) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
+  updateProfile: (data: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    avatar_url?: string;
+    hue?: number;
+  }) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
+  changePassword: (data: {
+    current_password: string;
+    new_password: string;
+    confirm_password?: string;
+  }) => Promise<{ success: boolean; message?: string; error?: string }>;
   adminLogin: (
     email: string,
     password: string,
@@ -205,6 +220,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    avatar_url?: string;
+    hue?: number;
+  }) => {
+    try {
+      const res = await api.auth.updateProfile(data);
+      if (res && res.id) {
+        const updated = res as unknown as UserProfile;
+        setUser(updated);
+        syncUserCookies(updated, 7);
+        return { success: true, user: updated };
+      }
+      return { success: false, error: "Failed to update profile" };
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to update profile";
+      return { success: false, error: msg };
+    }
+  };
+
+  const changePassword = async (data: {
+    current_password: string;
+    new_password: string;
+    confirm_password?: string;
+  }) => {
+    try {
+      const res = await api.auth.changePassword(data);
+      if (res.success) {
+        return { success: true, message: res.message };
+      }
+      return { success: false, error: "Failed to change password" };
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to change password";
+      return { success: false, error: msg };
+    }
+  };
+
   const adminLogin = async (email: string, password: string) => {
     try {
       const res = await api.admin.login({ email, password });
@@ -347,6 +403,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         login,
         register,
+        updateProfile,
+        changePassword,
         adminLogin,
         adminVerify2FA,
         selectPlan,

@@ -48,6 +48,9 @@ async def get_merchant_profile(
         ordersQuota=biz.orders_quota,
         pages=3,
         logoHue=biz.logo_hue,
+        slug=getattr(biz, "slug", "nokshi"),
+        currency=getattr(biz, "currency", "BDT"),
+        timezone=getattr(biz, "timezone", "Asia/Dhaka"),
     )
 
 
@@ -65,16 +68,20 @@ async def update_merchant_settings(
     if not biz:
         raise HTTPException(status_code=404, detail="Business tenant not found")
 
-    if req.name:
+    if req.name is not None:
         biz.name = req.name
-    if req.name_bn:
+    if req.name_bn is not None:
         biz.name_bn = req.name_bn
-    if req.kind:
+    if req.kind is not None:
         biz.kind = req.kind
-    if req.currency:
+    if req.currency is not None:
         biz.currency = req.currency
-    if req.timezone:
+    if req.timezone is not None:
         biz.timezone = req.timezone
+    if req.slug is not None:
+        biz.slug = req.slug.strip().lower()
+    if req.logo_hue is not None:
+        biz.logo_hue = req.logo_hue
 
     await db.commit()
     await db.refresh(biz)
@@ -89,6 +96,9 @@ async def update_merchant_settings(
         ordersQuota=biz.orders_quota,
         pages=3,
         logoHue=biz.logo_hue,
+        slug=getattr(biz, "slug", "nokshi"),
+        currency=getattr(biz, "currency", "BDT"),
+        timezone=getattr(biz, "timezone", "Asia/Dhaka"),
     )
 
 

@@ -15,6 +15,9 @@ class TenantResponse(BaseModel):
     ordersQuota: int
     pages: int
     logoHue: int
+    slug: str | None = None
+    currency: str = "BDT"
+    timezone: str = "Asia/Dhaka"
 
     model_config = {"from_attributes": True}
 
@@ -46,3 +49,5 @@ class UpdateSettingsRequest(BaseModel):
     kind: str | None = None
     currency: str | None = None
     timezone: str | None = None
+    slug: str | None = None
+    logo_hue: int | None = None
