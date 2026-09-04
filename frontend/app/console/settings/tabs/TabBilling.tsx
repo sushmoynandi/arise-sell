@@ -121,12 +121,12 @@ export function TabBilling() {
     ordersQuota > 0 ? Math.round((remainingQuota / ordersQuota) * 100) : 0;
 
   const maxStores =
-    matchedCurrentPlan?.maxStores ??
     settings.maxStores ??
+    matchedCurrentPlan?.maxStores ??
     (planName.toLowerCase().includes("business") ? 2 : 1);
   const maxSeats =
-    matchedCurrentPlan?.maxSeats ??
     settings.maxSeats ??
+    matchedCurrentPlan?.maxSeats ??
     (planName.toLowerCase().includes("business") ? 8 : 4);
 
   const ownedStores = stores.filter((s) => s.is_owner);
@@ -735,74 +735,148 @@ export function TabBilling() {
 
               {/* Enterprise Custom Plan & Voucher Redemption Banner (Below Plans Grid) */}
               <div className="border-t border-line p-5 bg-surface-2/20">
-                <div className="rounded-2xl border border-line/80 bg-white p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm sm:text-base font-bold font-display text-text">
-                        Custom Enterprise
-                      </h4>
-                      <span className="rounded-md bg-signal/15 px-2 py-0.5 text-[10px] font-bold font-mono text-signal uppercase tracking-wider">
-                        Tailored
-                      </span>
+                {isUserOnCustom ? (
+                  <div className="rounded-2xl border border-signal/30 bg-[#edf7f3]/60 p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-3 min-w-0">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="flex h-2 w-2 rounded-full bg-signal animate-pulse" />
+                        <h4 className="text-sm sm:text-base font-bold font-display text-text whitespace-nowrap">
+                          {planName}
+                        </h4>
+                        <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                          Active Plan
+                        </span>
+                      </div>
+                      <span className="text-text-3/60 hidden xl:inline">•</span>
+                      <p className="text-xs text-text-2 font-mono whitespace-nowrap">
+                        {ordersQuota.toLocaleString()} msgs · {maxStores} stores · {maxSeats} seats · Priority SLA
+                      </p>
                     </div>
-                    <p className="text-xs text-text-3 max-w-xl">
-                      Tailored AI message quotas, multi-store management (3–10+), and dedicated SLA for high-volume brands.
-                    </p>
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="signal"
-                      onClick={() =>
-                        handleContactSales({
-                          id: "custom-enterprise",
-                          name: "Custom Enterprise",
-                          priceBDT: 0,
-                          messageLimit: 50000,
-                          maxStores: 10,
-                          maxSeats: 30,
-                          features: [],
-                        } as unknown as BillingPlan)
-                      }
-                      className="justify-center text-xs gap-2 py-2 px-3.5 font-semibold shadow-xs"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRedeemError(null);
+                          setRedeemModalOpen(true);
+                        }}
+                        className="flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl border border-line bg-white hover:bg-surface-2 hover:border-signal/50 text-xs font-semibold text-text shadow-2xs transition-all cursor-pointer"
                       >
-                        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.04c-.24.68-1.4 1.26-1.92 1.34-.5.08-1.15.12-3.71-.94-3.28-1.36-5.38-4.7-5.54-4.92-.16-.22-1.33-1.78-1.33-3.4 0-1.62.85-2.42 1.15-2.75.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.2.01.47-.08.73.56.27.68.92 2.27 1 2.43.08.17.14.36.02.58-.11.22-.17.36-.34.56-.17.2-.36.45-.51.6-.17.17-.35.36-.15.7.2.34.89 1.47 1.91 2.38 1.31 1.17 2.42 1.53 2.76 1.7.34.17.54.14.74-.08.2-.23.86-1 1.09-1.35.23-.34.46-.29.77-.17.31.11 1.98.93 2.32 1.1.34.17.57.26.65.4.08.14.08.82-.16 1.5z" />
-                      </svg>
-                      <span>Contact Sales</span>
-                    </Button>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-signal"
+                        >
+                          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                        </svg>
+                        <span>Redeem Plan Code</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRedeemError(null);
-                        setRedeemModalOpen(true);
-                      }}
-                      className="flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl border border-line bg-surface-2/50 hover:bg-surface-2 hover:border-signal/50 text-xs font-semibold text-text shadow-2xs transition-all cursor-pointer"
-                    >
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-signal"
+                      <Button
+                        size="sm"
+                        variant="signal"
+                        onClick={() =>
+                          handleContactSales({
+                            id: "custom-enterprise",
+                            name: planName,
+                            priceBDT: planPriceBDT,
+                            messageLimit: ordersQuota,
+                            maxStores: maxStores,
+                            maxSeats: maxSeats,
+                            features: [],
+                          } as unknown as BillingPlan)
+                        }
+                        className="justify-center text-xs gap-2 py-2 px-3.5 font-semibold shadow-xs"
                       >
-                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                      </svg>
-                      <span>Redeem Plan Code</span>
-                    </button>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.04c-.24.68-1.4 1.26-1.92 1.34-.5.08-1.15.12-3.71-.94-3.28-1.36-5.38-4.7-5.54-4.92-.16-.22-1.33-1.78-1.33-3.4 0-1.62.85-2.42 1.15-2.75.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.2.01.47-.08.73.56.27.68.92 2.27 1 2.43.08.17.14.36.02.58-.11.22-.17.36-.34.56-.17.2-.36.45-.51.6-.17.17-.35.36-.15.7.2.34.89 1.47 1.91 2.38 1.31 1.17 2.42 1.53 2.76 1.7.34.17.54.14.74-.08.2-.23.86-1 1.09-1.35.23-.34.46-.29.77-.17.31.11 1.98.93 2.32 1.1.34.17.57.26.65.4.08.14.08.82-.16 1.5z" />
+                        </svg>
+                        <span>Contact Sales</span>
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-2xl border border-line/80 bg-white p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-3 min-w-0">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <h4 className="text-sm sm:text-base font-bold font-display text-text whitespace-nowrap">
+                          Custom Enterprise
+                        </h4>
+                        <span className="rounded-md bg-signal/15 px-2 py-0.5 text-[10px] font-bold font-mono text-signal uppercase tracking-wider">
+                          Tailored
+                        </span>
+                      </div>
+                      <span className="text-text-3/60 hidden xl:inline">•</span>
+                      <p className="text-xs text-text-3 whitespace-nowrap">
+                        Tailored AI message quotas, multi-store management (3–10+), and dedicated SLA for high-volume brands.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="signal"
+                        onClick={() =>
+                          handleContactSales({
+                            id: "custom-enterprise",
+                            name: "Custom Enterprise",
+                            priceBDT: 0,
+                            messageLimit: 50000,
+                            maxStores: 10,
+                            maxSeats: 30,
+                            features: [],
+                          } as unknown as BillingPlan)
+                        }
+                        className="justify-center text-xs gap-2 py-2 px-3.5 font-semibold shadow-xs"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.04c-.24.68-1.4 1.26-1.92 1.34-.5.08-1.15.12-3.71-.94-3.28-1.36-5.38-4.7-5.54-4.92-.16-.22-1.33-1.78-1.33-3.4 0-1.62.85-2.42 1.15-2.75.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.2.01.47-.08.73.56.27.68.92 2.27 1 2.43.08.17.14.36.02.58-.11.22-.17.36-.34.56-.17.2-.36.45-.51.6-.17.17-.35.36-.15.7.2.34.89 1.47 1.91 2.38 1.31 1.17 2.42 1.53 2.76 1.7.34.17.54.14.74-.08.2-.23.86-1 1.09-1.35.23-.34.46-.29.77-.17.31.11 1.98.93 2.32 1.1.34.17.57.26.65.4.08.14.08.82-.16 1.5z" />
+                        </svg>
+                        <span>Contact Sales</span>
+                      </Button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRedeemError(null);
+                          setRedeemModalOpen(true);
+                        }}
+                        className="flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl border border-line bg-surface-2/50 hover:bg-surface-2 hover:border-signal/50 text-xs font-semibold text-text shadow-2xs transition-all cursor-pointer"
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-signal"
+                        >
+                          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                        </svg>
+                        <span>Redeem Plan Code</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1092,69 +1166,6 @@ export function TabBilling() {
                     <span>{redeemError}</span>
                   </div>
                 )}
-
-                {/* Quick Test Code Chips */}
-                <div className="pt-1">
-                  <span className="text-[10.5px] text-text-3 font-mono block mb-1.5 font-medium">
-                    Available Enterprise Templates:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { code: "CUSTOM-VIP-50K", label: "50k Msg · 5 Stores" },
-                      {
-                        code: "ENTERPRISE-100K",
-                        label: "100k Msg · 10 Stores",
-                      },
-                      { code: "CUSTOM-AGENCY", label: "25k Msg · 4 Stores" },
-                      { code: "ARISE-VIP", label: "30k Msg · 4 Stores" },
-                    ].map((sample) => (
-                      <button
-                        key={sample.code}
-                        type="button"
-                        onClick={() => {
-                          setRedeemCodeInput(sample.code);
-                          setRedeemError(null);
-                        }}
-                        className="rounded-lg border border-line bg-surface-2/50 px-2 py-1 text-[10.5px] font-mono text-text hover:border-signal/50 hover:bg-signal/10 transition-colors cursor-pointer"
-                        title={sample.label}
-                      >
-                        {sample.code}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-xl bg-surface-2/50 p-3 text-[11px] text-text-3 leading-relaxed">
-                  💡 Don&apos;t have an enterprise code yet?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRedeemModalOpen(false);
-                      handleContactSales({
-                        id: "custom",
-                        name: "Custom Enterprise",
-                        nameBn: "কাস্টম এন্টারপ্রাইজ",
-                        tagline: "High volume AI quota",
-                        priceBDT: 0,
-                        yearlyPriceBDT: 0,
-                        yearlyDiscountPercent: 0,
-                        billingPeriod: "both",
-                        messageLimit: 50000,
-                        maxStores: 10,
-                        maxSeats: 30,
-                        catalogLimit: 10000,
-                        courierChannels: 10,
-                        features: [],
-                        showOnHome: true,
-                        status: "active",
-                      } as BillingPlan);
-                    }}
-                    className="text-signal font-semibold hover:underline cursor-pointer"
-                  >
-                    Contact sales on WhatsApp
-                  </button>{" "}
-                  for a customized high-volume contract.
-                </div>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2 border-t border-line">

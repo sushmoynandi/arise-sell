@@ -100,7 +100,7 @@ def _build_tenant_response(
     # Determine plan quota: User account level plan/quota takes precedence
     user_plan = user.plan if user and user.plan else None
     raw_plan = (user_plan or biz.plan or "Free").strip()
-    plan_name = raw_plan.capitalize()
+    plan_name = raw_plan if " " in raw_plan else raw_plan.capitalize()
     tier_limit = get_plan_ai_quota(raw_plan)
 
     account_quota = user.ai_quota if (user and user.ai_quota) else biz.orders_quota
