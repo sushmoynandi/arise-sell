@@ -41,6 +41,10 @@ export function TabBilling() {
   const [selectedInvoice, setSelectedInvoice] = useState<BillingInvoice | null>(
     null,
   );
+  const [redeemModalOpen, setRedeemModalOpen] = useState(false);
+  const [redeemCodeInput, setRedeemCodeInput] = useState("");
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     text: string;
@@ -219,6 +223,41 @@ export function TabBilling() {
       `Hello Arise-Sell Team, I am interested in the ${planTitle} Plan for my store "${storeName}". Please share details regarding custom AI message quota, multi-store limits, and pricing.`,
     );
     window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+  };
+
+  // Handle Enterprise Activation Code Redemption
+  const handleRedeemCode = async () => {
+    const cleanCode = redeemCodeInput.trim().toUpperCase();
+    if (!cleanCode) {
+      setRedeemError("Please enter an activation code.");
+      return;
+    }
+    setRedeemLoading(true);
+    setRedeemError(null);
+    try {
+      const res = await api.billing.redeemCode(cleanCode);
+      if (res.success) {
+        showToast(
+          res.message || `Successfully activated ${res.plan} Plan!`,
+          "success",
+        );
+        setRedeemModalOpen(false);
+        setRedeemCodeInput("");
+        await refreshSettings();
+        await fetchData();
+      } else {
+        setRedeemError(res.message || "Failed to activate code.");
+      }
+    } catch (err: unknown) {
+      console.error("Redeem code failed:", err);
+      setRedeemError(
+        err instanceof Error
+          ? err.message
+          : "Invalid or expired activation code.",
+      );
+    } finally {
+      setRedeemLoading(false);
+    }
   };
 
   // Handle PDF Download
@@ -514,6 +553,38 @@ export function TabBilling() {
             basePlans.push(activePlanMatch);
           }
 
+          // Always ensure an Enterprise / Custom card is rendered on the rightmost edge
+          if (!basePlans.some((p) => isCustomPlan(p))) {
+            basePlans.push({
+              id: "plan-custom-enterprise",
+              name: "Custom Enterprise",
+              nameBn: "কাস্টম এন্টারপ্রাইজ",
+              tagline:
+                "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA.",
+              priceBDT: 0,
+              yearlyPriceBDT: 0,
+              yearlyDiscountPercent: 0,
+              billingPeriod: "both",
+              messageLimit: 50000,
+              maxStores: 10,
+              maxSeats: 30,
+              catalogLimit: 10000,
+              courierChannels: 10,
+              features: [
+                "10,000+ to 100,000+ AI Messages / mo",
+                "3 to 10+ Connected Stores",
+                "10 to 30+ Team Member Seats",
+                "Dedicated High-Concurrency Cloud Node",
+                "Dedicated Account Manager & SLA",
+              ],
+              badge: "ENTERPRISE",
+              popular: false,
+              activeMerchants: 15,
+              status: "active",
+              showOnHome: true,
+            });
+          }
+
           const sortedPlans = [...basePlans].sort((a, b) => {
             const aCustom = isCustomPlan(a);
             const bCustom = isCustomPlan(b);
@@ -582,7 +653,10 @@ export function TabBilling() {
                       </p>
 
                       <div className="flex items-baseline gap-1 pt-1">
-                        {isCustom && !isCurrent && (p.priceBDT <= 0 || p.name.toLowerCase().includes("custom")) ? (
+                        {isCustom &&
+                        !isCurrent &&
+                        (p.priceBDT <= 0 ||
+                          p.name.toLowerCase().includes("custom")) ? (
                           <div className="flex flex-col">
                             <span className="text-xl font-bold font-display text-text">
                               Contact Sales
@@ -607,19 +681,25 @@ export function TabBilling() {
                         <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                           <span>Quota:</span>
                           <span className="text-signal font-bold">
-                            {p.messageLimit.toLocaleString()} Messages
+                            {isCustom
+                              ? "10k – 100k+ Messages"
+                              : `${p.messageLimit.toLocaleString()} Messages`}
                           </span>
                         </div>
                         <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                           <span>Stores:</span>
                           <span className="text-text font-bold">
-                            {p.maxStores} {p.maxStores > 1 ? "Stores" : "Store"}
+                            {isCustom
+                              ? "3 – 10+ Stores"
+                              : `${p.maxStores} ${p.maxStores > 1 ? "Stores" : "Store"}`}
                           </span>
                         </div>
                         <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
                           <span>Seats:</span>
                           <span className="text-text font-bold">
-                            {p.maxSeats} {p.maxSeats > 1 ? "Seats" : "Seat"}
+                            {isCustom
+                              ? "10 – 30+ Seats"
+                              : `${p.maxSeats} ${p.maxSeats > 1 ? "Seats" : "Seat"}`}
                           </span>
                         </div>
                       </div>
@@ -635,26 +715,47 @@ export function TabBilling() {
                         Active Plan
                       </Button>
                     ) : isCustom ? (
-                      <Button
-                        size="sm"
-                        variant="signal"
-                        onClick={() => handleContactSales(p)}
-                        className="w-full justify-center text-xs mt-2 gap-1.5"
-                      >
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                      <div className="space-y-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="signal"
+                          onClick={() => handleContactSales(p)}
+                          className="w-full justify-center text-xs gap-1.5 font-semibold shadow-xs"
                         >
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                        </svg>
-                        <span>Contact Sales</span>
-                      </Button>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.04c-.24.68-1.4 1.26-1.92 1.34-.5.08-1.15.12-3.71-.94-3.28-1.36-5.38-4.7-5.54-4.92-.16-.22-1.33-1.78-1.33-3.4 0-1.62.85-2.42 1.15-2.75.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.2.01.47-.08.73.56.27.68.92 2.27 1 2.43.08.17.14.36.02.58-.11.22-.17.36-.34.56-.17.2-.36.45-.51.6-.17.17-.35.36-.15.7.2.34.89 1.47 1.91 2.38 1.31 1.17 2.42 1.53 2.76 1.7.34.17.54.14.74-.08.2-.23.86-1 1.09-1.35.23-.34.46-.29.77-.17.31.11 1.98.93 2.32 1.1.34.17.57.26.65.4.08.14.08.82-.16 1.5z" />
+                          </svg>
+                          <span>Contact Sales</span>
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRedeemError(null);
+                            setRedeemModalOpen(true);
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-line bg-surface-2/60 hover:bg-surface-2 hover:border-signal/50 text-[11px] font-semibold text-text transition-all cursor-pointer"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-signal"
+                          >
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                          </svg>
+                          <span>Redeem Plan Code</span>
+                        </button>
+                      </div>
                     ) : (
                       <Button
                         size="sm"
@@ -875,6 +976,177 @@ export function TabBilling() {
                 >
                   <IconDownload width={16} height={16} />
                   Download PDF / Print
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Plan Code Redemption Modal */}
+      <AnimatePresence>
+        {redeemModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-5 border border-line"
+            >
+              <div className="flex items-start justify-between border-b border-line pb-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal/15 text-signal">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold font-display text-text">
+                      Redeem Custom Plan Code
+                    </h3>
+                    <p className="text-[11.5px] text-text-3">
+                      Enter the activation license key provided by sales
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRedeemModalOpen(false);
+                    setRedeemError(null);
+                  }}
+                  className="rounded-lg p-1 text-text-3 hover:bg-surface-2 hover:text-text cursor-pointer"
+                >
+                  <IconClose width={18} height={18} />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-text">
+                  Enterprise Activation Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. CUSTOM-VIP-50K"
+                  value={redeemCodeInput}
+                  onChange={(e) => {
+                    setRedeemCodeInput(e.target.value.toUpperCase());
+                    setRedeemError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !redeemLoading) {
+                      e.preventDefault();
+                      handleRedeemCode();
+                    }
+                  }}
+                  className="w-full rounded-xl border border-line bg-surface-2/30 px-3.5 py-2.5 font-mono text-sm uppercase tracking-wider text-text placeholder:normal-case placeholder:font-sans placeholder:text-text-3 focus:border-signal focus:bg-white focus:ring-2 focus:ring-signal/20 focus:outline-hidden"
+                  autoFocus
+                />
+
+                {redeemError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-600 flex items-center gap-2">
+                    <IconShield width={14} height={14} className="shrink-0" />
+                    <span>{redeemError}</span>
+                  </div>
+                )}
+
+                {/* Quick Test Code Chips */}
+                <div className="pt-1">
+                  <span className="text-[10.5px] text-text-3 font-mono block mb-1.5 font-medium">
+                    Available Enterprise Templates:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { code: "CUSTOM-VIP-50K", label: "50k Msg · 5 Stores" },
+                      { code: "ENTERPRISE-100K", label: "100k Msg · 10 Stores" },
+                      { code: "CUSTOM-AGENCY", label: "25k Msg · 4 Stores" },
+                      { code: "ARISE-VIP", label: "30k Msg · 4 Stores" },
+                    ].map((sample) => (
+                      <button
+                        key={sample.code}
+                        type="button"
+                        onClick={() => {
+                          setRedeemCodeInput(sample.code);
+                          setRedeemError(null);
+                        }}
+                        className="rounded-lg border border-line bg-surface-2/50 px-2 py-1 text-[10.5px] font-mono text-text hover:border-signal/50 hover:bg-signal/10 transition-colors cursor-pointer"
+                        title={sample.label}
+                      >
+                        {sample.code}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-surface-2/50 p-3 text-[11px] text-text-3 leading-relaxed">
+                  💡 Don&apos;t have an enterprise code yet?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRedeemModalOpen(false);
+                      handleContactSales({
+                        id: "custom",
+                        name: "Custom Enterprise",
+                        nameBn: "কাস্টম এন্টারপ্রাইজ",
+                        tagline: "High volume AI quota",
+                        priceBDT: 0,
+                        yearlyPriceBDT: 0,
+                        yearlyDiscountPercent: 0,
+                        billingPeriod: "both",
+                        messageLimit: 50000,
+                        maxStores: 10,
+                        maxSeats: 30,
+                        catalogLimit: 10000,
+                        courierChannels: 10,
+                        features: [],
+                        showOnHome: true,
+                        status: "active",
+                      } as BillingPlan);
+                    }}
+                    className="text-signal font-semibold hover:underline cursor-pointer"
+                  >
+                    Contact sales on WhatsApp
+                  </button>{" "}
+                  for a customized high-volume contract.
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-line">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setRedeemModalOpen(false);
+                    setRedeemError(null);
+                  }}
+                  disabled={redeemLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="signal"
+                  size="sm"
+                  onClick={handleRedeemCode}
+                  disabled={redeemLoading || !redeemCodeInput.trim()}
+                  className="gap-1.5"
+                >
+                  {redeemLoading ? (
+                    "Activating..."
+                  ) : (
+                    <>
+                      <IconCheck width={15} height={15} />
+                      <span>Activate Plan</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </motion.div>

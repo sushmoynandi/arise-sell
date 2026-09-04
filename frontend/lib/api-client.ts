@@ -46,6 +46,7 @@ export interface BillingPlan {
   features: string[];
   badge?: string | null;
   popular?: boolean;
+  activeMerchants?: number;
   status?: string;
   showOnHome?: boolean;
 }
@@ -534,6 +535,32 @@ class ApiClient {
         method: "POST",
         body: JSON.stringify({ pack, payment_method }),
       }),
+    redeemCode: (code: string) =>
+      this.request<{
+        success: boolean;
+        plan: string;
+        orders_quota: number;
+        messages_quota: number;
+        max_stores: number;
+        max_seats: number;
+        message: string;
+      }>("/billing/redeem-code", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      }),
+    getCustomCodes: () =>
+      this.request<
+        {
+          code: string;
+          plan_name: string;
+          message_limit: number;
+          max_stores: number;
+          max_seats: number;
+          price_bdt: number;
+          features: string[];
+          active: boolean;
+        }[]
+      >("/billing/custom-codes"),
   };
 
   // --- Analytics ---

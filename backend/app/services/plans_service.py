@@ -16,10 +16,89 @@ PLANS_FILE = os.path.abspath(
 FESTIVAL_OFFERS_FILE = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "data", "festival_offers.json")
 )
+CUSTOM_CODES_FILE = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "data", "custom_codes.json")
+)
 
 DEFAULT_INITIAL_PLANS: list[dict[str, Any]] = []
 
 DEFAULT_INITIAL_OFFERS: list[dict[str, Any]] = []
+
+DEFAULT_INITIAL_CUSTOM_CODES: list[dict[str, Any]] = [
+    {
+        "code": "CUSTOM-VIP-50K",
+        "plan_name": "Custom Enterprise",
+        "message_limit": 50000,
+        "max_stores": 5,
+        "max_seats": 20,
+        "price_bdt": 15000.0,
+        "features": [
+            "50,000 AI Messages / month",
+            "5 Connected Store Workspaces",
+            "20 Team Member Seats",
+            "All Channels: WhatsApp, Messenger, Instagram, Web",
+            "Dedicated Enterprise SLA & Account Manager",
+            "Custom ERP & POS Webhook Integrations",
+        ],
+        "active": True,
+        "max_uses": 100,
+        "used_count": 0,
+    },
+    {
+        "code": "ENTERPRISE-100K",
+        "plan_name": "Enterprise Scale",
+        "message_limit": 100000,
+        "max_stores": 10,
+        "max_seats": 30,
+        "price_bdt": 25000.0,
+        "features": [
+            "100,000 AI Messages / month",
+            "10 Connected Store Workspaces",
+            "30 Team Member Seats",
+            "Dedicated High-Concurrency Cloud Node",
+            "Custom Fine-Tuned Domain LLM",
+            "24/7 Priority Emergency Support",
+        ],
+        "active": True,
+        "max_uses": 100,
+        "used_count": 0,
+    },
+    {
+        "code": "CUSTOM-AGENCY",
+        "plan_name": "Custom Agency",
+        "message_limit": 25000,
+        "max_stores": 4,
+        "max_seats": 15,
+        "price_bdt": 8500.0,
+        "features": [
+            "25,000 AI Messages / month",
+            "4 Connected Store Workspaces",
+            "15 Team Member Seats",
+            "Multi-Courier Routing & Failover",
+            "Full API & Webhook Access",
+        ],
+        "active": True,
+        "max_uses": 100,
+        "used_count": 0,
+    },
+    {
+        "code": "ARISE-VIP",
+        "plan_name": "Custom VIP",
+        "message_limit": 30000,
+        "max_stores": 4,
+        "max_seats": 15,
+        "price_bdt": 9999.0,
+        "features": [
+            "30,000 AI Messages / month",
+            "4 Connected Store Workspaces",
+            "15 Team Member Seats",
+            "Priority VIP Support",
+        ],
+        "active": True,
+        "max_uses": 100,
+        "used_count": 0,
+    },
+]
 
 
 def _ensure_data_dir() -> None:
@@ -80,6 +159,28 @@ def _save_json_offers(offers: list[dict[str, Any]]) -> None:
     _ensure_data_dir()
     with open(FESTIVAL_OFFERS_FILE, "w", encoding="utf-8") as f:
         json.dump(offers, f, indent=2, ensure_ascii=False)
+
+
+def _get_json_custom_codes() -> list[dict[str, Any]]:
+    _ensure_data_dir()
+    if not os.path.exists(CUSTOM_CODES_FILE):
+        _save_json_custom_codes(DEFAULT_INITIAL_CUSTOM_CODES)
+        return DEFAULT_INITIAL_CUSTOM_CODES
+    try:
+        with open(CUSTOM_CODES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list) and len(data) > 0:
+                return data
+    except Exception:
+        pass
+    _save_json_custom_codes(DEFAULT_INITIAL_CUSTOM_CODES)
+    return DEFAULT_INITIAL_CUSTOM_CODES
+
+
+def _save_json_custom_codes(codes: list[dict[str, Any]]) -> None:
+    _ensure_data_dir()
+    with open(CUSTOM_CODES_FILE, "w", encoding="utf-8") as f:
+        json.dump(codes, f, indent=2, ensure_ascii=False)
 
 
 # ─── Plans Operations (PostgreSQL + JSON Mirror) ───────────────
@@ -426,3 +527,37 @@ async def delete_stored_festival_offer(offer_id: str) -> bool:
         deleted = True
         _save_json_offers(new_offers)
     return deleted
+
+
+# ─── Custom Enterprise Activation Codes ────────────────────────
+
+def get_custom_activation_codes() -> list[dict[str, Any]]:
+    codes = _get_json_custom_codes()
+    return [
+        {
+            "code": c.get("code"),
+            "plan_name": c.get("plan_name"),
+            "message_limit": c.get("message_limit"),
+            "max_stores": c.get("max_stores", 5),
+            "max_seats": c.get("max_seats", 20),
+            "price_bdt": c.get("price_bdt", 15000.0),
+            "features": c.get("features", []),
+            "active": c.get("active", True),
+        }
+        for c in codes
+        if c.get("active", True)
+    ]
+
+
+def find_and_redeem_code(code_str: str) -> dict[str, Any] | None:
+    norm_code = code_str.strip().upper()
+    codes = _get_json_custom_codes()
+    for item in codes:
+        if item.get("code", "").strip().upper() == norm_code and item.get("active", True):
+            used = int(item.get("used_count", 0))
+            max_u = int(item.get("max_uses", 100))
+            if used < max_u:
+                item["used_count"] = used + 1
+                _save_json_custom_codes(codes)
+                return item
+    return None

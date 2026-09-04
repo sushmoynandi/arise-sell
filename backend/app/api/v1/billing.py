@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import get_db
 from app.core.deps import get_current_active_user
@@ -15,8 +16,18 @@ from app.models.user import User
 from app.models.tenant import Business
 from app.models.billing import Invoice
 from app.schemas.auth import SelectPlanRequest, SelectPlanResponse
-from app.schemas.billing import InvoiceResponse, TopUpRequest, TopUpResponse
-from app.services.plans_service import get_stored_plans
+from app.schemas.billing import (
+    InvoiceResponse,
+    TopUpRequest,
+    TopUpResponse,
+    RedeemCodeRequest,
+    RedeemCodeResponse,
+)
+from app.services.plans_service import (
+    get_stored_plans,
+    get_custom_activation_codes,
+    find_and_redeem_code,
+)
 
 router = APIRouter(prefix="/billing", tags=["Billing & Subscriptions"])
 
@@ -351,5 +362,155 @@ async def create_topup(
         added_quota=added_quota,
         amount_bdt=price_bdt,
         message=f"Successfully added {req.pack} to your quota! Quota updated immediately.",
+    )
+
+
+@router.get("/custom-codes")
+async def list_custom_codes() -> list[dict[str, Any]]:
+    """Return available enterprise custom activation templates (metadata only)."""
+    return get_custom_activation_codes()
+
+
+@router.post("/redeem-code", response_model=RedeemCodeResponse)
+async def redeem_code(
+    req: RedeemCodeRequest,
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Validate and redeem an enterprise license activation code for the merchant."""
+    clean_code = req.code.strip().upper()
+    if not clean_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Activation code cannot be empty.",
+        )
+
+    code_info = find_and_redeem_code(clean_code)
+    if not code_info:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired plan activation code. Please contact sales on WhatsApp for a valid enterprise code.",
+        )
+
+    plan_name = code_info.get("plan_name", "Custom Enterprise")
+    quota = int(code_info.get("message_limit", 50000))
+    max_stores = int(code_info.get("max_stores", 5))
+    max_seats = int(code_info.get("max_seats", 20))
+    price_bdt = float(code_info.get("price_bdt", 0.0))
+
+    # 1. Update user permanent account
+    user.plan = plan_name
+    user.ai_quota = quota
+    db.add(user)
+
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    inv_no = f"INV-CUSTOM-{datetime.now().strftime('%Y%m')}-{uuid.uuid4().hex[:4].upper()}"
+
+    # 2. Find or create merchant business store
+    biz = None
+    if user.business_id:
+        biz = await db.get(Business, user.business_id)
+
+    if not biz:
+        clean_user_email = user.email.strip().lower()
+        all_biz = (await db.execute(select(Business))).scalars().all()
+        for b in all_biz:
+            extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+            if (
+                extra.get("owner_id") == str(user.id)
+                or extra.get("owner_email", "").strip().lower() == clean_user_email
+            ):
+                biz = b
+                break
+
+    if not biz:
+        clean_store_name = f"{user.first_name}'s Store" if user.first_name else "My Enterprise Store"
+        base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", clean_store_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
+        unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+
+        biz = Business(
+            name=clean_store_name,
+            name_bn=clean_store_name,
+            kind="Ecommerce",
+            slug=unique_slug,
+            plan=plan_name,
+            orders_quota=quota,
+            orders_used=user.ai_used or 0,
+            currency="BDT",
+            timezone="Asia/Dhaka",
+            settings_data={
+                "owner_id": str(user.id),
+                "owner_email": user.email.lower(),
+                "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
+                "plan": plan_name,
+                "plan_price_bdt": price_bdt,
+                "max_stores": max_stores,
+                "max_seats": max_seats,
+                "team_members": [],
+            },
+        )
+        db.add(biz)
+        await db.flush()
+        user.business_id = biz.id
+        user.role = "owner"
+    else:
+        biz.plan = plan_name
+        biz.orders_quota = quota
+        extra = dict(biz.settings_data or {})
+        extra["plan"] = plan_name
+        extra["plan_price_bdt"] = price_bdt
+        extra["max_stores"] = max_stores
+        extra["max_seats"] = max_seats
+        biz.settings_data = extra
+        flag_modified(biz, "settings_data")
+        db.add(biz)
+
+    # 3. Create paid voucher tax invoice
+    custom_inv = Invoice(
+        invoice_no=inv_no,
+        merchant_name=biz.name,
+        plan_name=f"{plan_name} (Code: {clean_code})",
+        amount_bdt=price_bdt,
+        original_amount_bdt=price_bdt,
+        payment_method="Enterprise License Voucher",
+        tx_id=f"VCHR-{clean_code}",
+        invoice_date=now_str,
+        status="paid",
+        business_id=biz.id,
+    )
+    db.add(custom_inv)
+
+    # 4. Also synchronize any other stores owned by this merchant
+    all_biz = (await db.execute(select(Business))).scalars().all()
+    clean_user_email = user.email.strip().lower()
+    for b in all_biz:
+        if b.id != biz.id:
+            b_extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+            if (
+                b_extra.get("owner_id") == str(user.id)
+                or b_extra.get("owner_email", "").strip().lower() == clean_user_email
+            ):
+                b.plan = plan_name
+                b.orders_quota = quota
+                b_extra["plan"] = plan_name
+                b_extra["plan_price_bdt"] = price_bdt
+                b_extra["max_stores"] = max_stores
+                b_extra["max_seats"] = max_seats
+                b.settings_data = b_extra
+                flag_modified(b, "settings_data")
+                db.add(b)
+
+    await db.commit()
+    await db.refresh(biz)
+    await db.refresh(user)
+
+    return RedeemCodeResponse(
+        success=True,
+        plan=biz.plan,
+        orders_quota=biz.orders_quota,
+        messages_quota=user.ai_quota or 0,
+        max_stores=max_stores,
+        max_seats=max_seats,
+        message=f"অভিনন্দন! আপনার {plan_name} প্ল্যান সফলভাবে সক্রিয় হয়েছে ({quota:,} AI মেসেজ, {max_stores}টি স্টোর, {max_seats}টি সিট)।",
     )
 

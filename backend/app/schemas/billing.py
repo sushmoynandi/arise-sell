@@ -50,3 +50,17 @@ class TopUpResponse(BaseModel):
     amount_bdt: float
     message: str
 
+
+class RedeemCodeRequest(BaseModel):
+    code: str
+
+
+class RedeemCodeResponse(BaseModel):
+    success: bool
+    plan: str
+    orders_quota: int
+    messages_quota: int
+    max_stores: int
+    max_seats: int
+    message: str
+

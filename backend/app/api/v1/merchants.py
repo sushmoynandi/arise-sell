@@ -157,6 +157,22 @@ def _build_tenant_response(
     max_stores = PLAN_STORES.get(p_lower, 2 if "business" in p_lower else (10 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else 1))
     max_seats = PLAN_SEATS.get(p_lower, 8 if "business" in p_lower else (4 if "pro" in p_lower else (20 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else (1 if "free" in p_lower else 2))))
 
+    if extra.get("max_stores") is not None:
+        try:
+            max_stores = int(extra["max_stores"])
+        except Exception:
+            pass
+    if extra.get("max_seats") is not None:
+        try:
+            max_seats = int(extra["max_seats"])
+        except Exception:
+            pass
+    if extra.get("plan_price_bdt") is not None:
+        try:
+            plan_price = float(extra["plan_price_bdt"])
+        except Exception:
+            pass
+
     tm_list = extra.get("team_members", [])
     seats_used = 1 + (len(tm_list) if isinstance(tm_list, list) else 0)
 
