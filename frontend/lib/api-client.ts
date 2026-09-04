@@ -188,10 +188,13 @@ class ApiClient {
       new_password: string;
       confirm_password?: string;
     }) =>
-      this.request<{ success: boolean; message: string }>("/auth/change-password", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
+      this.request<{ success: boolean; message: string }>(
+        "/auth/change-password",
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+        },
+      ),
     deleteAccount: (body: { password?: string; confirm_phrase: string }) =>
       this.request<{ success: boolean; message: string }>("/auth/account", {
         method: "DELETE",
@@ -277,22 +280,46 @@ class ApiClient {
   public integrations = {
     listChannels: () => this.request<unknown[]>("/integrations/channels"),
     sendOtp: (payload: { phone_number: string }) =>
-      this.request<{ success: boolean; message: string; otp_preview: string; expires_in_seconds: number }>(
-        "/integrations/whatsapp/send-otp",
-        { method: "POST", body: JSON.stringify(payload) }
-      ),
-    verifyOtp: (payload: { phone_number: string; otp: string; waba_id?: string; phone_number_id?: string }) =>
-      this.request<{ success: boolean; channel_id: string; status: string; detail: string; is_live: boolean }>(
-        "/integrations/whatsapp/verify-otp",
-        { method: "POST", body: JSON.stringify(payload) }
-      ),
-    embeddedSignup: (payload: { code?: string; waba_id?: string; phone_number_id?: string; phone_number?: string }) =>
-      this.request("/integrations/whatsapp/embedded-signup", { method: "POST", body: JSON.stringify(payload) }),
+      this.request<{
+        success: boolean;
+        message: string;
+        otp_preview: string;
+        expires_in_seconds: number;
+      }>("/integrations/whatsapp/send-otp", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    verifyOtp: (payload: {
+      phone_number: string;
+      otp: string;
+      waba_id?: string;
+      phone_number_id?: string;
+    }) =>
+      this.request<{
+        success: boolean;
+        channel_id: string;
+        status: string;
+        detail: string;
+        is_live: boolean;
+      }>("/integrations/whatsapp/verify-otp", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    embeddedSignup: (payload: {
+      code?: string;
+      waba_id?: string;
+      phone_number_id?: string;
+      phone_number?: string;
+    }) =>
+      this.request("/integrations/whatsapp/embedded-signup", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     toggleChannel: (channelId: string) =>
-      this.request(`/integrations/channels/${channelId}/toggle`, { method: "POST" }),
+      this.request(`/integrations/channels/${channelId}/toggle`, {
+        method: "POST",
+      }),
   };
-
-
 
   // --- AI Brain & Knowledge ---
   public brain = {

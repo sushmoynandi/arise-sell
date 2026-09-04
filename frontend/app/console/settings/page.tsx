@@ -12,6 +12,9 @@ import {
   IconEyeOff,
   IconCopy,
   IconSpark,
+  IconGlobe,
+  IconBox,
+  IconBrain,
 } from "@/components/ui/icons";
 import { TENANT } from "@/data/tenant";
 import { PLANS } from "@/data/plans";
@@ -19,15 +22,17 @@ import { cx } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
 
-/* ─── Tab definitions (Logical Order: Store -> AI & Growth -> Logistics -> Operations) ─── */
+/* ─── 12 Streamlined Tabs (Store -> Channels -> Logistics -> Operations) ─── */
 const TABS = [
   { id: "business", label: "General" },
   { id: "account", label: "Account" },
-  { id: "branding", label: "Branding & Invoice" },
-  { id: "preferences", label: "AI Persona" },
+  { id: "branding", label: "Branding" },
+  { id: "invoice", label: "Custom Invoice" },
+  { id: "website-orders", label: "Website Orders" },
+  { id: "courier", label: "Couriers" },
   { id: "meta", label: "Meta CAPI" },
   { id: "product-feed", label: "Product Feed" },
-  { id: "courier", label: "Couriers" },
+  { id: "preferences", label: "AI Persona" },
   { id: "team", label: "Team" },
   { id: "notifications", label: "Notifications" },
   { id: "billing", label: "Billing" },
@@ -35,86 +40,58 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-/* ─── Tab Icons for Frosted Glass Segmented Bar ─── */
+/* ─── Tab Icons for Frosted Glass Segmented Control ─── */
 const TAB_ICONS: Record<
   TabId,
   (props: { className?: string }) => React.ReactNode
 > = {
   business: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   ),
   account: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
   ),
   branding: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
-      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
     </svg>
   ),
-  preferences: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
-      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04" />
-      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04" />
+  invoice: (p) => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  ),
+  "website-orders": (p) => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  ),
+  courier: (p) => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <rect x="1" y="3" width="15" height="13" rx="2" />
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
     </svg>
   ),
   meta: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <circle cx="12" cy="12" r="10" />
       <path d="m4.93 4.93 4.24 4.24" />
       <path d="m14.83 9.17 4.24-4.24" />
@@ -124,53 +101,21 @@ const TAB_ICONS: Record<
     </svg>
   ),
   "product-feed": (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="m7.5 4.27 9 5.15" />
       <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
       <path d="m3.3 7 8.7 5 8.7-5" />
       <path d="M12 22V12" />
     </svg>
   ),
-  courier: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
-      <rect x="1" y="3" width="15" height="13" rx="2" />
-      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-      <circle cx="5.5" cy="18.5" r="2.5" />
-      <circle cx="18.5" cy="18.5" r="2.5" />
+  preferences: (p) => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04" />
+      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04" />
     </svg>
   ),
   team: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
@@ -178,40 +123,20 @@ const TAB_ICONS: Record<
     </svg>
   ),
   notifications: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
   ),
   billing: (p) => (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <rect width="20" height="14" x="2" y="5" rx="2" />
       <line x1="2" x2="22" y1="10" y2="10" />
     </svg>
   ),
 };
 
-/* ─── Inner component that uses searchParams ─── */
+/* ─── Inner Component ─── */
 function SettingsInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -227,10 +152,10 @@ function SettingsInner() {
 
   return (
     <>
-      {/* ─── Frosted Glass Segmented Control Navigation Bar (Sticky, No redundant top banner) ─── */}
+      {/* ─── Frosted Glass Segmented Control Navigation Bar ─── */}
       <div className="sticky top-16 z-20 border-b border-line/60 bg-surface/80 backdrop-blur-xl shadow-xs transition-all">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-          {/* Glass Segmented Pill Container (Fits neatly within max-w-6xl) */}
+          {/* Glass Segmented Pill Container */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 rounded-2xl bg-canvas/50 border border-line/60 shadow-2xs backdrop-blur-md w-full">
             {TABS.map((tab) => {
               const Icon = TAB_ICONS[tab.id];
@@ -241,7 +166,7 @@ function SettingsInner() {
                   type="button"
                   onClick={() => switchTab(tab.id)}
                   className={cx(
-                    "relative shrink-0 cursor-pointer px-2.5 lg:px-3 py-1.5 text-[12px] lg:text-[12.5px] font-medium transition-all rounded-xl whitespace-nowrap flex items-center justify-center gap-1.5 select-none group flex-1",
+                    "relative shrink-0 cursor-pointer px-2.5 py-1.5 text-[11.5px] font-medium transition-all rounded-xl whitespace-nowrap flex items-center justify-center gap-1.5 select-none group flex-1",
                     isActive
                       ? "text-signal font-semibold"
                       : "text-text-3 hover:text-text hover:bg-surface-2/50",
@@ -289,10 +214,12 @@ function SettingsInner() {
             {activeTab === "business" && <TabBusiness />}
             {activeTab === "account" && <TabAccount />}
             {activeTab === "branding" && <TabBranding />}
-            {activeTab === "preferences" && <TabPreferences />}
+            {activeTab === "invoice" && <TabInvoice />}
+            {activeTab === "website-orders" && <TabWebsiteOrders />}
+            {activeTab === "courier" && <TabCourier />}
             {activeTab === "meta" && <TabMeta />}
             {activeTab === "product-feed" && <TabProductFeed />}
-            {activeTab === "courier" && <TabCourier />}
+            {activeTab === "preferences" && <TabPreferences />}
             {activeTab === "team" && <TabTeam />}
             {activeTab === "notifications" && <TabNotifications />}
             {activeTab === "billing" && <TabBilling />}
@@ -303,7 +230,7 @@ function SettingsInner() {
   );
 }
 
-/* ─── Page export with Suspense ─── */
+/* ─── Page Export ─── */
 export default function SettingsPage() {
   return (
     <Suspense
@@ -319,14 +246,18 @@ export default function SettingsPage() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 1: General (Store Information & Operating Details)
+   TAB 1: General (Store Identity, Contacts, Schedule & Localization)
    ═══════════════════════════════════════════════════════════════════ */
 function TabBusiness() {
   const [storeName, setStoreName] = useState<string>(TENANT.name || "Nokshi");
   const [storeNameBn, setStoreNameBn] = useState<string>(
     TENANT.nameBn || "নকশী হ্যান্ডিক্রাফটস",
   );
-  const [category, setCategory] = useState<string>(TENANT.kind || "Traditional Lifestyle & Handloom");
+  const [category, setCategory] = useState<string>(
+    TENANT.kind || "Traditional Handloom, Silk & Lifestyle",
+  );
+  const [website, setWebsite] = useState("https://nokshi.co");
+  const [supportEmail, setSupportEmail] = useState("support@nokshi.co");
   const [phone, setPhone] = useState("+880 1711-234567");
   const [address, setAddress] = useState(
     "House 42, Road 11, Dhanmondi, Dhaka 1209",
@@ -349,14 +280,14 @@ function TabBusiness() {
       await api.merchants.updateSettings({
         name: storeName,
         name_bn: storeNameBn,
-        category,
+        kind: category,
+        website,
+        support_email: supportEmail,
         phone,
         address,
         trade_license: tradeLicense,
         currency,
         timezone,
-        date_format: dateFormat,
-        operating_status: isOpenForOrders ? "open" : "paused",
       });
       setSavedToast(true);
       setTimeout(() => setSavedToast(false), 3000);
@@ -379,15 +310,15 @@ function TabBusiness() {
             className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
           >
             <IconCheck width={16} height={16} />
-            <span>Store settings saved successfully to your cloud profile!</span>
+            <span>Store general information saved and synchronized!</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       <Panel>
         <PanelHead
-          title="Store Information"
-          sub="Your official business identity shown on customer invoices, WhatsApp headers, and AI conversations."
+          title="Store Profile & Contacts"
+          sub="Official business identity shown on customer invoices, WhatsApp headers, and order confirmations."
         />
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           <SettingsField
@@ -403,10 +334,16 @@ function TabBusiness() {
             placeholder="e.g. নকশী হ্যান্ডিক্রাফটস"
           />
           <SettingsField
-            label="Industry / Category"
-            value={category}
-            onChange={setCategory}
-            placeholder="e.g. Traditional Handloom & Lifestyle"
+            label="Store Website URL"
+            value={website}
+            onChange={setWebsite}
+            placeholder="https://yourbrand.com"
+          />
+          <SettingsField
+            label="Customer Support Email"
+            value={supportEmail}
+            onChange={setSupportEmail}
+            placeholder="support@yourbrand.com"
           />
           <SettingsField
             label="Official Contact Phone"
@@ -415,13 +352,19 @@ function TabBusiness() {
             placeholder="+880 1XXXXXXXXX"
           />
           <SettingsField
+            label="Industry / Category"
+            value={category}
+            onChange={setCategory}
+            placeholder="e.g. Traditional Handloom & Lifestyle"
+          />
+          <SettingsField
             label="Storefront Physical Address"
             value={address}
             onChange={setAddress}
             placeholder="House, Road, Area, City"
           />
           <SettingsField
-            label="Trade License / BIN"
+            label="Trade License / Tax BIN"
             value={tradeLicense}
             onChange={setTradeLicense}
             placeholder="e.g. TRAD/DNCC/XXXXXX"
@@ -431,13 +374,13 @@ function TabBusiness() {
 
       <Panel>
         <PanelHead
-          title="Operating Schedule & Status"
-          sub="Control AI sales agent availability and business order acceptance hours."
+          title="Operating Hours & Availability"
+          sub="Control AI conversational checkout and order fulfillment hours."
         />
         <div className="divide-y divide-line/60">
           <ToggleRow
             label="Open for New Orders"
-            desc="When turned off, the AI greets customers and collects inquiries but politely defers immediate order checkout."
+            desc="When turned off, the AI greets customers and collects inquiries but politely holds checkout until opening."
             value={isOpenForOrders}
             onToggle={setIsOpenForOrders}
           />
@@ -458,8 +401,8 @@ function TabBusiness() {
 
       <Panel>
         <PanelHead
-          title="Currency & Regional Settings"
-          sub="Localization settings for catalog pricing, courier rates, and timestamps."
+          title="Localization & Regional Settings"
+          sub="Localization settings for currency, delivery charges, and timestamps."
         />
         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -502,8 +445,8 @@ function TabBusiness() {
               className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-text outline-hidden focus:border-signal"
             >
               <option value="DD/MM/YYYY">DD/MM/YYYY (e.g. 04/09/2026)</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY (US Format)</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD (ISO standard)</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY (US format)</option>
             </select>
           </div>
         </div>
@@ -525,19 +468,17 @@ function TabBusiness() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 2: Account (Profile, Password Change, Security, Danger Zone)
+   TAB 2: Account (Profile, Security, Password Change & Danger Zone)
    ═══════════════════════════════════════════════════════════════════ */
 function TabAccount() {
   const { user, updateProfile, changePassword, deleteAccount } = useAuth();
 
-  // Profile Form State
   const [firstName, setFirstName] = useState(user?.first_name || "Farhana");
   const [lastName, setLastName] = useState(user?.last_name || "Rahman");
   const [phone, setPhone] = useState(user?.phone || "+880 1711-234567");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileToast, setProfileToast] = useState<string | null>(null);
 
-  // Password Modal State
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -548,7 +489,6 @@ function TabAccount() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState<string | null>(null);
 
-  // Delete Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [confirmPhrase, setConfirmPhrase] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
@@ -559,7 +499,6 @@ function TabAccount() {
   const userEmail = user?.email || "farhana@nokshi.co";
   const userInitials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "FR";
 
-  // Password criteria check
   const pwHasLength = newPassword.length >= 8;
   const pwHasUpper = /[A-Z]/.test(newPassword);
   const pwHasLower = /[a-z]/.test(newPassword);
@@ -595,9 +534,7 @@ function TabAccount() {
     setPwSuccess(null);
 
     if (!pwHasLength || !pwHasUpper || !pwHasLower || !pwHasNumber) {
-      setPwError(
-        "Password must be at least 8 characters and include uppercase, lowercase, and numeric characters.",
-      );
+      setPwError("Password must be 8+ characters with uppercase, lowercase, and numeric characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -621,11 +558,10 @@ function TabAccount() {
           setPwSuccess(null);
         }, 2000);
       } else {
-        setPwError(res.error || "Failed to change password. Verify your current password.");
+        setPwError(res.error || "Failed to change password. Please verify current password.");
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Password change failed";
-      setPwError(msg);
+      setPwError(err instanceof Error ? err.message : "Password change failed");
     } finally {
       setPwChanging(false);
     }
@@ -652,14 +588,11 @@ function TabAccount() {
       if (res.success) {
         window.location.href = "/login?deleted=true";
       } else {
-        setDeleteError(
-          res.error || "Failed to delete account. Please check your credentials.",
-        );
+        setDeleteError(res.error || "Failed to delete account. Please check credentials.");
         setIsDeleting(false);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Account deletion failed";
-      setDeleteError(msg);
+      setDeleteError(err instanceof Error ? err.message : "Account deletion failed");
       setIsDeleting(false);
     }
   };
@@ -699,7 +632,7 @@ function TabAccount() {
                     {user?.role || "Store Owner"}
                   </Badge>
                   <span className="text-[11px] text-signal font-medium flex items-center gap-1">
-                    <IconCheck width={13} height={13} /> Verified Account
+                    <IconCheck width={13} height={13} /> Verified Active Account
                   </span>
                 </div>
               </div>
@@ -745,7 +678,7 @@ function TabAccount() {
         </Panel>
       </form>
 
-      {/* Security Section with Real Password Change */}
+      {/* Security */}
       <Panel>
         <PanelHead
           title="Security & Authentication"
@@ -818,7 +751,7 @@ function TabAccount() {
         </div>
       </div>
 
-      {/* Password Change Modal */}
+      {/* Password Modal */}
       <AnimatePresence>
         {passwordModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -928,7 +861,6 @@ function TabAccount() {
                   />
                 </div>
 
-                {/* Password strength checklist */}
                 <div className="rounded-xl bg-surface-2/60 border border-line/60 p-3 space-y-1.5 text-[11px] font-mono">
                   <div className="flex items-center gap-1.5">
                     <span className={pwHasLength ? "text-signal" : "text-text-3"}>
@@ -1108,21 +1040,18 @@ function TabAccount() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 3: Branding & Invoice (Combined with Live Real-Time Invoice Preview)
+   TAB 3: Branding (Logo, Palette, Social Links & Chat Persona Brand)
    ═══════════════════════════════════════════════════════════════════ */
 function TabBranding() {
   const [brandColor, setBrandColor] = useState("#0a6e50");
-  const [invoicePrefix, setInvoicePrefix] = useState("NOK-");
-  const [invoiceSeq, setInvoiceSeq] = useState("1042");
-  const [invoiceTagline, setInvoiceTagline] = useState(
-    "নকশী — ঐতিহ্যবাহী খাঁটি দেশীয় কারুশিল্প",
+  const [secondaryColor, setSecondaryColor] = useState("#f2fbf7");
+  const [assistantName, setAssistantName] = useState("Nokshi Assistant");
+  const [greetingHeadline, setGreetingHeadline] = useState(
+    "স্বাগতম! নকশীতে আপনাকে সাহায্য করতে পেরে আনন্দিত।",
   );
-  const [invoiceTerms, setInvoiceTerms] = useState(
-    "Thank you for shopping with Nokshi! 7-day exchange warranty on all genuine handlooms.",
-  );
-  const [supportPhone, setSupportPhone] = useState("+880 1711-234567");
-  const [vatNumber, setVatNumber] = useState("BIN: 002910394-0101");
-  const [includeVat, setIncludeVat] = useState(true);
+  const [facebookUrl, setFacebookUrl] = useState("https://facebook.com/nokshibd");
+  const [instagramUrl, setInstagramUrl] = useState("https://instagram.com/nokshibd");
+  const [whatsappUrl, setWhatsappUrl] = useState("https://wa.me/8801711234567");
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
@@ -1157,87 +1086,238 @@ function TabBranding() {
             className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
           >
             <IconCheck width={16} height={16} />
-            <span>Branding & Invoice styles saved and active on all customer receipts!</span>
+            <span>Store branding and social links updated!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Panel>
+        <PanelHead
+          title="Brand Visual Identity"
+          sub="Logo, brand theme colors, and visual presence across conversational channels."
+        />
+        <div className="p-5 space-y-5">
+          <div className="flex items-center gap-5">
+            <div
+              className="size-16 rounded-2xl grid place-items-center text-white font-bold text-lg font-display shadow-md transition-colors"
+              style={{ backgroundColor: brandColor }}
+            >
+              নকশী
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-text">Store Logo & Monogram</p>
+              <p className="text-xs text-text-3">
+                Shown in chat headers, invoice slips, and WhatsApp cards (512×512 PNG recommended)
+              </p>
+              <Button size="sm" variant="outline" type="button" className="mt-1">
+                Upload New Logo
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-text mb-2">
+              Primary Brand Color
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c.hex}
+                  type="button"
+                  onClick={() => setBrandColor(c.hex)}
+                  className={cx(
+                    "size-8 rounded-xl transition-all cursor-pointer flex items-center justify-center shadow-2xs",
+                    brandColor === c.hex
+                      ? "ring-2 ring-offset-2 ring-black/80 scale-110"
+                      : "hover:scale-105 opacity-90",
+                  )}
+                  style={{ backgroundColor: c.hex }}
+                  title={c.name}
+                >
+                  {brandColor === c.hex && (
+                    <span className="text-white text-xs font-bold">✓</span>
+                  )}
+                </button>
+              ))}
+              <div className="flex items-center gap-1.5 ml-2">
+                <input
+                  type="color"
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  className="size-8 rounded-lg cursor-pointer border border-line p-0 bg-transparent"
+                />
+                <span className="text-xs font-mono font-semibold text-text-2">
+                  {brandColor}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Social Channels & Storefront Links"
+          sub="Customer communication and storefront URLs sent by the AI when requested."
+        />
+        <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SettingsField
+            label="Facebook Page URL"
+            value={facebookUrl}
+            onChange={setFacebookUrl}
+            placeholder="https://facebook.com/yourpage"
+          />
+          <SettingsField
+            label="Instagram Profile URL"
+            value={instagramUrl}
+            onChange={setInstagramUrl}
+            placeholder="https://instagram.com/yourhandle"
+          />
+          <SettingsField
+            label="WhatsApp Catalog / Link"
+            value={whatsappUrl}
+            onChange={setWhatsappUrl}
+            placeholder="https://wa.me/880XXXXXXXXX"
+          />
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Conversational Assistant Persona"
+          sub="How the AI assistant introduces itself in Messenger and WhatsApp."
+        />
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SettingsField
+            label="AI Assistant Display Name"
+            value={assistantName}
+            onChange={setAssistantName}
+            placeholder="e.g. Nokshi Assistant"
+          />
+          <SettingsField
+            label="Default Greeting Headline"
+            value={greetingHeadline}
+            onChange={setGreetingHeadline}
+            placeholder="Welcome message"
+          />
+        </div>
+      </Panel>
+
+      <div className="flex justify-end">
+        <Button
+          size="md"
+          variant="signal"
+          type="submit"
+          disabled={isSaving}
+          className="px-6"
+        >
+          {isSaving ? "Saving Branding…" : "Save Brand Settings"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB 4: Custom Invoice (Dedicated Tab with Dual A4 & Thermal POS Slip Preview)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabInvoice() {
+  const [layoutMode, setLayoutMode] = useState<"a4" | "thermal">("a4");
+  const [brandColor, setBrandColor] = useState("#0a6e50");
+  const [invoicePrefix, setInvoicePrefix] = useState("NOK-");
+  const [invoiceSeq, setInvoiceSeq] = useState("001042");
+  const [invoiceTagline, setInvoiceTagline] = useState("নকশী — ঐতিহ্যবাহী খাঁটি দেশীয় কারুশিল্প");
+  const [invoiceTerms, setInvoiceTerms] = useState(
+    "Thank you for choosing Nokshi! 7-day hassle-free replacement warranty with invoice slip.",
+  );
+  const [supportPhone, setSupportPhone] = useState("+880 1711-234567");
+  const [vatNumber, setVatNumber] = useState("BIN: 002910394-0101");
+  const [showVat, setShowVat] = useState(true);
+  const [showQrCode, setShowQrCode] = useState(true);
+  const [showAddress, setShowAddress] = useState(true);
+  const [showSignature, setShowSignature] = useState(true);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    }, 600);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="space-y-6">
+      <AnimatePresence>
+        {savedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
+          >
+            <IconCheck width={16} height={16} />
+            <span>Custom Invoice layout and rules saved! Generated receipts will reflect these settings.</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Form Controls */}
+        {/* Left Form Controls */}
         <div className="lg:col-span-7 space-y-6">
           <Panel>
             <PanelHead
-              title="Brand Visual Identity"
-              sub="Store palette, logo badge, and primary color used on customer touchpoints."
-            />
-            <div className="p-5 space-y-5">
-              <div className="flex items-center gap-5">
-                <div
-                  className="size-16 rounded-2xl grid place-items-center text-white font-bold text-lg font-display shadow-md transition-colors"
-                  style={{ backgroundColor: brandColor }}
-                >
-                  নকশী
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-text">Store Logo & Monogram</p>
-                  <p className="text-xs text-text-3">
-                    Displayed in receipt header and chat widgets (512×512 PNG supported)
-                  </p>
-                  <Button size="sm" variant="outline" type="button" className="mt-1">
-                    Upload New Logo
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-text mb-2">
-                  Brand Accent Color
-                </label>
-                <div className="flex flex-wrap items-center gap-2">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c.hex}
-                      type="button"
-                      onClick={() => setBrandColor(c.hex)}
-                      className={cx(
-                        "size-8 rounded-xl transition-all cursor-pointer flex items-center justify-center shadow-2xs",
-                        brandColor === c.hex
-                          ? "ring-2 ring-offset-2 ring-black/80 scale-110"
-                          : "hover:scale-105 opacity-90",
-                      )}
-                      style={{ backgroundColor: c.hex }}
-                      title={c.name}
-                    >
-                      {brandColor === c.hex && (
-                        <span className="text-white text-xs font-bold">✓</span>
-                      )}
-                    </button>
-                  ))}
-                  <div className="flex items-center gap-1.5 ml-2">
-                    <input
-                      type="color"
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      className="size-8 rounded-lg cursor-pointer border border-line p-0 bg-transparent"
-                    />
-                    <span className="text-xs font-mono font-semibold text-text-2">
-                      {brandColor}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Panel>
-
-          <Panel>
-            <PanelHead
-              title="Invoice & Packing Slip Settings"
-              sub="Configure numbering sequence, tax identity, and customer warranty notes."
+              title="Invoice Format & Numbering"
+              sub="Select your paper layout and configure invoice sequence numbering."
             />
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Paper Format Selector */}
+              <div>
+                <label className="block text-xs font-bold text-text mb-2">
+                  Paper Format & Layout Style
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("a4")}
+                    className={cx(
+                      "rounded-xl border p-3.5 text-left transition-all cursor-pointer",
+                      layoutMode === "a4"
+                        ? "border-signal bg-[#edf7f3] ring-1 ring-signal/30 shadow-2xs"
+                        : "border-line bg-white hover:border-line/80",
+                    )}
+                  >
+                    <p className="font-bold text-sm text-text">A4 Standard Sheet</p>
+                    <p className="text-[11px] text-text-3 mt-0.5">
+                      Full corporate tax receipt with detailed variant breakdown
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("thermal")}
+                    className={cx(
+                      "rounded-xl border p-3.5 text-left transition-all cursor-pointer",
+                      layoutMode === "thermal"
+                        ? "border-signal bg-[#edf7f3] ring-1 ring-signal/30 shadow-2xs"
+                        : "border-line bg-white hover:border-line/80",
+                    )}
+                  >
+                    <p className="font-bold text-sm text-text">POS Thermal 80mm</p>
+                    <p className="text-[11px] text-text-3 mt-0.5">
+                      Compact roll slip for courier parcel packing & POS printers
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <SettingsField
-                  label="Invoice Number Prefix"
+                  label="Invoice Prefix"
                   value={invoicePrefix}
                   onChange={setInvoicePrefix}
                   placeholder="e.g. NOK-"
@@ -1246,45 +1326,72 @@ function TabBranding() {
                   label="Next Sequence Number"
                   value={invoiceSeq}
                   onChange={setInvoiceSeq}
-                  placeholder="1042"
+                  placeholder="001042"
                 />
               </div>
 
               <SettingsField
-                label="Invoice Header Tagline"
+                label="Invoice Header Slogan / Tagline"
                 value={invoiceTagline}
                 onChange={setInvoiceTagline}
-                placeholder="Business slogan"
+                placeholder="Tagline printed under store name"
               />
 
               <SettingsField
-                label="Customer Service Hotline"
+                label="Customer Service Hotline on Invoice"
                 value={supportPhone}
                 onChange={setSupportPhone}
                 placeholder="+880 1XXXXXXXXX"
               />
+            </div>
+          </Panel>
 
-              <div className="pt-2 border-t border-line/60">
-                <ToggleRow
-                  label="Include VAT / BIN Registration"
-                  desc="Prints your verified Bangladesh National Board of Revenue BIN number on receipts."
-                  value={includeVat}
-                  onToggle={setIncludeVat}
-                />
-                {includeVat && (
-                  <div className="mt-3">
-                    <SettingsField
-                      label="Business Identification Number (BIN)"
-                      value={vatNumber}
-                      onChange={setVatNumber}
-                    />
-                  </div>
-                )}
-              </div>
+          <Panel>
+            <PanelHead
+              title="Invoice Content & Tax Rules"
+              sub="Control what information is visible on customer slips."
+            />
+            <div className="divide-y divide-line/60">
+              <ToggleRow
+                label="Print Verified Tax / BIN Identification"
+                desc="Prints National Board of Revenue BIN number on receipts."
+                value={showVat}
+                onToggle={setShowVat}
+              />
+              {showVat && (
+                <div className="p-5">
+                  <SettingsField
+                    label="Business Identification Number (BIN)"
+                    value={vatNumber}
+                    onChange={setVatNumber}
+                  />
+                </div>
+              )}
 
-              <div className="pt-2">
+              <ToggleRow
+                label="Embed Digital QR Verification Code"
+                desc="Prints a scannable QR code on the receipt linking directly to parcel tracking or digital invoice verification."
+                value={showQrCode}
+                onToggle={setShowQrCode}
+              />
+
+              <ToggleRow
+                label="Show Full Delivery Address"
+                desc="Includes recipient street, house, and city details."
+                value={showAddress}
+                onToggle={setShowAddress}
+              />
+
+              <ToggleRow
+                label="Authorized Signature Line"
+                desc="Displays 'Authorized Store Seal & Signature' section at the bottom of the invoice."
+                value={showSignature}
+                onToggle={setShowSignature}
+              />
+
+              <div className="p-5">
                 <label className="block text-xs font-bold text-text mb-1.5">
-                  Receipt Footer / Exchange Terms
+                  Warranty & Return Policy Footnote
                 </label>
                 <textarea
                   rows={2}
@@ -1304,127 +1411,226 @@ function TabBranding() {
               disabled={isSaving}
               className="px-6"
             >
-              {isSaving ? "Saving Branding…" : "Save Brand & Invoice Settings"}
+              {isSaving ? "Saving Invoice Settings…" : "Save Custom Invoice Rules"}
             </Button>
           </div>
         </div>
 
-        {/* Right Column: Live Real-Time Invoice Preview */}
-        <div className="lg:col-span-5 sticky top-32">
+        {/* Right Live Preview: Dual A4 vs Thermal */}
+        <div className="lg:col-span-5 sticky top-32 space-y-3">
           <div className="rounded-2xl border border-line bg-white shadow-md overflow-hidden">
-            {/* Header pill indicator */}
+            {/* Header Toolbar */}
             <div className="bg-surface-2/70 px-4 py-2.5 border-b border-line flex items-center justify-between">
               <span className="text-xs font-bold text-text flex items-center gap-1.5 font-display">
-                <IconSpark width={14} height={14} className="text-signal" /> Live Invoice Preview
+                <IconSpark width={14} height={14} className="text-signal" /> Live Real-Time Receipt Preview
               </span>
-              <span className="text-[10.5px] font-mono text-text-3">Real-time dynamic</span>
+              <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-line/60">
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode("a4")}
+                  className={cx(
+                    "px-2 py-0.5 text-[10.5px] rounded font-medium transition-all cursor-pointer",
+                    layoutMode === "a4" ? "bg-signal text-white font-bold" : "text-text-3 hover:text-text",
+                  )}
+                >
+                  A4
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode("thermal")}
+                  className={cx(
+                    "px-2 py-0.5 text-[10.5px] rounded font-medium transition-all cursor-pointer",
+                    layoutMode === "thermal" ? "bg-signal text-white font-bold" : "text-text-3 hover:text-text",
+                  )}
+                >
+                  Thermal 80mm
+                </button>
+              </div>
             </div>
 
-            {/* Printable Receipt Paper Container */}
-            <div className="p-6 space-y-5 font-sans text-xs bg-white">
-              {/* Receipt Header */}
-              <div className="flex items-start justify-between border-b border-line pb-4">
-                <div className="flex items-center gap-3">
+            {/* A4 Format Preview */}
+            {layoutMode === "a4" ? (
+              <div className="p-6 space-y-4 font-sans text-xs bg-white">
+                <div className="flex items-start justify-between border-b border-line pb-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="size-10 rounded-xl grid place-items-center text-white font-bold font-display text-sm shadow-xs"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      ন
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base text-text font-display">
+                        {TENANT.name}
+                      </h4>
+                      <p className="text-[10.5px] text-text-3">{invoiceTagline}</p>
+                    </div>
+                  </div>
+                  <div className="text-right font-mono">
+                    <span
+                      className="inline-block px-2 py-0.5 rounded text-[9.5px] font-bold text-white uppercase tracking-wider mb-1"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      TAX INVOICE
+                    </span>
+                    <p className="font-bold text-text text-sm">
+                      {invoicePrefix}{invoiceSeq}
+                    </p>
+                    <p className="text-[10px] text-text-3">04 Sep, 2026</p>
+                  </div>
+                </div>
+
+                {showAddress && (
+                  <div className="grid grid-cols-2 gap-3 text-[11px] bg-surface-2/40 p-3 rounded-xl border border-line/60">
+                    <div>
+                      <span className="text-text-3 font-mono text-[9px] uppercase block">
+                        Customer Details
+                      </span>
+                      <p className="font-bold text-text">Ayesha Siddiqua</p>
+                      <p className="text-text-3">House 12, Road 4, Dhanmondi, Dhaka</p>
+                      <p className="font-mono text-text-3">+880 1812-998877</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-text-3 font-mono text-[9px] uppercase block">
+                        Payment & Courier
+                      </span>
+                      <p className="font-bold text-text">Cash on Delivery (COD)</p>
+                      <p className="text-text-3">Courier: Steadfast Express</p>
+                      {showVat && (
+                        <p className="font-mono text-[10px] text-text-3 mt-0.5">{vatNumber}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Items */}
+                <div className="space-y-2 border-b border-line pb-3">
+                  <div className="flex justify-between font-mono text-[10px] font-bold text-text-3 uppercase">
+                    <span>Item Description</span>
+                    <span>Total</span>
+                  </div>
+                  <div className="divide-y divide-line/40">
+                    <div className="flex justify-between py-1.5">
+                      <div>
+                        <p className="font-semibold text-text">Dhakai Jamdani Saree</p>
+                        <p className="text-[10px] text-text-3">SKU: JAM-042 · Qty: 1</p>
+                      </div>
+                      <span className="font-mono font-bold text-text">৳৪,৮৫০</span>
+                    </div>
+                    <div className="flex justify-between py-1.5">
+                      <div>
+                        <p className="font-semibold text-text">Handwoven Silk Scarf</p>
+                        <p className="text-[10px] text-text-3">SKU: SCF-108 · Qty: 1</p>
+                      </div>
+                      <span className="font-mono font-bold text-text">৳১,২০০</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-xs font-mono">
+                  <div className="flex justify-between text-text-3">
+                    <span>Subtotal</span>
+                    <span>৳৬,০৫০</span>
+                  </div>
+                  <div className="flex justify-between text-text-3">
+                    <span>Shipping Fee (Dhaka Metro)</span>
+                    <span>৳৬০</span>
+                  </div>
                   <div
-                    className="size-10 rounded-xl grid place-items-center text-white font-bold font-display text-sm shadow-xs"
-                    style={{ backgroundColor: brandColor }}
+                    className="flex justify-between font-bold text-sm pt-2 border-t border-line"
+                    style={{ color: brandColor }}
                   >
-                    ন
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-base text-text leading-tight font-display">
-                      {TENANT.name}
-                    </h4>
-                    <p className="text-[11px] text-text-3">{invoiceTagline}</p>
+                    <span>Total Due</span>
+                    <span>৳৬,১১০</span>
                   </div>
                 </div>
-                <div className="text-right font-mono">
-                  <span
-                    className="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider mb-1"
-                    style={{ backgroundColor: brandColor }}
-                  >
-                    INVOICE
-                  </span>
-                  <p className="font-bold text-text text-sm">
-                    {invoicePrefix}{invoiceSeq}
-                  </p>
-                  <p className="text-[10px] text-text-3">04 Sep, 2026</p>
-                </div>
-              </div>
 
-              {/* Customer & Order Metadata */}
-              <div className="grid grid-cols-2 gap-3 py-1 text-[11px] text-text-2 bg-surface-2/40 p-3 rounded-xl border border-line/60">
-                <div>
-                  <span className="text-text-3 font-mono block text-[9.5px] uppercase">
-                    Billed To
-                  </span>
-                  <p className="font-bold text-text">Ayesha Siddiqua</p>
-                  <p className="text-text-3">House 12, Road 4, Dhanmondi, Dhaka</p>
-                  <p className="font-mono text-text-3">+880 1812-998877</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-text-3 font-mono block text-[9.5px] uppercase">
-                    Payment Method
-                  </span>
-                  <p className="font-bold text-text">Cash on Delivery (COD)</p>
-                  <p className="text-text-3">Courier: Steadfast Express</p>
-                  {includeVat && (
-                    <p className="font-mono text-[10px] text-text-3 mt-1">{vatNumber}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <div className="space-y-2 border-b border-line pb-4">
-                <div className="flex justify-between font-mono text-[10px] font-bold text-text-3 uppercase">
-                  <span>Item Description</span>
-                  <span>Amount</span>
-                </div>
-                <div className="divide-y divide-line/40">
-                  <div className="flex justify-between py-1.5 items-center">
-                    <div>
-                      <p className="font-semibold text-text">Dhakai Jamdani Saree</p>
-                      <p className="text-[10.5px] text-text-3">Variant: Royal Crimson × 1</p>
+                {showQrCode && (
+                  <div className="flex items-center justify-between pt-3 border-t border-dashed border-line">
+                    <div className="text-[10.5px] text-text-3">
+                      <p className="font-bold text-text">Digital Verification</p>
+                      <p>Scan to verify authentic order & tracking</p>
                     </div>
-                    <span className="font-mono font-bold text-text">৳৪,৮৫০</span>
-                  </div>
-                  <div className="flex justify-between py-1.5 items-center">
-                    <div>
-                      <p className="font-semibold text-text">Handwoven Silk Scarf</p>
-                      <p className="text-[10.5px] text-text-3">Variant: Emerald Green × 1</p>
+                    <div className="size-12 rounded bg-surface-2 border border-line grid place-items-center font-mono text-[9px] text-text-3">
+                      [QR Code]
                     </div>
-                    <span className="font-mono font-bold text-text">৳১,২০০</span>
                   </div>
-                </div>
-              </div>
+                )}
 
-              {/* Totals Summary */}
-              <div className="space-y-1.5 text-xs font-mono">
-                <div className="flex justify-between text-text-3">
-                  <span>Subtotal</span>
-                  <span>৳৬,০৫০</span>
-                </div>
-                <div className="flex justify-between text-text-3">
-                  <span>Shipping Fee (Dhaka Metro)</span>
-                  <span>৳৬০</span>
-                </div>
-                <div
-                  className="flex justify-between font-bold text-sm pt-2 border-t border-line text-text"
-                  style={{ color: brandColor }}
-                >
-                  <span>Total Due (BDT)</span>
-                  <span>৳৬,১১০</span>
-                </div>
-              </div>
+                {showSignature && (
+                  <div className="pt-2 flex justify-between items-end text-[10px] text-text-3">
+                    <span>Hotline: {supportPhone}</span>
+                    <span className="border-t border-line pt-1 font-mono">Authorized Seal</span>
+                  </div>
+                )}
 
-              {/* Receipt Footer note */}
-              <div className="pt-3 border-t border-dashed border-line text-[10.5px] text-text-3 text-center space-y-1">
-                <p className="italic">{invoiceTerms}</p>
-                <p className="font-mono text-[10px]">
-                  Hotline: <span className="font-semibold text-text">{supportPhone}</span> · www.nokshi.co
+                <p className="text-[10px] text-text-3 italic text-center pt-2">
+                  {invoiceTerms}
                 </p>
               </div>
-            </div>
+            ) : (
+              /* POS Thermal 80mm Slip Preview */
+              <div className="p-6 font-mono text-[11px] bg-[#fafafa] space-y-3 border-x-4 border-dashed border-line/40">
+                <div className="text-center space-y-1 border-b border-dashed border-line pb-2">
+                  <h4 className="font-bold text-sm uppercase">{TENANT.name}</h4>
+                  <p className="text-[10px] text-text-3">{invoiceTagline}</p>
+                  <p className="text-[10px] font-bold">INV: {invoicePrefix}{invoiceSeq}</p>
+                  <p className="text-[9.5px] text-text-3">04/09/2026 10:45 AM</p>
+                </div>
+
+                <div className="space-y-1 text-[10px] border-b border-dashed border-line pb-2">
+                  <p><strong>CUST:</strong> Ayesha Siddiqua</p>
+                  <p><strong>TEL:</strong> +880 1812-998877</p>
+                  <p><strong>ADDR:</strong> Dhanmondi 4, Dhaka</p>
+                  <p><strong>COURIER:</strong> Steadfast Express (COD)</p>
+                </div>
+
+                <div className="space-y-1 border-b border-dashed border-line pb-2">
+                  <div className="flex justify-between">
+                    <span>1x Jamdani Saree</span>
+                    <span>৳4,850</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>1x Silk Scarf</span>
+                    <span>৳1,200</span>
+                  </div>
+                  <div className="flex justify-between text-text-3">
+                    <span>Delivery (Dhaka)</span>
+                    <span>৳60</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between font-bold text-xs pt-1">
+                  <span>TOTAL COD:</span>
+                  <span>৳6,110</span>
+                </div>
+
+                {showQrCode && (
+                  <div className="text-center pt-2">
+                    <div className="size-14 mx-auto bg-surface-2 border border-line grid place-items-center text-[8px]">
+                      [QR-80MM]
+                    </div>
+                    <p className="text-[9px] text-text-3 mt-1">Scan for Steadfast Consignment</p>
+                  </div>
+                )}
+
+                <div className="text-center text-[9px] text-text-3 pt-1">
+                  <p>Hotline: {supportPhone}</p>
+                  <p className="italic mt-1">{invoiceTerms}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-text-3 px-1">
+            <span>✨ Live automatic layout update</span>
+            <button
+              type="button"
+              onClick={() => alert("Sample invoice PDF rendering triggered.")}
+              className="text-signal hover:underline font-medium cursor-pointer"
+            >
+              Print Test Sample ↗
+            </button>
           </div>
         </div>
       </div>
@@ -1433,21 +1639,854 @@ function TabBranding() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 4: AI Persona (Tone Presets, Sales Urgency & Automation Rules)
+   TAB 5: Website Orders (Sync Orders to WooCommerce/Shopify/Custom REST)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabWebsiteOrders() {
+  const [enabled, setEnabled] = useState(false);
+  const [preset, setPreset] = useState<"custom" | "woocommerce" | "shopify">("custom");
+  const [paymentMode, setPaymentMode] = useState<"payment_link" | "cod">("payment_link");
+  const [apiBaseUrl, setApiBaseUrl] = useState("https://nokshi.co/api/v1/orders");
+  const [authType, setAuthType] = useState("api_key");
+  const [headerName, setHeaderName] = useState("X-API-Key");
+  const [apiKey, setApiKey] = useState("arise_live_89128394812");
+  const [showKey, setShowKey] = useState(false);
+
+  const [requestTemplate, setRequestTemplate] = useState(`{
+  "customer_name": "{{customer_name}}",
+  "customer_phone": "{{customer_phone}}",
+  "delivery_address": "{{delivery_address}}",
+  "city": "{{city}}",
+  "items": {{items_json}},
+  "total_amount": {{total_amount}},
+  "delivery_charge": {{delivery_charge}},
+  "payment_method": "{{payment_method}}"
+}`);
+
+  const [isPinging, setIsPinging] = useState(false);
+  const [pingResult, setPingResult] = useState<{
+    success: boolean;
+    status: number;
+    latency: string;
+  } | null>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const handleTestPing = () => {
+    setIsPinging(true);
+    setPingResult(null);
+    setTimeout(() => {
+      setIsPinging(false);
+      setPingResult({
+        success: true,
+        status: 200,
+        latency: "142ms",
+      });
+    }, 1100);
+  };
+
+  const handleProposeTemplate = () => {
+    if (preset === "woocommerce") {
+      setRequestTemplate(`{
+  "payment_method": "cod",
+  "payment_method_title": "Cash on Delivery",
+  "billing": {
+    "first_name": "{{customer_name}}",
+    "phone": "{{customer_phone}}",
+    "address_1": "{{delivery_address}}"
+  },
+  "line_items": {{items_json}}
+}`);
+    } else if (preset === "shopify") {
+      setRequestTemplate(`{
+  "order": {
+    "email": "{{customer_email}}",
+    "phone": "{{customer_phone}}",
+    "shipping_address": {
+      "name": "{{customer_name}}",
+      "address1": "{{delivery_address}}"
+    },
+    "financial_status": "pending"
+  }
+}`);
+    } else {
+      setRequestTemplate(`{
+  "customer_name": "{{customer_name}}",
+  "customer_phone": "{{customer_phone}}",
+  "delivery_address": "{{delivery_address}}",
+  "items": {{items_json}},
+  "total_amount": {{total_amount}}
+}`);
+    }
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    }, 600);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="space-y-6">
+      <AnimatePresence>
+        {savedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
+          >
+            <IconCheck width={16} height={16} />
+            <span>Website Orders configuration saved and verified!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Panel>
+        <PanelHead
+          title="Website Orders Integration"
+          sub="Let the AI agent place confirmed chat orders directly on your own website or e-commerce backend."
+        />
+        <div className="divide-y divide-line/60">
+          <ToggleRow
+            label="Enable Website Ordering"
+            desc="When active, AI chat orders are dispatched to your website order API instead of the standalone list."
+            value={enabled}
+            onToggle={setEnabled}
+          />
+
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-text mb-1.5">
+                  Platform Preset
+                </label>
+                <select
+                  value={preset}
+                  onChange={(e) => {
+                    const val = e.target.value as "custom" | "woocommerce" | "shopify";
+                    setPreset(val);
+                    if (val === "woocommerce") {
+                      setApiBaseUrl("https://yourshop.com/wp-json/wc/v3/orders");
+                      setHeaderName("Authorization");
+                    } else if (val === "shopify") {
+                      setApiBaseUrl("https://yourshop.myshopify.com/admin/api/2024-01/orders.json");
+                      setHeaderName("X-Shopify-Access-Token");
+                    }
+                  }}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-text outline-hidden focus:border-signal"
+                >
+                  <option value="custom">Custom REST API / Webhook</option>
+                  <option value="woocommerce">WooCommerce (WordPress)</option>
+                  <option value="shopify">Shopify Store API</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text mb-1.5">
+                  Order Payment Mode
+                </label>
+                <select
+                  value={paymentMode}
+                  onChange={(e) => setPaymentMode(e.target.value as "payment_link" | "cod")}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-text outline-hidden focus:border-signal"
+                >
+                  <option value="payment_link">Payment link (pay online) — Agent sends checkout URL</option>
+                  <option value="cod">Cash on delivery (COD) — Agent directly creates confirmed order</option>
+                </select>
+              </div>
+            </div>
+
+            <SettingsField
+              label="API Base URL Endpoint"
+              value={apiBaseUrl}
+              onChange={setApiBaseUrl}
+              placeholder="https://yourshop.com/api/orders"
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-text mb-1.5">
+                  Authentication Type
+                </label>
+                <select
+                  value={authType}
+                  onChange={(e) => setAuthType(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-text outline-hidden focus:border-signal"
+                >
+                  <option value="api_key">API Key Header</option>
+                  <option value="bearer">Bearer Token</option>
+                  <option value="basic">Basic Auth</option>
+                  <option value="none">No Authentication (Public)</option>
+                </select>
+              </div>
+
+              <SettingsField
+                label="Auth Header Name"
+                value={headerName}
+                onChange={setHeaderName}
+                placeholder="X-API-Key"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-text mb-1.5">
+                API Key / Secret Token
+              </label>
+              <div className="relative">
+                <input
+                  type={showKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[13px] font-mono text-text pr-10 focus:border-signal outline-hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-3 top-3 text-text-3 hover:text-text cursor-pointer"
+                >
+                  {showKey ? <IconEyeOff width={16} height={16} /> : <IconEye width={16} height={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel>
+        <div className="p-5 border-b border-line flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-text">JSON Request Payload Template</h3>
+            <p className="text-xs text-text-3 mt-0.5">
+              Available variables: <code className="font-mono text-signal font-semibold">{"{{customer_name}}"}</code>, <code className="font-mono text-signal font-semibold">{"{{customer_phone}}"}</code>, <code className="font-mono text-signal font-semibold">{"{{delivery_address}}"}</code>, <code className="font-mono text-signal font-semibold">{"{{items_json}}"}</code>, <code className="font-mono text-signal font-semibold">{"{{total_amount}}"}</code>
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            type="button"
+            onClick={handleProposeTemplate}
+          >
+            🪄 AI Propose Template
+          </Button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <textarea
+            rows={8}
+            value={requestTemplate}
+            onChange={(e) => setRequestTemplate(e.target.value)}
+            className="w-full rounded-xl border border-line bg-surface-2/40 p-3.5 text-xs font-mono text-text outline-hidden focus:border-signal leading-relaxed"
+          />
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                type="button"
+                onClick={handleTestPing}
+                disabled={isPinging}
+              >
+                {isPinging ? "Dispatching Ping…" : "Send Test Order Ping"}
+              </Button>
+              {pingResult && (
+                <span className="text-xs font-mono text-signal flex items-center gap-1 font-semibold">
+                  <IconCheck width={13} height={13} /> HTTP {pingResult.status} OK ({pingResult.latency})
+                </span>
+              )}
+            </div>
+
+            <Button
+              size="md"
+              variant="signal"
+              type="submit"
+              disabled={isSaving}
+              className="px-6"
+            >
+              {isSaving ? "Saving Configuration…" : "Save Website Orders Setup"}
+            </Button>
+          </div>
+        </div>
+      </Panel>
+    </form>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB 6: Couriers (Steadfast, Pathao, RedX, Zones & Auto-Book)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabCourier() {
+  const [defaultCourier, setDefaultCourier] = useState("steadfast");
+  const [insideDhaka, setInsideDhaka] = useState("60");
+  const [subDhaka, setSubDhaka] = useState("100");
+  const [outsideDhaka, setOutsideDhaka] = useState("150");
+  const [freeDeliveryMin, setFreeDeliveryMin] = useState("3000");
+  const [autoBook, setAutoBook] = useState(true);
+  const [includePackingSlip, setIncludePackingSlip] = useState(true);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const couriers = [
+    {
+      id: "steadfast",
+      name: "Steadfast Courier",
+      coverage: "Nationwide (64 Districts + All Upazilas)",
+      key: "sf_live_49182394",
+      status: "Connected",
+      badge: "Fastest COD Payout",
+    },
+    {
+      id: "pathao",
+      name: "Pathao Express",
+      coverage: "Dhaka Metro, Chittagong, Sylhet",
+      key: "pt_sec_88492019",
+      status: "Connected",
+      badge: "Same-Day Delivery",
+    },
+    {
+      id: "redx",
+      name: "RedX Logistics",
+      coverage: "Doorstep Delivery Nationwide",
+      key: "—",
+      status: "Configure",
+      badge: "Bulky Items",
+    },
+  ];
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    }, 600);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="space-y-6">
+      <AnimatePresence>
+        {savedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
+          >
+            <IconCheck width={16} height={16} />
+            <span>Courier dispatch rules and delivery pricing saved!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Panel>
+        <PanelHead
+          title="Courier Integrations & API Credentials"
+          sub="Automated consignment creation, tracking code generation, and COD payout reconciliation."
+        />
+        <div className="p-5 space-y-4">
+          {couriers.map((c) => {
+            const isSelectedDefault = defaultCourier === c.id;
+            return (
+              <div
+                key={c.id}
+                className={cx(
+                  "rounded-2xl border p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all",
+                  c.status === "Connected"
+                    ? "border-signal/30 bg-[#edf7f3]/20"
+                    : "border-line bg-surface-2/20",
+                )}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="size-11 rounded-xl bg-surface border border-line grid place-items-center shadow-2xs">
+                    <IconTruck width={20} height={20} className="text-signal" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-text">{c.name}</h4>
+                      <span className="text-[10px] font-mono font-bold bg-signal/15 text-signal px-2 py-0.5 rounded">
+                        {c.badge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-text-3 font-mono mt-0.5">
+                      Coverage: {c.coverage} · API Key: {c.key}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  {c.status === "Connected" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setDefaultCourier(c.id)}
+                        className={cx(
+                          "text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all cursor-pointer",
+                          isSelectedDefault
+                            ? "bg-signal text-white border-signal shadow-xs"
+                            : "bg-surface border-line text-text-2 hover:border-signal/50",
+                        )}
+                      >
+                        {isSelectedDefault ? "★ Default Courier" : "Set as Default"}
+                      </button>
+                      <Badge tone="mint" dot>
+                        Connected
+                      </Badge>
+                    </>
+                  ) : (
+                    <Button size="sm" variant="outline" type="button">
+                      Configure API
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Delivery Zones & Automated Dispatch"
+          sub="Configure shipping charges and immediate booking behavior."
+        />
+        <div className="divide-y divide-line/60">
+          <ToggleRow
+            label="Instant Auto-Booking on Order Verification"
+            desc="Automatically create shipment with default courier as soon as buyer confirms COD details in chat."
+            value={autoBook}
+            onToggle={setAutoBook}
+          />
+
+          <ToggleRow
+            label="Printable Courier Packing Slip with QR Code"
+            desc="Generate instant PDF packing slips with Steadfast/Pathao tracking barcode."
+            value={includePackingSlip}
+            onToggle={setIncludePackingSlip}
+          />
+
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <SettingsField
+              label="Inside Dhaka (৳)"
+              value={insideDhaka}
+              onChange={setInsideDhaka}
+              placeholder="60"
+            />
+            <SettingsField
+              label="Sub-Districts / Savar (৳)"
+              value={subDhaka}
+              onChange={setSubDhaka}
+              placeholder="100"
+            />
+            <SettingsField
+              label="Outside Dhaka Nationwide (৳)"
+              value={outsideDhaka}
+              onChange={setOutsideDhaka}
+              placeholder="150"
+            />
+            <SettingsField
+              label="Free Shipping Min Order (৳)"
+              value={freeDeliveryMin}
+              onChange={setFreeDeliveryMin}
+              placeholder="3000"
+            />
+          </div>
+        </div>
+      </Panel>
+
+      <div className="flex justify-end pt-2">
+        <Button
+          size="md"
+          variant="signal"
+          type="submit"
+          disabled={isSaving}
+          className="px-6"
+        >
+          {isSaving ? "Saving Courier Settings…" : "Save Courier Rules & Rates"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB 7: Meta CAPI (Pixel ID, Access Token, Events & Test Ping)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabMeta() {
+  const [capiEnabled, setCapiEnabled] = useState(true);
+  const [pixelId, setPixelId] = useState("738291039482104");
+  const [accessToken, setAccessToken] = useState("EAABoZA9X1mZCQBAKz9PZChqKq2wL4uG9J9M8kZD");
+  const [showToken, setShowToken] = useState(false);
+  const [testEventCode, setTestEventCode] = useState("TEST42891");
+
+  const [isPinging, setIsPinging] = useState(false);
+  const [pingResult, setPingResult] = useState<{
+    success: boolean;
+    traceId?: string;
+    message?: string;
+  } | null>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const handleTestPing = () => {
+    setIsPinging(true);
+    setPingResult(null);
+    setTimeout(() => {
+      setIsPinging(false);
+      setPingResult({
+        success: true,
+        traceId: "fb_trc_9948214a19b02",
+        message: "Meta Graph API v20.0 received event 'Purchase' with HTTP 200 OK.",
+      });
+    }, 1200);
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    }, 600);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="space-y-6">
+      <AnimatePresence>
+        {savedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
+          >
+            <IconCheck width={16} height={16} />
+            <span>Meta Conversions API parameters saved and active!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Panel>
+        <PanelHead
+          title="Meta Conversions API (CAPI)"
+          sub="Server-side event dispatch for Facebook & Instagram Ads. Bypass ad-blockers and feed high-fidelity purchase signals directly to Meta Graph API."
+        />
+        <div className="divide-y divide-line/60">
+          <ToggleRow
+            label="Server-Side CAPI Events Dispatch"
+            desc="Send real-time Purchase, Lead, and AddToCart events directly from AriseSell backend to Meta."
+            value={capiEnabled}
+            onToggle={setCapiEnabled}
+          />
+
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SettingsField
+                label="Meta Pixel ID / Dataset ID"
+                value={pixelId}
+                onChange={setPixelId}
+                placeholder="e.g. 7382910394XXXXX"
+              />
+              <div>
+                <label className="block text-xs font-bold text-text mb-1.5">
+                  System User Access Token
+                </label>
+                <div className="relative">
+                  <input
+                    type={showToken ? "text" : "password"}
+                    value={accessToken}
+                    onChange={(e) => setAccessToken(e.target.value)}
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[13px] font-mono text-text pr-10 focus:border-signal outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowToken(!showToken)}
+                    className="absolute right-3 top-3 text-text-3 hover:text-text cursor-pointer"
+                  >
+                    {showToken ? <IconEyeOff width={16} height={16} /> : <IconEye width={16} height={16} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div>
+                <SettingsField
+                  label="Meta Test Event Code (Optional for testing)"
+                  value={testEventCode}
+                  onChange={setTestEventCode}
+                  placeholder="e.g. TEST12345"
+                />
+                <p className="text-[11px] text-text-3 mt-1">
+                  Find this in Meta Events Manager &gt; Test Events tab.
+                </p>
+              </div>
+
+              <div className="flex flex-col justify-end">
+                <Button
+                  size="md"
+                  variant="outline"
+                  type="button"
+                  onClick={handleTestPing}
+                  disabled={isPinging || !capiEnabled}
+                  className="w-full justify-center"
+                >
+                  {isPinging ? (
+                    <span className="flex items-center gap-2">
+                      <span className="size-3 animate-spin rounded-full border-2 border-signal border-t-transparent" />
+                      Dispatching Test Ping to Meta…
+                    </span>
+                  ) : (
+                    "Send Live Test Event Ping to Meta"
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {pingResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3 text-xs text-signal space-y-1"
+              >
+                <p className="font-bold flex items-center gap-1.5">
+                  <IconCheck width={14} height={14} /> Meta Graph API Response: 200 OK
+                </p>
+                <p className="text-text-2 font-mono text-[11px]">{pingResult.message}</p>
+                <p className="text-[10px] text-text-3 font-mono">
+                  Event Trace ID: {pingResult.traceId}
+                </p>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Event Attribution Triggers"
+          sub="Select which lifecycle actions send server-side signals."
+        />
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { event: "Purchase", desc: "Order booked & courier consignment created.", active: true },
+            { event: "Lead", desc: "Customer provided name and shipping address.", active: true },
+            { event: "AddToCart", desc: "Customer requested variant checkout in chat.", active: true },
+            { event: "InitiateCheckout", desc: "AI presented the invoice payment summary.", active: true },
+            { event: "ViewContent", desc: "Customer viewed product variant photos.", active: false },
+            { event: "Search", desc: "Customer queried catalog for specific items.", active: false },
+          ].map((e) => (
+            <div
+              key={e.event}
+              className="rounded-xl border border-line p-3.5 flex items-center justify-between bg-surface-2/20"
+            >
+              <div>
+                <p className="text-sm font-bold text-text font-mono">{e.event}</p>
+                <p className="text-[11.5px] text-text-3 mt-0.5">{e.desc}</p>
+              </div>
+              <Badge tone={e.active ? "mint" : "neutral"} dot={e.active}>
+                {e.active ? "Active" : "Off"}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <div className="flex justify-end pt-2">
+        <Button
+          size="md"
+          variant="signal"
+          type="submit"
+          disabled={isSaving}
+          className="px-6"
+        >
+          {isSaving ? "Saving Meta Settings…" : "Save Meta CAPI Settings"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB 8: Product Feed (Meta Catalog, Google Shopping & XML)
+   ═══════════════════════════════════════════════════════════════════ */
+function TabProductFeed() {
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [syncFreq, setSyncFreq] = useState("Every 2 hours");
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+
+  const feeds = [
+    {
+      id: "fb",
+      name: "Facebook & Instagram Commerce Catalog",
+      format: "XML / RSS 2.0",
+      url: "https://api.arisesell.com/v1/feed/nokshi/facebook-catalog.xml",
+      lastSync: "14 minutes ago",
+      products: 47,
+    },
+    {
+      id: "google",
+      name: "Google Merchant Center Shopping Feed",
+      format: "Google Shopping XML",
+      url: "https://api.arisesell.com/v1/feed/nokshi/google-merchant.xml",
+      lastSync: "1 hour ago",
+      products: 47,
+    },
+    {
+      id: "csv",
+      name: "Standard Tab-Delimited CSV Feed",
+      format: "UTF-8 CSV",
+      url: "https://api.arisesell.com/v1/feed/nokshi/products.csv",
+      lastSync: "3 hours ago",
+      products: 47,
+    },
+  ];
+
+  const handleCopy = (url: string) => {
+    navigator.clipboard?.writeText(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl(null), 2500);
+  };
+
+  const handleSyncNow = () => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setIsSyncing(false);
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 3000);
+    }, 1200);
+  };
+
+  return (
+    <div className="space-y-6">
+      <AnimatePresence>
+        {syncSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
+          >
+            <IconCheck width={16} height={16} />
+            <span>All catalog feeds synchronized! 47 active products updated.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Panel>
+        <PanelHead
+          title="Product Catalog Feeds"
+          sub="Live dynamic URLs for Meta Commerce Manager, Instagram Shop, and Google Merchant Center."
+        />
+        <div className="p-5 space-y-4">
+          {feeds.map((f) => (
+            <div
+              key={f.id}
+              className="rounded-xl border border-line p-4 bg-surface-2/20 space-y-2.5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-text">{f.name}</h4>
+                  <p className="text-[11px] text-text-3 font-mono">
+                    Format: {f.format} · {f.products} Products · Synced {f.lastSync}
+                  </p>
+                </div>
+                <Badge tone="mint" dot>
+                  Live & Validated
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={f.url}
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-1.5 font-mono text-xs text-text-2 outline-hidden"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleCopy(f.url)}
+                  className="shrink-0 flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedUrl === f.url ? (
+                    <>
+                      <IconCheck width={13} height={13} className="text-signal" />
+                      <span className="text-signal font-semibold">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <IconCopy width={13} height={13} />
+                      <span>Copy Feed URL</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHead
+          title="Feed Automation & Sync Schedule"
+          sub="Manage auto-generation frequency and stock thresholds."
+        />
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-text mb-1.5">
+                Auto-Refresh Interval
+              </label>
+              <select
+                value={syncFreq}
+                onChange={(e) => setSyncFreq(e.target.value)}
+                className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-text outline-hidden focus:border-signal"
+              >
+                <option value="Every 1 hour">Every 1 hour (Fast inventory sync)</option>
+                <option value="Every 2 hours">Every 2 hours (Recommended)</option>
+                <option value="Every 6 hours">Every 6 hours</option>
+                <option value="Once Daily">Once Daily (Midnight UTC)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col justify-end">
+              <Button
+                size="md"
+                variant="signal"
+                onClick={handleSyncNow}
+                disabled={isSyncing}
+                className="w-full justify-center"
+              >
+                {isSyncing ? "Regenerating Feeds…" : "Sync Catalog Feeds Now"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TAB 9: AI Persona (Tone Presets, Dialects & Automation Rules)
    ═══════════════════════════════════════════════════════════════════ */
 function TabPreferences() {
-  const [dialect, setDialect] = useState<"bangla" | "banglish" | "english">(
-    "bangla",
-  );
-  const [persona, setPersona] = useState<"friendly" | "urgent" | "formal" | "custom">(
-    "friendly",
-  );
+  const [dialect, setDialect] = useState<"bangla" | "banglish" | "english">("bangla");
+  const [persona, setPersona] = useState<"friendly" | "urgent" | "formal" | "custom">("friendly");
   const [systemPrompt, setSystemPrompt] = useState(
     "You are Nokshi Assistant, an expert fashion consultant. Greet warmly with respectful Bangla. Highlight the authentic handwoven quality of our sarees. Offer free shipping if the order exceeds ৳3,000.",
   );
-  const [replyDelay, setReplyDelay] = useState<"instant" | "natural" | "thinking">(
-    "natural",
-  );
+  const [replyDelay, setReplyDelay] = useState<"instant" | "natural" | "thinking">("natural");
   const [autoPhoto, setAutoPhoto] = useState(true);
   const [scarcityNudge, setScarcityNudge] = useState(true);
   const [priceFloorLock, setPriceFloorLock] = useState(true);
@@ -1478,7 +2517,7 @@ function TabPreferences() {
             className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
           >
             <IconCheck width={16} height={16} />
-            <span>AI Persona & sales guidelines updated immediately for all connected channels!</span>
+            <span>AI Persona & sales guidelines updated immediately!</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1686,584 +2725,7 @@ function TabPreferences() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 5: Meta CAPI (Pixel, Token, Triggers & Interactive Test Ping)
-   ═══════════════════════════════════════════════════════════════════ */
-function TabMeta() {
-  const [capiEnabled, setCapiEnabled] = useState(true);
-  const [pixelId, setPixelId] = useState("738291039482104");
-  const [accessToken, setAccessToken] = useState(
-    "EAABoZA9X1mZCQBAKz9PZChqKq2wL4uG9J9M8kZD",
-  );
-  const [showToken, setShowToken] = useState(false);
-  const [testEventCode, setTestEventCode] = useState("TEST42891");
-
-  const [isPinging, setIsPinging] = useState(false);
-  const [pingResult, setPingResult] = useState<{
-    success: boolean;
-    traceId?: string;
-    message?: string;
-  } | null>(null);
-
-  const [isSaving, setIsSaving] = useState(false);
-  const [savedToast, setSavedToast] = useState(false);
-
-  const handleTestPing = () => {
-    setIsPinging(true);
-    setPingResult(null);
-    setTimeout(() => {
-      setIsPinging(false);
-      setPingResult({
-        success: true,
-        traceId: "fb_trc_9948214a19b02",
-        message: "Meta Graph API v20.0 received event 'Purchase' with HTTP 200 OK.",
-      });
-    }, 1200);
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setSavedToast(true);
-      setTimeout(() => setSavedToast(false), 3000);
-    }, 600);
-  };
-
-  return (
-    <form onSubmit={handleSave} className="space-y-6">
-      <AnimatePresence>
-        {savedToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
-          >
-            <IconCheck width={16} height={16} />
-            <span>Meta Conversions API parameters saved and activated!</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <Panel>
-        <PanelHead
-          title="Meta Conversions API (CAPI)"
-          sub="Server-side event dispatch for Facebook & Instagram Ads. Bypass iOS 14+ ad-blockers and feed high-fidelity purchase signals directly to Meta Graph API."
-        />
-        <div className="divide-y divide-line/60">
-          <ToggleRow
-            label="Server-Side CAPI Events Dispatch"
-            desc="Send real-time Purchase, Lead, and AddToCart events directly from AriseSell backend to Meta."
-            value={capiEnabled}
-            onToggle={setCapiEnabled}
-          />
-
-          <div className="p-5 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SettingsField
-                label="Meta Pixel ID / Dataset ID"
-                value={pixelId}
-                onChange={setPixelId}
-                placeholder="e.g. 7382910394XXXXX"
-              />
-              <div>
-                <label className="block text-xs font-bold text-text mb-1.5">
-                  System User Access Token
-                </label>
-                <div className="relative">
-                  <input
-                    type={showToken ? "text" : "password"}
-                    value={accessToken}
-                    onChange={(e) => setAccessToken(e.target.value)}
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[13px] font-mono text-text pr-10 focus:border-signal outline-hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowToken(!showToken)}
-                    className="absolute right-3 top-3 text-text-3 hover:text-text cursor-pointer"
-                  >
-                    {showToken ? (
-                      <IconEyeOff width={16} height={16} />
-                    ) : (
-                      <IconEye width={16} height={16} />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div>
-                <SettingsField
-                  label="Meta Test Event Code (Optional for sandbox testing)"
-                  value={testEventCode}
-                  onChange={setTestEventCode}
-                  placeholder="e.g. TEST12345"
-                />
-                <p className="text-[11px] text-text-3 mt-1">
-                  Find this in Meta Events Manager &gt; Test Events tab.
-                </p>
-              </div>
-
-              <div className="flex flex-col justify-end">
-                <Button
-                  size="md"
-                  variant="outline"
-                  type="button"
-                  onClick={handleTestPing}
-                  disabled={isPinging || !capiEnabled}
-                  className="w-full justify-center"
-                >
-                  {isPinging ? (
-                    <span className="flex items-center gap-2">
-                      <span className="size-3 animate-spin rounded-full border-2 border-signal border-t-transparent" />
-                      Dispatching Test Ping to Meta…
-                    </span>
-                  ) : (
-                    "Send Live Test Event Ping to Meta"
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {pingResult && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3 text-xs text-signal space-y-1"
-              >
-                <p className="font-bold flex items-center gap-1.5">
-                  <IconCheck width={14} height={14} /> Meta Graph API Response: 200 OK
-                </p>
-                <p className="text-text-2 font-mono text-[11px]">
-                  {pingResult.message}
-                </p>
-                <p className="text-[10px] text-text-3 font-mono">
-                  Event Trace ID: {pingResult.traceId}
-                </p>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </Panel>
-
-      <Panel>
-        <PanelHead
-          title="Event Attribution Triggers"
-          sub="Select which lifecycle actions send server-side signals."
-        />
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            {
-              event: "Purchase",
-              desc: "Fires when customer confirms order and courier consignment is created.",
-              active: true,
-            },
-            {
-              event: "Lead",
-              desc: "Fires when customer provides phone number and shipping address.",
-              active: true,
-            },
-            {
-              event: "AddToCart",
-              desc: "Fires when customer requests variant checkout in chat.",
-              active: true,
-            },
-            {
-              event: "InitiateCheckout",
-              desc: "Fires when AI presents the final order invoice summary.",
-              active: true,
-            },
-            {
-              event: "ViewContent",
-              desc: "Fires when customer browses a product photo or catalog card.",
-              active: false,
-            },
-            {
-              event: "Search",
-              desc: "Fires when customer queries catalog for a specific item.",
-              active: false,
-            },
-          ].map((e) => (
-            <div
-              key={e.event}
-              className="rounded-xl border border-line p-3.5 flex items-center justify-between bg-surface-2/20"
-            >
-              <div>
-                <p className="text-sm font-bold text-text font-mono">{e.event}</p>
-                <p className="text-[11.5px] text-text-3 mt-0.5">{e.desc}</p>
-              </div>
-              <Badge tone={e.active ? "mint" : "neutral"} dot={e.active}>
-                {e.active ? "Active" : "Off"}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </Panel>
-
-      <div className="flex justify-end pt-2">
-        <Button
-          size="md"
-          variant="signal"
-          type="submit"
-          disabled={isSaving}
-          className="px-6"
-        >
-          {isSaving ? "Saving Meta Settings…" : "Save Meta CAPI Settings"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   TAB 6: Product Feed (Meta Catalog, Google Shopping & XML)
-   ═══════════════════════════════════════════════════════════════════ */
-function TabProductFeed() {
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-  const [syncFreq, setSyncFreq] = useState("Every 2 hours");
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncSuccess, setSyncSuccess] = useState(false);
-
-  const feeds = [
-    {
-      id: "fb",
-      name: "Facebook & Instagram Commerce Catalog",
-      format: "XML / RSS 2.0",
-      url: "https://api.arisesell.com/v1/feed/nokshi/facebook-catalog.xml",
-      lastSync: "14 minutes ago",
-      products: 47,
-    },
-    {
-      id: "google",
-      name: "Google Merchant Center Shopping Feed",
-      format: "Google Shopping XML",
-      url: "https://api.arisesell.com/v1/feed/nokshi/google-merchant.xml",
-      lastSync: "1 hour ago",
-      products: 47,
-    },
-    {
-      id: "csv",
-      name: "Standard Tab-Delimited CSV Feed",
-      format: "UTF-8 CSV",
-      url: "https://api.arisesell.com/v1/feed/nokshi/products.csv",
-      lastSync: "3 hours ago",
-      products: 47,
-    },
-  ];
-
-  const handleCopy = (url: string) => {
-    navigator.clipboard?.writeText(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl(null), 2500);
-  };
-
-  const handleSyncNow = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-      setSyncSuccess(true);
-      setTimeout(() => setSyncSuccess(false), 3000);
-    }, 1200);
-  };
-
-  return (
-    <div className="space-y-6">
-      <AnimatePresence>
-        {syncSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
-          >
-            <IconCheck width={16} height={16} />
-            <span>All catalog feeds synchronized! 47 active products updated with fresh inventory counts.</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <Panel>
-        <PanelHead
-          title="Product Catalog Feeds"
-          sub="Live dynamic URLs for Meta Commerce Manager, Instagram Shop, and Google Merchant Center."
-        />
-        <div className="p-5 space-y-4">
-          {feeds.map((f) => (
-            <div
-              key={f.id}
-              className="rounded-xl border border-line p-4 bg-surface-2/20 space-y-2.5"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h4 className="text-sm font-bold text-text">{f.name}</h4>
-                  <p className="text-[11px] text-text-3 font-mono">
-                    Format: {f.format} · {f.products} Products · Synced {f.lastSync}
-                  </p>
-                </div>
-                <Badge tone="mint" dot>
-                  Live & Validated
-                </Badge>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={f.url}
-                  className="w-full rounded-lg border border-line bg-surface px-3 py-1.5 font-mono text-xs text-text-2 outline-hidden"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCopy(f.url)}
-                  className="shrink-0 flex items-center gap-1 cursor-pointer"
-                >
-                  {copiedUrl === f.url ? (
-                    <>
-                      <IconCheck width={13} height={13} className="text-signal" />
-                      <span className="text-signal font-semibold">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <IconCopy width={13} height={13} />
-                      <span>Copy Feed URL</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Panel>
-
-      <Panel>
-        <PanelHead
-          title="Catalog Automation & Sync Schedule"
-          sub="Manage auto-generation frequency and stock thresholds."
-        />
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-text mb-1.5">
-                Auto-Refresh Interval
-              </label>
-              <select
-                value={syncFreq}
-                onChange={(e) => setSyncFreq(e.target.value)}
-                className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-text outline-hidden focus:border-signal"
-              >
-                <option value="Every 1 hour">Every 1 hour (Fast inventory sync)</option>
-                <option value="Every 2 hours">Every 2 hours (Recommended)</option>
-                <option value="Every 6 hours">Every 6 hours</option>
-                <option value="Once Daily">Once Daily (Midnight UTC)</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col justify-end">
-              <Button
-                size="md"
-                variant="signal"
-                onClick={handleSyncNow}
-                disabled={isSyncing}
-                className="w-full justify-center"
-              >
-                {isSyncing ? "Regenerating Feeds…" : "Sync Catalog Feeds Now"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   TAB 7: Couriers (Steadfast, Pathao, RedX & Delivery Zones)
-   ═══════════════════════════════════════════════════════════════════ */
-function TabCourier() {
-  const [defaultCourier, setDefaultCourier] = useState("steadfast");
-  const [insideDhaka, setInsideDhaka] = useState("60");
-  const [subDhaka, setSubDhaka] = useState("100");
-  const [outsideDhaka, setOutsideDhaka] = useState("150");
-  const [autoBook, setAutoBook] = useState(true);
-
-  const [isSaving, setIsSaving] = useState(false);
-  const [savedToast, setSavedToast] = useState(false);
-
-  const couriers = [
-    {
-      id: "steadfast",
-      name: "Steadfast Courier",
-      coverage: "Nationwide (64 Districts + Sub-districts)",
-      key: "sf_live_49182394",
-      status: "Connected",
-      badge: "Fastest COD Settlement",
-    },
-    {
-      id: "pathao",
-      name: "Pathao Express",
-      coverage: "Dhaka Metro, Chittagong, Sylhet",
-      key: "pt_sec_88492019",
-      status: "Connected",
-      badge: "Same-Day Delivery",
-    },
-    {
-      id: "redx",
-      name: "RedX Logistics",
-      coverage: "Doorstep Delivery Nationwide",
-      key: "—",
-      status: "Configure",
-      badge: "Heavy Parcels",
-    },
-  ];
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setSavedToast(true);
-      setTimeout(() => setSavedToast(false), 3000);
-    }, 600);
-  };
-
-  return (
-    <form onSubmit={handleSave} className="space-y-6">
-      <AnimatePresence>
-        {savedToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="rounded-xl border border-signal/40 bg-[#edf7f3] p-3.5 text-[13px] text-signal font-medium flex items-center gap-2 shadow-xs"
-          >
-            <IconCheck width={16} height={16} />
-            <span>Courier dispatch rules and delivery fees updated!</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <Panel>
-        <PanelHead
-          title="Courier Integrations & API Credentials"
-          sub="Automated consignment creation, tracking code generation, and COD payout reconciliation."
-        />
-        <div className="p-5 space-y-4">
-          {couriers.map((c) => {
-            const isSelectedDefault = defaultCourier === c.id;
-            return (
-              <div
-                key={c.id}
-                className={cx(
-                  "rounded-2xl border p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all",
-                  c.status === "Connected"
-                    ? "border-signal/30 bg-[#edf7f3]/20"
-                    : "border-line bg-surface-2/20",
-                )}
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="size-11 rounded-xl bg-surface border border-line grid place-items-center shadow-2xs">
-                    <IconTruck width={20} height={20} className="text-signal" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-text">{c.name}</h4>
-                      <span className="text-[10px] font-mono font-bold bg-signal/15 text-signal px-2 py-0.5 rounded">
-                        {c.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-text-3 font-mono mt-0.5">
-                      Coverage: {c.coverage} · API Key: {c.key}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  {c.status === "Connected" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setDefaultCourier(c.id)}
-                        className={cx(
-                          "text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all cursor-pointer",
-                          isSelectedDefault
-                            ? "bg-signal text-white border-signal shadow-xs"
-                            : "bg-surface border-line text-text-2 hover:border-signal/50",
-                        )}
-                      >
-                        {isSelectedDefault ? "★ Default Courier" : "Set as Default"}
-                      </button>
-                      <Badge tone="mint" dot>
-                        Connected
-                      </Badge>
-                    </>
-                  ) : (
-                    <Button size="sm" variant="outline" type="button">
-                      Configure API
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Panel>
-
-      <Panel>
-        <PanelHead
-          title="Delivery Zones & Automated Booking"
-          sub="Set customer delivery fees and booking behavior."
-        />
-        <div className="divide-y divide-line/60">
-          <ToggleRow
-            label="Instant Auto-Booking on Order Confirmation"
-            desc="Automatically book parcel with the default courier as soon as AI verifies customer address and phone."
-            value={autoBook}
-            onToggle={setAutoBook}
-          />
-
-          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SettingsField
-              label="Inside Dhaka Delivery (৳)"
-              value={insideDhaka}
-              onChange={setInsideDhaka}
-              placeholder="60"
-            />
-            <SettingsField
-              label="Sub-Districts / Savar / Gazipur (৳)"
-              value={subDhaka}
-              onChange={setSubDhaka}
-              placeholder="100"
-            />
-            <SettingsField
-              label="Outside Dhaka Nationwide (৳)"
-              value={outsideDhaka}
-              onChange={setOutsideDhaka}
-              placeholder="150"
-            />
-          </div>
-        </div>
-      </Panel>
-
-      <div className="flex justify-end pt-2">
-        <Button
-          size="md"
-          variant="signal"
-          type="submit"
-          disabled={isSaving}
-          className="px-6"
-        >
-          {isSaving ? "Saving Courier Settings…" : "Save Courier & Shipping Rates"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   TAB 8: Team (Staff Members, Roles & Add Moderator Modal)
+   TAB 10: Team (Staff Members, Roles & Add Moderator Modal)
    ═══════════════════════════════════════════════════════════════════ */
 function TabTeam() {
   const [members, setMembers] = useState([
@@ -2549,7 +3011,7 @@ function TabTeam() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 9: Notifications (WhatsApp Alerts, SMS & Email Digest)
+   TAB 11: Notifications (WhatsApp Alerts, SMS & Email Digest)
    ═══════════════════════════════════════════════════════════════════ */
 function TabNotifications() {
   const [whatsappAlert, setWhatsappAlert] = useState(true);
@@ -2673,7 +3135,7 @@ function TabNotifications() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   TAB 10: Billing (Current Plan, Dynamic Quotas, Top-ups & Invoices)
+   TAB 12: Billing (Current Plan, Dynamic Quotas, Top-ups & Invoices)
    ═══════════════════════════════════════════════════════════════════ */
 function TabBilling() {
   const [topupSuccess, setTopupSuccess] = useState<string | null>(null);
