@@ -747,7 +747,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                         <span>Billing &amp; Quota</span>
                       </Link>
                       <Link
-                        href="/console/settings?tab=team"
+                        href="/console/settings?tab=account"
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
@@ -759,16 +759,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                         <span>Team &amp; Roles</span>
                       </Link>
                       <Link
-                        href="/console/settings?tab=preferences"
+                        href="/console/brain"
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
-                        <IconSettings
+                        <IconBot
                           width={14}
                           height={14}
                           className="text-text-3"
                         />
-                        <span>AI Preferences</span>
+                        <span>AI Brain &amp; Persona</span>
                       </Link>
                     </div>
 
