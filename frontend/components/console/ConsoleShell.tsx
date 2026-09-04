@@ -8,7 +8,7 @@ import { CONSOLE_NAV } from "@/lib/brand";
 import { TENANT, TEAM } from "@/data/tenant";
 import { Avatar, Wordmark } from "@/components/ui/primitives";
 import { useAuth } from "@/lib/auth-context";
-import api, { type StoreWorkspace } from "@/lib/api-client";
+import api, { type StoreWorkspace, type BillingPlan } from "@/lib/api-client";
 import {
   NAV_ICON,
   IconBell,
@@ -511,11 +511,15 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
   const [tenantInfo, setTenantInfo] = useState({
     name: "Nokshi & Co.",
     plan: "Pro",
+    maxStores: 1,
     messagesUsed: 23,
     messagesQuota: 500,
     remainingQuota: 477,
     remainingPercent: 95,
   });
+
+  // Dynamic Subscription Plans from database
+  const [dynamicPlans, setDynamicPlans] = useState<BillingPlan[]>([]);
 
   const activeStoreName =
     activeWorkspace?.name || tenantInfo.name || TENANT.name;
@@ -524,30 +528,56 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     activeWorkspace?.plan || tenantInfo.plan || TENANT.plan;
 
   const maxAllowedStores = useMemo(() => {
-    const limits: Record<string, number> = {
-      free: 1,
-      grow: 1,
-      growth: 1,
-      basic: 1,
-      go: 1,
-      pro: 1,
-      business: 2,
-      scale: 5,
-      custom: 10,
-      enterprise: 10,
-      karkhana: 10,
-    };
     let max = 1;
+
+    // 1. Check owned workspaces (each workspace carries dynamic maxStores from database)
     for (const w of ownedWorkspaces) {
-      const k = (w.plan || "free").toLowerCase().trim();
-      if ((limits[k] || 1) > max) max = limits[k] || 1;
+      const storeLimit = w.maxStores ?? w.max_stores;
+      if (storeLimit && storeLimit > max) max = storeLimit;
     }
-    if (activeStorePlan) {
-      const k = activeStorePlan.toLowerCase().trim();
-      if ((limits[k] || 1) > max) max = limits[k] || 1;
+
+    // 2. Check tenantInfo.maxStores from backend getProfile()
+    if (tenantInfo.maxStores && tenantInfo.maxStores > max) {
+      max = tenantInfo.maxStores;
     }
+
+    // 3. Match against dynamic database plans loaded from /billing/plans
+    const planKey = (activeStorePlan || tenantInfo.plan || "").toLowerCase().trim();
+    if (dynamicPlans && dynamicPlans.length > 0) {
+      const matched = dynamicPlans.find(
+        (p) =>
+          p.name.toLowerCase() === planKey ||
+          p.id.toLowerCase() === planKey ||
+          planKey.includes(p.name.toLowerCase()) ||
+          p.name.toLowerCase().includes(planKey),
+      );
+      if (matched && matched.maxStores && matched.maxStores > max) {
+        max = matched.maxStores;
+      }
+    }
+
+    // 4. Robust fallback keyword matching (Enterprize, Enterprise, Scale, Custom, Business)
+    if (max <= 1) {
+      if (
+        planKey.includes("enter") ||
+        planKey.includes("scale") ||
+        planKey.includes("custom") ||
+        planKey.includes("vip")
+      ) {
+        max = 4;
+      } else if (planKey.includes("business") || planKey.includes("karkhana")) {
+        max = 2;
+      }
+    }
+
     return max;
-  }, [ownedWorkspaces, activeStorePlan]);
+  }, [
+    ownedWorkspaces,
+    activeStorePlan,
+    tenantInfo.maxStores,
+    tenantInfo.plan,
+    dynamicPlans,
+  ]);
   const isStoreLimitReached = ownedWorkspaces.length >= maxAllowedStores;
 
   // Dynamic Team Members from backend
@@ -616,6 +646,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
         })
         .catch(() => {});
 
+      // 0.1 Fetch dynamic active plans from database
+      api.billing
+        .listPlans()
+        .then((res: unknown) => {
+          if (Array.isArray(res)) {
+            setDynamicPlans(res as BillingPlan[]);
+          }
+        })
+        .catch(() => {});
+
       // 1. Fetch live Tenant Profile, Message Quota & Setup Checklist
       api.merchants
         .getProfile()
@@ -629,6 +669,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
             ) as {
               name?: string;
               plan?: string;
+              maxStores?: number;
               messagesUsed?: number;
               messagesQuota?: number;
               ordersUsed?: number;
@@ -651,6 +692,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
             setTenantInfo({
               name: d.name || "Nokshi & Co.",
               plan: d.plan || "Pro",
+              maxStores: d.maxStores ?? 1,
               messagesUsed: used,
               messagesQuota: quota,
               remainingQuota: remaining,

@@ -364,10 +364,11 @@ PLAN_STORE_LIMITS: dict[str, int] = {
     "go": 1,
     "pro": 1,
     "business": 2,
-    "scale": 5,
+    "scale": 4,
     "custom": 10,
-    "enterprise": 10,
-    "karkhana": 10,
+    "enterprise": 4,
+    "enterprize": 4,
+    "karkhana": 4,
 }
 
 
@@ -1310,6 +1311,10 @@ async def list_my_stores(
             owner_display = extra.get("owner_name") or "Store Owner"
             perms = (matched_member.get("permissions") if matched_member else None) or ["chat", "orders"]
 
+        # Resolve real-time dynamic store limit from database plans
+        plan_str = b.plan or user.plan or "Free"
+        max_allowed = await get_dynamic_plan_store_limit(plan_str)
+
         workspaces.append(
             StoreWorkspaceItem(
                 id=store_id_str,
@@ -1323,6 +1328,8 @@ async def list_my_stores(
                 is_active=is_active,
                 channels_count=3,
                 permissions=perms,
+                max_stores=max_allowed,
+                maxStores=max_allowed,
             )
         )
 

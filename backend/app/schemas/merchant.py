@@ -123,6 +123,9 @@ class StoreWorkspaceItem(BaseModel):
     is_active: bool = False
     channels_count: int = 1
     permissions: list[str] = []
+    max_stores: int = 1
+    maxStores: int = 1
+
 
 
 class SwitchStoreRequest(BaseModel):

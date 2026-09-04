@@ -25,6 +25,8 @@ export interface StoreWorkspace {
   is_active: boolean;
   channels_count: number;
   permissions: string[];
+  max_stores?: number;
+  maxStores?: number;
 }
 
 export interface BillingPlan {
