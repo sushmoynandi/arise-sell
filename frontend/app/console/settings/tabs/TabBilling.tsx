@@ -201,7 +201,10 @@ export function TabBilling() {
   };
 
   // Helper to identify Custom / Enterprise plans that require custom consultation
-  const isCustomPlan = (p: BillingPlan) => {
+  const isCustomPlan = (
+    p?: Partial<BillingPlan> | { name?: string; id?: string; tagline?: string } | null,
+  ) => {
+    if (!p) return false;
     const name = (p.name || "").toLowerCase().trim();
     const id = (p.id || "").toLowerCase().trim();
     const tagline = (p.tagline || "").toLowerCase().trim();
@@ -210,7 +213,9 @@ export function TabBilling() {
       id.includes("custom") ||
       tagline.includes("custom") ||
       name.includes("enterprise") ||
-      name.includes("enterprize")
+      name.includes("enterprize") ||
+      name.includes("scale") ||
+      name.includes("vip")
     );
   };
 
@@ -528,6 +533,7 @@ export function TabBilling() {
 
         {/* Dynamic Plans Grid: Show plans with showOnHome: true, PLUS user's active plan if not included. Sort Custom/Enterprise to far right */}
         {(() => {
+          const isUserOnCustom = isCustomPlan({ name: planName, id: planName, tagline: "" });
           const homePlans = plans.filter(
             (p) => p.showOnHome === true && p.status !== "archived",
           );
@@ -553,21 +559,23 @@ export function TabBilling() {
             basePlans.push(activePlanMatch);
           }
 
-          // Always ensure an Enterprise / Custom card is rendered on the rightmost edge
-          if (!basePlans.some((p) => isCustomPlan(p))) {
+          // Ensure exactly ONE Enterprise / Custom card is rendered on the rightmost edge
+          const customPlansInBase = basePlans.filter((p) => isCustomPlan(p));
+          if (customPlansInBase.length === 0) {
             basePlans.push({
               id: "plan-custom-enterprise",
-              name: "Custom Enterprise",
+              name: isUserOnCustom ? planName : "Custom Enterprise",
               nameBn: "কাস্টম এন্টারপ্রাইজ",
-              tagline:
-                "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA.",
-              priceBDT: 0,
-              yearlyPriceBDT: 0,
-              yearlyDiscountPercent: 0,
+              tagline: isUserOnCustom
+                ? "Tailored high-volume enterprise plan with dedicated SLA."
+                : "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA.",
+              priceBDT: isUserOnCustom ? planPriceBDT : 0,
+              yearlyPriceBDT: isUserOnCustom ? planPriceBDT * 10 : 0,
+              yearlyDiscountPercent: 17,
               billingPeriod: "both",
-              messageLimit: 50000,
-              maxStores: 10,
-              maxSeats: 30,
+              messageLimit: isUserOnCustom ? ordersQuota : 50000,
+              maxStores: isUserOnCustom ? maxStores : 10,
+              maxSeats: isUserOnCustom ? maxSeats : 30,
               catalogLimit: 10000,
               courierChannels: 10,
               features: [
@@ -583,6 +591,19 @@ export function TabBilling() {
               status: "active",
               showOnHome: true,
             });
+          } else if (customPlansInBase.length > 1) {
+            const keepPlan =
+              customPlansInBase.find(
+                (p) => p.name.toLowerCase() === planName.toLowerCase(),
+              ) || customPlansInBase[0];
+            const otherIds = customPlansInBase
+              .filter((p) => p.id !== keepPlan.id)
+              .map((p) => p.id);
+            for (let i = basePlans.length - 1; i >= 0; i--) {
+              if (otherIds.includes(basePlans[i].id)) {
+                basePlans.splice(i, 1);
+              }
+            }
           }
 
           const sortedPlans = [...basePlans].sort((a, b) => {
@@ -603,14 +624,22 @@ export function TabBilling() {
               )}
             >
               {sortedPlans.map((p) => {
-                const isCurrent =
-                  p.name.toLowerCase() === planName.toLowerCase();
-                const isSwitching = switchingPlanId === p.id;
                 const isCustom = isCustomPlan(p);
+                const isCurrent = isCustom
+                  ? isUserOnCustom
+                  : p.name.toLowerCase() === planName.toLowerCase();
+                const isSwitching = switchingPlanId === p.id;
+                const displayTitle = isCurrent && isCustom ? planName : p.name;
                 const price =
                   billingCycle === "yearly"
                     ? Math.round(p.yearlyPriceBDT || p.priceBDT * 10)
                     : p.priceBDT;
+                const displayPrice =
+                  isCurrent && isCustom
+                    ? billingCycle === "yearly"
+                      ? Math.round(planPriceBDT * 10)
+                      : planPriceBDT
+                    : price;
                 const periodLabel = billingCycle === "yearly" ? "/ yr" : "/ mo";
 
                 return (
@@ -628,7 +657,7 @@ export function TabBilling() {
                     <div className="space-y-2.5">
                       <div className="flex justify-between items-center">
                         <h4 className="font-bold text-base text-text capitalize">
-                          {p.name}
+                          {displayTitle}
                         </h4>
                         {isCurrent ? (
                           <span className="rounded bg-signal text-white px-2 py-0.5 text-[9.5px] font-bold">
@@ -646,17 +675,27 @@ export function TabBilling() {
                       </div>
 
                       <p className="text-[11px] text-text-3 min-h-[30px] line-clamp-2">
-                        {p.tagline ||
-                          (isCustom
-                            ? "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA."
-                            : `Designed for growing merchants needing reliable conversational AI.`)}
+                        {isCurrent && isCustom
+                          ? "Active tailored enterprise tier with dedicated SLA & multi-store."
+                          : p.tagline ||
+                            (isCustom
+                              ? "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA."
+                              : `Designed for growing merchants needing reliable conversational AI.`)}
                       </p>
 
-                      <div className="flex items-baseline gap-1 pt-1">
-                        {isCustom &&
-                        !isCurrent &&
-                        (p.priceBDT <= 0 ||
-                          p.name.toLowerCase().includes("custom")) ? (
+                      <div className="flex items-baseline gap-1 pt-1 min-h-[38px]">
+                        {isCurrent ? (
+                          <>
+                            <span className="text-xl font-bold font-display text-text">
+                              ৳{displayPrice.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] text-text-3 font-mono">
+                              {periodLabel}
+                            </span>
+                          </>
+                        ) : isCustom &&
+                          (p.priceBDT <= 0 ||
+                            p.name.toLowerCase().includes("custom")) ? (
                           <div className="flex flex-col">
                             <span className="text-xl font-bold font-display text-text">
                               Contact Sales
@@ -677,43 +716,64 @@ export function TabBilling() {
                         )}
                       </div>
 
-                      <div className="space-y-1 pt-1">
-                        <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
-                          <span>Quota:</span>
-                          <span className="text-signal font-bold">
-                            {isCustom
-                              ? "10k – 100k+ Messages"
-                              : `${p.messageLimit.toLocaleString()} Messages`}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
+                          <span>Messages:</span>
+                          <span className="text-signal font-bold whitespace-nowrap">
+                            {isCurrent
+                              ? `${ordersQuota.toLocaleString()} msgs`
+                              : isCustom
+                                ? "10k – 100k+"
+                                : `${p.messageLimit.toLocaleString()} msgs`}
                           </span>
                         </div>
-                        <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
+                        <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
                           <span>Stores:</span>
-                          <span className="text-text font-bold">
-                            {isCustom
-                              ? "3 – 10+ Stores"
-                              : `${p.maxStores} ${p.maxStores > 1 ? "Stores" : "Store"}`}
+                          <span className="text-text font-bold whitespace-nowrap">
+                            {isCurrent
+                              ? `${maxStores} ${maxStores > 1 ? "Stores" : "Store"}`
+                              : isCustom
+                                ? "3 – 10+ Stores"
+                                : `${p.maxStores} ${p.maxStores > 1 ? "Stores" : "Store"}`}
                           </span>
                         </div>
-                        <div className="rounded-lg bg-surface-2/60 p-1.5 font-mono text-[10.5px] text-text-2 font-semibold flex justify-between">
+                        <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
                           <span>Seats:</span>
-                          <span className="text-text font-bold">
-                            {isCustom
-                              ? "10 – 30+ Seats"
-                              : `${p.maxSeats} ${p.maxSeats > 1 ? "Seats" : "Seat"}`}
+                          <span className="text-text font-bold whitespace-nowrap">
+                            {isCurrent
+                              ? `${maxSeats} ${maxSeats > 1 ? "Seats" : "Seat"}`
+                              : isCustom
+                                ? "10 – 30+ Seats"
+                                : `${p.maxSeats} ${p.maxSeats > 1 ? "Seats" : "Seat"}`}
                           </span>
                         </div>
                       </div>
                     </div>
 
                     {isCurrent ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled
-                        className="w-full justify-center text-xs mt-2"
-                      >
-                        Active Plan
-                      </Button>
+                      <div className="space-y-1.5 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled
+                          className="w-full justify-center text-xs font-semibold border-signal/40 bg-signal/10 text-signal shadow-2xs"
+                        >
+                          <IconCheck width={14} height={14} className="mr-1 text-signal" />
+                          Active Plan
+                        </Button>
+                        {isCustom && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRedeemError(null);
+                              setRedeemModalOpen(true);
+                            }}
+                            className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[10.5px] font-mono text-text-3 hover:text-signal hover:bg-signal/5 transition-all cursor-pointer"
+                          >
+                            <span>+ Redeem Another Code</span>
+                          </button>
+                        )}
+                      </div>
                     ) : isCustom ? (
                       <div className="space-y-2 mt-2">
                         <Button
