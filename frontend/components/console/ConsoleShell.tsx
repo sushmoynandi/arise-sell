@@ -388,10 +388,10 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           collapsed ? "w-[78px]" : "w-[290px]",
         )}
       >
-        {/* Brand Header with Working Collapse Toggle Button (Exact h-16 match with Main Header, with border-b line) */}
+        {/* Brand Header with Working Collapse Toggle Button (Exact h-[72px] match with Main Header, with border-b line) */}
         <div
           className={cx(
-            "h-16 shrink-0 flex items-center border-b border-line",
+            "h-[72px] shrink-0 flex items-center border-b border-line",
             collapsed ? "justify-center px-2" : "justify-between pl-4.5 pr-3",
           )}
         >
@@ -446,26 +446,48 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
         {/* Inner Scrollable Sidebar Container */}
         <div
           className={cx(
-            "flex-1 overflow-y-auto overflow-x-visible pt-3 pb-3 space-y-3",
+            "flex-1 overflow-y-auto overflow-x-visible pt-4 pb-3 space-y-3",
             collapsed ? "px-2.5" : "px-5",
           )}
         >
-          {/* Business / Tenant Switcher with Interactive Dropdown */}
-          <div className="relative mb-5">
+          {/* Navigation List */}
+          <NavList
+            collapsed={collapsed}
+            expandedGroups={expandedGroups}
+            onToggleGroup={toggleGroup}
+          />
+        </div>
+
+        {/* Bottom Store Profile / Switcher */}
+        <div
+          className={cx(
+            "shrink-0 border-t border-line bg-surface/50 p-3",
+            collapsed ? "px-2" : "px-3.5",
+          )}
+        >
+          <div className="relative">
             <button
               type="button"
-              onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
+              onClick={() => {
+                setStoreDropdownOpen(!storeDropdownOpen);
+                setProfileOpen(false);
+                setNotifOpen(false);
+                setTeamOpen(false);
+              }}
               className={cx(
-                "flex w-full items-center rounded-xl p-1.5 text-left transition-all hover:bg-surface-2 cursor-pointer select-none group border border-line/50 hover:border-line bg-surface/30 shadow-2xs",
-                collapsed ? "justify-center" : "gap-2.5 px-3",
-                storeDropdownOpen ? "bg-surface-2 border-line" : "",
+                "flex w-full items-center rounded-2xl p-1.5 text-left transition-all hover:bg-surface-2 cursor-pointer select-none group border border-line/60 hover:border-line bg-surface shadow-2xs",
+                collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2",
+                storeDropdownOpen
+                  ? "bg-surface-2 border-line ring-2 ring-signal/20"
+                  : "",
               )}
               title={
                 collapsed ? `${TENANT.name} (${TENANT.pages} pages)` : undefined
               }
+              aria-label="Store switcher menu"
             >
               <span className="grid size-7 shrink-0 place-items-center rounded-lg font-display text-[12px] font-bold text-signal bg-signal/10 border border-signal/20 shadow-2xs group-hover:scale-105 transition-transform">
-                N
+                {TENANT.name.charAt(0)}
               </span>
               {!collapsed && (
                 <>
@@ -484,7 +506,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     strokeLinecap="round"
                     className={cx(
                       "text-text-3 shrink-0 transition-transform duration-150 group-hover:text-text",
-                      storeDropdownOpen ? "rotate-180" : "",
+                      storeDropdownOpen ? "rotate-180 text-signal" : "",
                     )}
                   >
                     <path d="m6 9 6 6 6-6" />
@@ -493,175 +515,13 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
               )}
             </button>
 
-            {/* Store Switcher Dropdown (Linear / Slack Workspace Standard) */}
-            {storeDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setStoreDropdownOpen(false)}
-                />
-                <div
-                  className={cx(
-                    "absolute z-[70] rounded-[18px] border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-[0_18px_40px_rgba(15,20,25,0.12)] animate-in fade-in slide-in-from-left-1 duration-150",
-                    collapsed
-                      ? "left-[calc(100%+12px)] top-0 w-[290px] origin-left"
-                      : "left-0 top-full mt-1.5 w-full",
-                  )}
-                >
-                  <div className="flex items-center justify-between px-1 pb-2 select-none">
-                    <p className="text-[11px] font-display font-black uppercase tracking-[0.18em] text-text-3">
-                      Workspaces
-                    </p>
-                    <span className="text-[11px] font-medium text-text-3">
-                      1 Active
-                    </span>
-                  </div>
-
-                  <div className="rounded-[14px] border border-line bg-surface-2/80 p-2.5 shadow-[inset_0_0_0_1px_rgba(15,20,25,0.02)]">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal/12 text-[18px] font-display font-bold text-signal">
-                        N
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[18px] font-display font-bold tracking-[-0.03em] text-text leading-tight">
-                          {TENANT.name}
-                        </p>
-                        <p className="mt-0.5 truncate text-[11.5px] font-mono text-text-3">
-                          {TENANT.pages} Connected Channels
-                        </p>
-                      </div>
-                      <span className="shrink-0 rounded-lg border border-signal/20 bg-signal/10 px-1.5 py-1 text-[9.5px] font-mono font-bold text-signal">
-                        {TENANT.plan}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 space-y-1.5 border-t border-line/60 pt-2.5 text-[15px] font-medium text-text-2">
-                    <Link
-                      href="/pricing"
-                      onClick={() => setStoreDropdownOpen(false)}
-                      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 font-semibold text-signal hover:bg-signal/8 transition-colors cursor-pointer"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-amber-700"
-                      >
-                        <path d="M13 2 5 13h6l-1 9 8-11h-6l1-9Z" />
-                      </svg>
-                      <span>Upgrade to Business Tier</span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setStoreDropdownOpen(false)}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-text-2 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        className="text-text-3"
-                      >
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                      <span>Connect Another Store</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Navigation List */}
-          <NavList
-            collapsed={collapsed}
-            expandedGroups={expandedGroups}
-            onToggleGroup={toggleGroup}
-          />
-        </div>
-
-        {/* Bottom User Profile Footer (Pinned to Sidebar Bottom) */}
-        <div
-          className={cx(
-            "shrink-0 pt-2 pb-2.5 border-t border-line/60 bg-surface/95",
-            collapsed ? "px-2" : "px-3",
-          )}
-        >
-          {/* User Profile Trigger Button (Bottom-Left) */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileOpen(!profileOpen)}
-              className={cx(
-                "flex w-full items-center gap-2 rounded-xl p-1.5 transition-all text-left cursor-pointer select-none group border border-line/50 hover:border-signal/50 bg-surface/30 shadow-2xs hover:bg-surface-2",
-                collapsed ? "justify-center" : "",
-                profileOpen
-                  ? "bg-signal/[0.08] border-signal/50 ring-1.5 ring-signal/40 text-signal shadow-[0_2px_14px_rgba(10,110,80,0.20)]"
-                  : "",
-              )}
-              title={
-                collapsed ? "Farhana Rahman (farhana@nokshi.co)" : undefined
-              }
-            >
-              <div className="relative shrink-0" title="farhana@nokshi.co">
-                <Avatar
-                  name="Farhana Rahman"
-                  hue={82}
-                  size={collapsed ? 26 : 28}
-                />
-                <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-white" />
-              </div>
-
-              {!collapsed && (
-                <>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cx(
-                        "truncate text-[13px] font-bold transition-colors leading-tight",
-                        profileOpen
-                          ? "text-signal"
-                          : "text-text group-hover:text-signal",
-                      )}
-                    >
-                      {user?.first_name
-                        ? `${user.first_name} ${user.last_name || ""}`.trim()
-                        : "Farhana Rahman"}
-                    </p>
-                    <p className="truncate text-[11px] font-mono mt-0.5 font-semibold text-signal">
-                      {TENANT.plan} Plan
-                    </p>
-                  </div>
-                  <IconChevronUp
-                    width={15}
-                    height={15}
-                    className={cx(
-                      "shrink-0 transition-transform duration-200",
-                      profileOpen
-                        ? "rotate-180 text-signal"
-                        : "text-text-3 group-hover:text-text",
-                    )}
-                  />
-                </>
-              )}
-            </button>
-
-            {/* Profile Context Dropdown (Clean White Surface with Rich Green Highlight Ring & Glow) */}
+            {/* Store Switcher Dropdown (Linear / Slack Workspace Standard - Popover Opens Upwards) */}
             <AnimatePresence>
-              {profileOpen && (
+              {storeDropdownOpen && (
                 <>
                   <div
                     className="fixed inset-0 z-40"
-                    onClick={() => setProfileOpen(false)}
+                    onClick={() => setStoreDropdownOpen(false)}
                   />
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -669,126 +529,91 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
                     className={cx(
-                      "absolute z-[70] rounded-xl border border-signal/50 ring-2 ring-signal/35 bg-surface/98 backdrop-blur-xl p-2 shadow-[0_16px_50px_-4px_rgba(10,110,80,0.40),0_6px_22px_rgba(10,110,80,0.22)] space-y-2",
+                      "absolute z-[70] rounded-[18px] border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-[0_18px_40px_rgba(15,20,25,0.14)] space-y-2.5",
                       collapsed
-                        ? "left-[calc(100%+10px)] bottom-0 w-64 origin-left"
-                        : "bottom-full mb-1.5 left-0 right-0 w-full",
+                        ? "left-[calc(100%+12px)] bottom-0 w-[290px] origin-bottom-left"
+                        : "left-0 right-0 bottom-full mb-2 w-full origin-bottom",
                     )}
                   >
-                    {/* Account Summary Header */}
-                    <div className="flex items-center justify-between pb-1.5 border-b border-line/60">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-bold text-text truncate leading-tight">
-                          {user?.first_name
-                            ? `${user.first_name} ${user.last_name || ""}`.trim()
-                            : "Farhana Rahman"}
-                        </p>
-                        <p className="text-[10.5px] text-text-3 font-mono truncate mt-0.5">
-                          {user?.email || "farhana@nokshi.co"}
-                        </p>
-                      </div>
-                      <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-signal capitalize">
-                        {user?.role || "Owner"}
+                    <div className="flex items-center justify-between px-1 pb-1 select-none">
+                      <p className="text-[11px] font-display font-black uppercase tracking-[0.18em] text-text-3">
+                        Workspaces
+                      </p>
+                      <span className="rounded-full bg-signal/15 px-2 py-0.2 font-mono text-[10px] font-bold text-signal">
+                        1 Active
                       </span>
                     </div>
 
-                    {/* Quota Usage Summary (Clean Surface Card) */}
-                    <div className="p-2 rounded-lg bg-surface-2/60 border border-line/60 space-y-1.5 select-none">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-text">
-                          Orders Quota
+                    <div className="rounded-[14px] border border-line bg-surface-2/80 p-2.5 shadow-2xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal/12 text-[18px] font-display font-bold text-signal">
+                          {TENANT.name.charAt(0)}
                         </span>
-                        <span
-                          className={cx(
-                            "rounded px-1.5 py-0.2 font-mono text-[9px] font-bold",
-                            quotaTone.badge,
-                          )}
-                        >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[16px] font-display font-bold tracking-[-0.02em] text-text leading-tight">
+                            {TENANT.name}
+                          </p>
+                          <p className="mt-0.5 truncate text-[11.5px] font-mono text-text-3">
+                            {TENANT.pages} Connected Channels
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-lg border border-signal/20 bg-signal/10 px-1.5 py-1 text-[9.5px] font-mono font-bold text-signal">
                           {TENANT.plan}
                         </span>
                       </div>
-                      <div className="flex items-baseline justify-between font-mono text-[11.5px]">
-                        <span className={cx("font-bold", quotaTone.text)}>
-                          {TENANT.ordersUsed.toLocaleString()}
-                        </span>
-                        <span className="text-text-3">
-                          / {TENANT.ordersQuota.toLocaleString()} ({pct}%)
-                        </span>
-                      </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
-                        <div
-                          className={cx(
-                            "h-full rounded-full transition-all duration-300",
-                            quotaTone.bar,
-                          )}
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[9.5px] text-text-3 font-mono">
-                        <span>Resets in 9 days</span>
-                        <span className={quotaTone.text}>
-                          {quotaTone.status}
-                        </span>
-                      </div>
                     </div>
 
-                    {/* Menu Items (Clean Line List) */}
-                    <div className="space-y-0.5 text-[12.5px] font-medium text-text-2">
+                    <div className="space-y-1 border-t border-line/60 pt-2 text-[13.5px] font-medium text-text-2">
                       <Link
-                        href="/console/settings?tab=billing"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                        href="/console/settings?tab=business"
+                        onClick={() => setStoreDropdownOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-text hover:bg-surface-2 transition-colors cursor-pointer"
                       >
-                        <IconCreditCard
-                          width={14}
-                          height={14}
+                        <IconSettings
+                          width={15}
+                          height={15}
                           className="text-text-3"
                         />
-                        <span>Billing &amp; Quota</span>
+                        <span>Store Settings</span>
                       </Link>
                       <Link
-                        href="/console/settings?tab=account"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                        href="/pricing"
+                        onClick={() => setStoreDropdownOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 font-semibold text-signal hover:bg-signal/8 transition-colors cursor-pointer"
                       >
-                        <IconUsers
-                          width={14}
-                          height={14}
-                          className="text-text-3"
-                        />
-                        <span>Team &amp; Roles</span>
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-signal"
+                        >
+                          <path d="M13 2 5 13h6l-1 9 8-11h-6l1-9Z" />
+                        </svg>
+                        <span>Upgrade to Business Tier</span>
                       </Link>
-                      <Link
-                        href="/console/brain"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
-                      >
-                        <IconBot
-                          width={14}
-                          height={14}
-                          className="text-text-3"
-                        />
-                        <span>AI Brain &amp; Persona</span>
-                      </Link>
-                    </div>
-
-                    {/* Sign Out (Sleek Clean Action) */}
-                    <div className="pt-1 border-t border-line/60">
                       <button
                         type="button"
-                        onClick={() => {
-                          setProfileOpen(false);
-                          logout();
-                          router.push("/login");
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-[12px] font-medium text-rose-600 hover:bg-rose-50/80 transition-colors cursor-pointer"
+                        onClick={() => setStoreDropdownOpen(false)}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-text-2 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
                       >
-                        <IconLogOut
-                          width={14}
-                          height={14}
-                          className="text-rose-500"
-                        />
-                        <span>Sign Out</span>
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          className="text-text-3"
+                        >
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        <span>Connect Another Store</span>
                       </button>
                     </div>
                   </motion.div>
@@ -801,7 +626,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
 
       {/* ---------------- main ---------------- */}
       <div className="relative z-0 flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line bg-canvas/85 px-4 backdrop-blur-xl lg:px-6">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-line bg-canvas/85 px-4 backdrop-blur-xl lg:px-6">
           {/* Left: Mobile Nav Toggle + Prominent Section Title */}
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -876,6 +701,8 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 onClick={() => {
                   setTeamOpen(!teamOpen);
                   setNotifOpen(false);
+                  setProfileOpen(false);
+                  setStoreDropdownOpen(false);
                 }}
                 className={cx(
                   "hidden sm:flex items-center -space-x-2 rounded-full p-1 transition-all cursor-pointer select-none",
@@ -987,6 +814,8 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 onClick={() => {
                   setNotifOpen(!notifOpen);
                   setTeamOpen(false);
+                  setProfileOpen(false);
+                  setStoreDropdownOpen(false);
                 }}
                 className={cx(
                   "relative grid size-8.5 place-items-center rounded-xl transition-all cursor-pointer hover:bg-surface-2",
@@ -1102,6 +931,206 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 </>
               )}
             </div>
+
+            {/* 4. Far Right: User Profile Avatar & Dropdown Popover */}
+            <div className="relative border-l border-line/60 pl-2 sm:pl-2.5 ml-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(!profileOpen);
+                  setNotifOpen(false);
+                  setTeamOpen(false);
+                  setStoreDropdownOpen(false);
+                }}
+                className={cx(
+                  "flex items-center gap-2 rounded-xl p-1 sm:pr-2 transition-all cursor-pointer select-none",
+                  profileOpen
+                    ? "bg-surface-2 ring-2 ring-signal/30"
+                    : "hover:bg-surface-2",
+                )}
+                title="Account & Profile"
+                aria-label="User profile menu"
+              >
+                <div className="relative shrink-0">
+                  <Avatar
+                    name={
+                      user?.first_name
+                        ? `${user.first_name} ${user.last_name || ""}`.trim()
+                        : "Farhana Rahman"
+                    }
+                    hue={155}
+                    size={28}
+                  />
+                  <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-surface" />
+                </div>
+                <div className="hidden text-left md:block min-w-0 max-w-[100px] lg:max-w-[120px]">
+                  <p className="truncate text-[12.5px] font-semibold text-text leading-tight">
+                    {user?.first_name
+                      ? `${user.first_name} ${user.last_name || ""}`.trim()
+                      : "Farhana Rahman"}
+                  </p>
+                  <p className="truncate text-[10px] font-mono text-signal font-semibold">
+                    {user?.role || "Owner"}
+                  </p>
+                </div>
+                <IconChevronUp
+                  width={13}
+                  height={13}
+                  className={cx(
+                    "text-text-3 transition-transform duration-200",
+                    profileOpen ? "rotate-0 text-signal" : "rotate-180",
+                  )}
+                />
+              </button>
+
+              {/* Profile Context Dropdown (Linear / Stripe Standard) */}
+              <AnimatePresence>
+                {profileOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[50]"
+                      onClick={() => setProfileOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="absolute right-0 top-full mt-2 z-[60] w-72 rounded-2xl border border-line bg-white/95 backdrop-blur-xl p-2.5 shadow-2xl space-y-2 animate-in fade-in"
+                    >
+                      {/* Account Summary Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-line/60">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-bold text-text truncate leading-tight">
+                            {user?.first_name
+                              ? `${user.first_name} ${user.last_name || ""}`.trim()
+                              : "Farhana Rahman"}
+                          </p>
+                          <p className="text-[10.5px] text-text-3 font-mono truncate mt-0.5">
+                            {user?.email || "farhana@nokshi.co"}
+                          </p>
+                        </div>
+                        <span className="rounded-md bg-signal/15 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-signal capitalize shrink-0">
+                          {user?.role || "Owner"}
+                        </span>
+                      </div>
+
+                      {/* Quota Usage Summary (Clean Surface Card) */}
+                      <div className="p-2 rounded-xl bg-surface-2/70 border border-line/60 space-y-1.5 select-none">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-text">
+                            Orders Quota
+                          </span>
+                          <span
+                            className={cx(
+                              "rounded px-1.5 py-0.2 font-mono text-[9px] font-bold",
+                              quotaTone.badge,
+                            )}
+                          >
+                            {TENANT.plan}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between font-mono text-[11.5px]">
+                          <span className={cx("font-bold", quotaTone.text)}>
+                            {TENANT.ordersUsed.toLocaleString()}
+                          </span>
+                          <span className="text-text-3">
+                            / {TENANT.ordersQuota.toLocaleString()} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+                          <div
+                            className={cx(
+                              "h-full rounded-full transition-all duration-300",
+                              quotaTone.bar,
+                            )}
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[9.5px] text-text-3 font-mono">
+                          <span>Resets in 9 days</span>
+                          <span className={quotaTone.text}>
+                            {quotaTone.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="space-y-0.5 text-[12.5px] font-medium text-text-2">
+                        <Link
+                          href="/console/settings?tab=billing"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                        >
+                          <IconCreditCard
+                            width={14}
+                            height={14}
+                            className="text-text-3"
+                          />
+                          <span>Billing &amp; Quota</span>
+                        </Link>
+                        <Link
+                          href="/console/settings?tab=account"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                        >
+                          <IconUsers
+                            width={14}
+                            height={14}
+                            className="text-text-3"
+                          />
+                          <span>Team &amp; Roles</span>
+                        </Link>
+                        <Link
+                          href="/console/brain"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                        >
+                          <IconBot
+                            width={14}
+                            height={14}
+                            className="text-text-3"
+                          />
+                          <span>AI Brain &amp; Persona</span>
+                        </Link>
+                        <Link
+                          href="/console/settings"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
+                        >
+                          <IconSettings
+                            width={14}
+                            height={14}
+                            className="text-text-3"
+                          />
+                          <span>Settings</span>
+                        </Link>
+                      </div>
+
+                      {/* Sign Out */}
+                      <div className="pt-1.5 border-t border-line/60">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileOpen(false);
+                            logout();
+                            router.push("/login");
+                          }}
+                          className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-medium text-rose-600 hover:bg-rose-50/80 transition-colors cursor-pointer"
+                        >
+                          <IconLogOut
+                            width={14}
+                            height={14}
+                            className="text-rose-500"
+                          />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 
@@ -1140,6 +1169,27 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 expandedGroups={expandedGroups}
                 onToggleGroup={toggleGroup}
               />
+            </div>
+
+            {/* Mobile Store Profile in Bottom */}
+            <div className="shrink-0 border-t border-line pt-3 mt-2">
+              <Link
+                href="/console/settings?tab=business"
+                onClick={() => setMobileNav(false)}
+                className="flex items-center gap-2.5 rounded-2xl p-2 bg-surface-2/60 border border-line hover:bg-surface-2 transition-colors cursor-pointer"
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg font-display text-[12px] font-bold text-signal bg-signal/10 border border-signal/20">
+                  {TENANT.name.charAt(0)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-bold text-text">
+                    {TENANT.name}
+                  </p>
+                  <p className="truncate text-[10.5px] font-mono text-text-3">
+                    {TENANT.plan} Plan · {TENANT.pages} Channels
+                  </p>
+                </div>
+              </Link>
             </div>
           </aside>
         </div>

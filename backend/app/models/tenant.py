@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, String, Text, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -54,6 +54,9 @@ class Business(Base, TimestampMixin):
     logo_hue: Mapped[int] = mapped_column(default=82, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="BDT", nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Dhaka", nullable=False)
+    settings_data: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, server_default="{}", nullable=False
+    )
 
     # Relationships
     organization: Mapped[Organization | None] = relationship(

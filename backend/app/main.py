@@ -54,10 +54,21 @@ from app.api.webhooks.couriers import router as courier_webhook_router
 from app.api.webhooks.payments import router as payment_webhook_router
 
 
+from sqlalchemy import text
+from app.core.database import async_session_factory
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup & shutdown events."""
     print("🚀 NextProduct AI FastAPI Backend Starting...")
+    try:
+        async with async_session_factory() as session:
+            await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS settings_data JSON DEFAULT '{}'::json;"))
+            await session.commit()
+            print("✅ Auto-migration: businesses.settings_data ensured.")
+    except Exception as e:
+        print(f"⚠️ Auto-migration note: {e}")
     yield
     print("🛑 NextProduct AI FastAPI Backend Stopping...")
 
