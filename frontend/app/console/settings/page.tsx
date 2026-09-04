@@ -45,11 +45,11 @@ function SettingsInner() {
 
   return (
     <>
-      {/* ─── Frosted Glass Segmented Control Navigation Bar ─── */}
-      <div className="sticky top-[72px] z-20 border-b border-line/60 bg-surface/80 backdrop-blur-xl shadow-xs transition-all">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-          {/* Glass Segmented Pill Container */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 rounded-2xl bg-canvas/50 border border-line/60 shadow-2xs backdrop-blur-md w-full">
+      {/* ─── Floating Glassy Options Container (No full-width navbar background) ─── */}
+      <div className="sticky top-[72px] z-20 pt-3 pb-1.5 transition-all pointer-events-none">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
+          {/* Frosted Glass Pill Capsule directly under the options */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none p-1 rounded-2xl bg-white/85 dark:bg-surface/85 backdrop-blur-xl border border-line/75 shadow-[0_2px_12px_rgba(0,0,0,0.035)] ring-1 ring-black/[0.02] w-full">
             {TABS.map((tab) => {
               const Icon = TAB_ICONS[tab.id];
               const isActive = activeTab === tab.id;
@@ -59,34 +59,37 @@ function SettingsInner() {
                   type="button"
                   onClick={() => switchTab(tab.id)}
                   className={cx(
-                    "relative shrink-0 xl:shrink cursor-pointer px-2.5 py-1.5 text-[11.5px] font-medium transition-all rounded-xl whitespace-nowrap flex items-center justify-center gap-1.5 select-none group flex-1",
+                    "relative shrink-0 cursor-pointer h-8.5 px-3 text-[12.5px] font-medium transition-colors rounded-[11px] whitespace-nowrap flex items-center justify-center gap-2 select-none group flex-1",
                     isActive
                       ? "text-signal font-semibold"
-                      : "text-text-3 hover:text-text hover:bg-surface-2/50",
+                      : "text-text-3 hover:text-text",
                   )}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="settings-active-glass-pill"
-                      className="absolute inset-0 rounded-xl bg-white shadow-xs border border-line/60 ring-1 ring-black/5 dark:bg-surface-2 dark:border-line"
+                      className="absolute inset-0 rounded-[11px] bg-white shadow-xs border border-line/75 ring-1 ring-black/[0.03] dark:bg-surface-2 dark:border-line"
                       transition={{
                         type: "spring",
-                        bounce: 0.15,
-                        duration: 0.35,
+                        stiffness: 380,
+                        damping: 30,
+                        mass: 0.7,
                       }}
                     />
                   )}
                   <span
                     className={cx(
-                      "relative z-10 transition-colors",
+                      "relative z-10 transition-colors shrink-0 flex items-center",
                       isActive
                         ? "text-signal"
                         : "text-text-3 group-hover:text-text",
                     )}
                   >
-                    {Icon && <Icon className="size-3.5 shrink-0" />}
+                    {Icon && <Icon className="size-[15px] shrink-0" />}
                   </span>
-                  <span className="relative z-10">{tab.label}</span>
+                  <span className="relative z-10 tracking-tight">
+                    {tab.label}
+                  </span>
                 </button>
               );
             })}
@@ -94,15 +97,15 @@ function SettingsInner() {
         </div>
       </div>
 
-      {/* ─── Tab Content ─── */}
-      <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+      {/* ─── Tab Content (Smooth Fade & Subtle Elevation) ─── */}
+      <div className="pt-2 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
           >
             {activeTab === "business" && (
               <TabBusiness key={settings.slug || "biz"} />
