@@ -202,7 +202,10 @@ export function TabBilling() {
 
   // Helper to identify Custom / Enterprise plans that require custom consultation
   const isCustomPlan = (
-    p?: Partial<BillingPlan> | { name?: string; id?: string; tagline?: string } | null,
+    p?:
+      | Partial<BillingPlan>
+      | { name?: string; id?: string; tagline?: string }
+      | null,
   ) => {
     if (!p) return false;
     const name = (p.name || "").toLowerCase().trim();
@@ -531,9 +534,13 @@ export function TabBilling() {
           </div>
         </div>
 
-        {/* Dynamic Plans Grid: Show plans with showOnHome: true, PLUS user's active plan if not included. Sort Custom/Enterprise to far right */}
+        {/* Dynamic Plans Grid: Show plans with showOnHome: true, PLUS user's active plan if not included */}
         {(() => {
-          const isUserOnCustom = isCustomPlan({ name: planName, id: planName, tagline: "" });
+          const isUserOnCustom = isCustomPlan({
+            name: planName,
+            id: planName,
+            tagline: "",
+          });
           const homePlans = plans.filter(
             (p) => p.showOnHome === true && p.status !== "archived",
           );
@@ -542,7 +549,7 @@ export function TabBilling() {
               ? [...homePlans]
               : plans.filter((p) => p.status === "active");
 
-          // Always include user's active plan (e.g. Enterprize / Custom) even if showOnHome is false
+          // Always include user's active plan if not already present
           const activePlanMatch = plans.find(
             (p) =>
               p.name.toLowerCase() === planName.toLowerCase() ||
@@ -557,31 +564,30 @@ export function TabBilling() {
             )
           ) {
             basePlans.push(activePlanMatch);
-          }
-
-          // Ensure exactly ONE Enterprise / Custom card is rendered on the rightmost edge
-          const customPlansInBase = basePlans.filter((p) => isCustomPlan(p));
-          if (customPlansInBase.length === 0) {
+          } else if (
+            isUserOnCustom &&
+            !basePlans.some((p) => isCustomPlan(p))
+          ) {
+            // User has an active custom plan, include it in the grid at the right
             basePlans.push({
-              id: "plan-custom-enterprise",
-              name: isUserOnCustom ? planName : "Custom Enterprise",
+              id: "plan-custom-active",
+              name: planName,
               nameBn: "কাস্টম এন্টারপ্রাইজ",
-              tagline: isUserOnCustom
-                ? "Tailored high-volume enterprise plan with dedicated SLA."
-                : "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA.",
-              priceBDT: isUserOnCustom ? planPriceBDT : 0,
-              yearlyPriceBDT: isUserOnCustom ? planPriceBDT * 10 : 0,
+              tagline:
+                "Active tailored enterprise tier with dedicated SLA & multi-store.",
+              priceBDT: planPriceBDT,
+              yearlyPriceBDT: planPriceBDT * 10,
               yearlyDiscountPercent: 17,
               billingPeriod: "both",
-              messageLimit: isUserOnCustom ? ordersQuota : 50000,
-              maxStores: isUserOnCustom ? maxStores : 10,
-              maxSeats: isUserOnCustom ? maxSeats : 30,
+              messageLimit: ordersQuota,
+              maxStores: maxStores,
+              maxSeats: maxSeats,
               catalogLimit: 10000,
               courierChannels: 10,
               features: [
-                "10,000+ to 100,000+ AI Messages / mo",
-                "3 to 10+ Connected Stores",
-                "10 to 30+ Team Member Seats",
+                `${ordersQuota.toLocaleString()} AI Messages / month`,
+                `${maxStores} Connected Stores`,
+                `${maxSeats} Team Member Seats`,
                 "Dedicated High-Concurrency Cloud Node",
                 "Dedicated Account Manager & SLA",
               ],
@@ -591,19 +597,6 @@ export function TabBilling() {
               status: "active",
               showOnHome: true,
             });
-          } else if (customPlansInBase.length > 1) {
-            const keepPlan =
-              customPlansInBase.find(
-                (p) => p.name.toLowerCase() === planName.toLowerCase(),
-              ) || customPlansInBase[0];
-            const otherIds = customPlansInBase
-              .filter((p) => p.id !== keepPlan.id)
-              .map((p) => p.id);
-            for (let i = basePlans.length - 1; i >= 0; i--) {
-              if (otherIds.includes(basePlans[i].id)) {
-                basePlans.splice(i, 1);
-              }
-            }
           }
 
           const sortedPlans = [...basePlans].sort((a, b) => {
@@ -615,221 +608,220 @@ export function TabBilling() {
           });
 
           return (
-            <div
-              className={cx(
-                "grid grid-cols-1 md:grid-cols-2 gap-4 p-5",
-                sortedPlans.length === 3 && "lg:grid-cols-3",
-                sortedPlans.length === 4 && "lg:grid-cols-4",
-                sortedPlans.length >= 5 && "lg:grid-cols-5",
-              )}
-            >
-              {sortedPlans.map((p) => {
-                const isCustom = isCustomPlan(p);
-                const isCurrent = isCustom
-                  ? isUserOnCustom
-                  : p.name.toLowerCase() === planName.toLowerCase();
-                const isSwitching = switchingPlanId === p.id;
-                const displayTitle = isCurrent && isCustom ? planName : p.name;
-                const price =
-                  billingCycle === "yearly"
-                    ? Math.round(p.yearlyPriceBDT || p.priceBDT * 10)
-                    : p.priceBDT;
-                const displayPrice =
-                  isCurrent && isCustom
-                    ? billingCycle === "yearly"
-                      ? Math.round(planPriceBDT * 10)
-                      : planPriceBDT
-                    : price;
-                const periodLabel = billingCycle === "yearly" ? "/ yr" : "/ mo";
+            <div>
+              <div
+                className={cx(
+                  "grid grid-cols-1 md:grid-cols-2 gap-4 p-5",
+                  sortedPlans.length === 3 && "lg:grid-cols-3",
+                  sortedPlans.length === 4 && "lg:grid-cols-4",
+                  sortedPlans.length >= 5 && "lg:grid-cols-5",
+                )}
+              >
+                {sortedPlans.map((p) => {
+                  const isCustom = isCustomPlan(p);
+                  const isCurrent = isCustom
+                    ? isUserOnCustom
+                    : p.name.toLowerCase() === planName.toLowerCase();
+                  const isSwitching = switchingPlanId === p.id;
+                  const displayTitle = isCurrent && isCustom ? planName : p.name;
+                  const price =
+                    billingCycle === "yearly"
+                      ? Math.round(p.yearlyPriceBDT || p.priceBDT * 10)
+                      : p.priceBDT;
+                  const displayPrice =
+                    isCurrent && isCustom
+                      ? billingCycle === "yearly"
+                        ? Math.round(planPriceBDT * 10)
+                        : planPriceBDT
+                      : price;
+                  const periodLabel = billingCycle === "yearly" ? "/ yr" : "/ mo";
 
-                return (
-                  <div
-                    key={p.id}
-                    className={cx(
-                      "rounded-2xl border p-4 space-y-3 flex flex-col justify-between transition-all",
-                      isCurrent
-                        ? "border-signal/60 bg-[#edf7f3]/40 ring-1.5 ring-signal/30 shadow-xs"
-                        : isCustom
-                          ? "border-signal/40 bg-white hover:border-signal/80 hover:shadow-xs"
+                  return (
+                    <div
+                      key={p.id}
+                      className={cx(
+                        "rounded-2xl border p-4 space-y-3 flex flex-col justify-between transition-all",
+                        isCurrent
+                          ? "border-signal/60 bg-[#edf7f3]/40 ring-1.5 ring-signal/30 shadow-xs"
                           : "border-line bg-white hover:border-line/80 hover:shadow-2xs",
-                    )}
-                  >
-                    <div className="space-y-2.5">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-bold text-base text-text capitalize">
-                          {displayTitle}
-                        </h4>
-                        {isCurrent ? (
-                          <span className="rounded bg-signal text-white px-2 py-0.5 text-[9.5px] font-bold">
-                            CURRENT
-                          </span>
-                        ) : isCustom ? (
-                          <span className="rounded bg-signal/15 text-signal px-2 py-0.5 text-[9.5px] font-bold font-mono">
-                            {p.badge || "CUSTOM"}
-                          </span>
-                        ) : p.badge ? (
-                          <span className="rounded bg-signal/15 text-signal px-2 py-0.5 text-[9.5px] font-bold font-mono">
-                            {p.badge}
-                          </span>
-                        ) : null}
-                      </div>
+                      )}
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-bold text-base text-text capitalize">
+                            {displayTitle}
+                          </h4>
+                          {isCurrent ? (
+                            <span className="rounded bg-signal text-white px-2 py-0.5 text-[9.5px] font-bold">
+                              CURRENT
+                            </span>
+                          ) : p.badge ? (
+                            <span className="rounded bg-signal/15 text-signal px-2 py-0.5 text-[9.5px] font-bold font-mono">
+                              {p.badge}
+                            </span>
+                          ) : null}
+                        </div>
 
-                      <p className="text-[11px] text-text-3 min-h-[30px] line-clamp-2">
-                        {isCurrent && isCustom
-                          ? "Active tailored enterprise tier with dedicated SLA & multi-store."
-                          : p.tagline ||
-                            (isCustom
-                              ? "Tailored high-volume AI quota, multi-store architecture, and dedicated SLA."
-                              : `Designed for growing merchants needing reliable conversational AI.`)}
-                      </p>
+                        <p className="text-[11px] text-text-3 min-h-[30px] line-clamp-2">
+                          {p.tagline ||
+                            `Designed for growing merchants needing reliable conversational AI.`}
+                        </p>
 
-                      <div className="flex items-baseline gap-1 pt-1 min-h-[38px]">
-                        {isCurrent ? (
-                          <>
-                            <span className="text-xl font-bold font-display text-text">
-                              ৳{displayPrice.toLocaleString()}
-                            </span>
-                            <span className="text-[10px] text-text-3 font-mono">
-                              {periodLabel}
-                            </span>
-                          </>
-                        ) : isCustom &&
-                          (p.priceBDT <= 0 ||
-                            p.name.toLowerCase().includes("custom")) ? (
-                          <div className="flex flex-col">
-                            <span className="text-xl font-bold font-display text-text">
-                              Contact Sales
-                            </span>
-                            <span className="text-[10px] text-text-3 font-mono">
-                              Custom & Tailored Pricing
+                        <div className="flex items-baseline gap-1 pt-1 min-h-[38px]">
+                          <span className="text-xl font-bold font-display text-text">
+                            ৳{displayPrice.toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-text-3 font-mono">
+                            {periodLabel}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5 pt-1">
+                          <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
+                            <span>Messages:</span>
+                            <span className="text-signal font-bold whitespace-nowrap">
+                              {isCurrent
+                                ? `${ordersQuota.toLocaleString()} msgs`
+                                : `${p.messageLimit.toLocaleString()} msgs`}
                             </span>
                           </div>
-                        ) : (
-                          <>
-                            <span className="text-xl font-bold font-display text-text">
-                              ৳{price.toLocaleString()}
-                            </span>
-                            <span className="text-[10px] text-text-3 font-mono">
-                              {periodLabel}
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5 pt-1">
-                        <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
-                          <span>Messages:</span>
-                          <span className="text-signal font-bold whitespace-nowrap">
-                            {isCurrent
-                              ? `${ordersQuota.toLocaleString()} msgs`
-                              : isCustom
-                                ? "10k – 100k+"
-                                : `${p.messageLimit.toLocaleString()} msgs`}
-                          </span>
-                        </div>
-                        <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
-                          <span>Stores:</span>
-                          <span className="text-text font-bold whitespace-nowrap">
-                            {isCurrent
-                              ? `${maxStores} ${maxStores > 1 ? "Stores" : "Store"}`
-                              : isCustom
-                                ? "3 – 10+ Stores"
+                          <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
+                            <span>Stores:</span>
+                            <span className="text-text font-bold whitespace-nowrap">
+                              {isCurrent
+                                ? `${maxStores} ${maxStores > 1 ? "Stores" : "Store"}`
                                 : `${p.maxStores} ${p.maxStores > 1 ? "Stores" : "Store"}`}
-                          </span>
-                        </div>
-                        <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
-                          <span>Seats:</span>
-                          <span className="text-text font-bold whitespace-nowrap">
-                            {isCurrent
-                              ? `${maxSeats} ${maxSeats > 1 ? "Seats" : "Seat"}`
-                              : isCustom
-                                ? "10 – 30+ Seats"
+                            </span>
+                          </div>
+                          <div className="rounded-lg bg-surface-2/60 p-2 font-mono text-[11px] text-text-2 font-semibold flex justify-between items-center">
+                            <span>Seats:</span>
+                            <span className="text-text font-bold whitespace-nowrap">
+                              {isCurrent
+                                ? `${maxSeats} ${maxSeats > 1 ? "Seats" : "Seat"}`
                                 : `${p.maxSeats} ${p.maxSeats > 1 ? "Seats" : "Seat"}`}
-                          </span>
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {isCurrent ? (
-                      <div className="space-y-1.5 mt-2">
+                      {isCurrent ? (
                         <Button
                           size="sm"
                           variant="outline"
                           disabled
-                          className="w-full justify-center text-xs font-semibold border-signal/40 bg-signal/10 text-signal shadow-2xs"
+                          className="w-full justify-center text-xs font-semibold border-signal/40 bg-signal/10 text-signal shadow-2xs mt-2"
                         >
-                          <IconCheck width={14} height={14} className="mr-1 text-signal" />
+                          <IconCheck
+                            width={14}
+                            height={14}
+                            className="mr-1 text-signal"
+                          />
                           Active Plan
                         </Button>
-                        {isCustom && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRedeemError(null);
-                              setRedeemModalOpen(true);
-                            }}
-                            className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[10.5px] font-mono text-text-3 hover:text-signal hover:bg-signal/5 transition-all cursor-pointer"
-                          >
-                            <span>+ Redeem Another Code</span>
-                          </button>
-                        )}
-                      </div>
-                    ) : isCustom ? (
-                      <div className="space-y-2 mt-2">
+                      ) : (
                         <Button
                           size="sm"
                           variant="signal"
-                          onClick={() => handleContactSales(p)}
-                          className="w-full justify-center text-xs gap-1.5 font-semibold shadow-xs"
+                          disabled={isSwitching}
+                          onClick={() => handleSwitchPlan(p)}
+                          className="w-full justify-center text-xs mt-2"
                         >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.04c-.24.68-1.4 1.26-1.92 1.34-.5.08-1.15.12-3.71-.94-3.28-1.36-5.38-4.7-5.54-4.92-.16-.22-1.33-1.78-1.33-3.4 0-1.62.85-2.42 1.15-2.75.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.2.01.47-.08.73.56.27.68.92 2.27 1 2.43.08.17.14.36.02.58-.11.22-.17.36-.34.56-.17.2-.36.45-.51.6-.17.17-.35.36-.15.7.2.34.89 1.47 1.91 2.38 1.31 1.17 2.42 1.53 2.76 1.7.34.17.54.14.74-.08.2-.23.86-1 1.09-1.35.23-.34.46-.29.77-.17.31.11 1.98.93 2.32 1.1.34.17.57.26.65.4.08.14.08.82-.16 1.5z" />
-                          </svg>
-                          <span>Contact Sales</span>
+                          {isSwitching ? "Switching..." : `Switch to ${p.name}`}
                         </Button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRedeemError(null);
-                            setRedeemModalOpen(true);
-                          }}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-line bg-surface-2/60 hover:bg-surface-2 hover:border-signal/50 text-[11px] font-semibold text-text transition-all cursor-pointer"
-                        >
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-signal"
-                          >
-                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                          </svg>
-                          <span>Redeem Plan Code</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="signal"
-                        disabled={isSwitching}
-                        onClick={() => handleSwitchPlan(p)}
-                        className="w-full justify-center text-xs mt-2"
-                      >
-                        {isSwitching ? "Switching..." : `Switch to ${p.name}`}
-                      </Button>
-                    )}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Enterprise Custom Plan & Voucher Redemption Banner (Below Plans Grid) */}
+              <div className="border-t border-line p-5 bg-linear-to-r from-surface-2/30 via-[#edf7f3]/40 to-surface-2/30">
+                <div className="rounded-2xl border border-signal/25 bg-white p-5 sm:p-6 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md bg-signal/15 px-2.5 py-0.5 text-[10px] font-bold font-mono text-signal uppercase tracking-wider">
+                        Custom Enterprise
+                      </span>
+                      <span className="text-[11px] text-text-3 font-medium">
+                        High-Volume Quotas · Multi-Store · Custom SLA
+                      </span>
+                    </div>
+                    <h4 className="text-base font-bold font-display text-text">
+                      Need 10,000+ to 100,000+ AI Messages or Multiple Stores?
+                    </h4>
+                    <p className="text-xs text-text-3 max-w-2xl leading-relaxed">
+                      We offer tailored enterprise tiers for high-volume merchants: 3–10+ connected stores, 10–30+ seats, custom webhook &amp; ERP integrations, and dedicated 24/7 priority SLA support.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1 text-[11px] font-mono text-text-2">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-signal" />
+                        Quota: <strong className="text-signal font-bold">10k – 100k+ Messages</strong>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-signal" />
+                        Stores: <strong>3 – 10+ Workspaces</strong>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-signal" />
+                        Seats: <strong>10 – 30+ Seats</strong>
+                      </span>
+                    </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 min-w-[200px]">
+                    <Button
+                      size="sm"
+                      variant="signal"
+                      onClick={() =>
+                        handleContactSales({
+                          id: "custom-enterprise",
+                          name: "Custom Enterprise",
+                          priceBDT: 0,
+                          messageLimit: 50000,
+                          maxStores: 10,
+                          maxSeats: 30,
+                          features: [],
+                        } as unknown as BillingPlan)
+                      }
+                      className="justify-center text-xs gap-2 py-2.5 font-semibold shadow-xs"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.04c-.24.68-1.4 1.26-1.92 1.34-.5.08-1.15.12-3.71-.94-3.28-1.36-5.38-4.7-5.54-4.92-.16-.22-1.33-1.78-1.33-3.4 0-1.62.85-2.42 1.15-2.75.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.2.01.47-.08.73.56.27.68.92 2.27 1 2.43.08.17.14.36.02.58-.11.22-.17.36-.34.56-.17.2-.36.45-.51.6-.17.17-.35.36-.15.7.2.34.89 1.47 1.91 2.38 1.31 1.17 2.42 1.53 2.76 1.7.34.17.54.14.74-.08.2-.23.86-1 1.09-1.35.23-.34.46-.29.77-.17.31.11 1.98.93 2.32 1.1.34.17.57.26.65.4.08.14.08.82-.16 1.5z" />
+                      </svg>
+                      <span>Contact Sales</span>
+                    </Button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRedeemError(null);
+                        setRedeemModalOpen(true);
+                      }}
+                      className="flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl border border-line bg-surface-2/60 hover:bg-surface-2 hover:border-signal/50 text-xs font-semibold text-text shadow-2xs transition-all cursor-pointer"
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-signal"
+                      >
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                      </svg>
+                      <span>Redeem Plan Code</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -1127,7 +1119,10 @@ export function TabBilling() {
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       { code: "CUSTOM-VIP-50K", label: "50k Msg · 5 Stores" },
-                      { code: "ENTERPRISE-100K", label: "100k Msg · 10 Stores" },
+                      {
+                        code: "ENTERPRISE-100K",
+                        label: "100k Msg · 10 Stores",
+                      },
                       { code: "CUSTOM-AGENCY", label: "25k Msg · 4 Stores" },
                       { code: "ARISE-VIP", label: "30k Msg · 4 Stores" },
                     ].map((sample) => (
