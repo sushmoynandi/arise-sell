@@ -265,7 +265,13 @@ export interface TeammateMember {
   is_owner?: boolean;
 }
 
-export function TabAccount() {
+export function TabAccount({
+  isStoreOwner: propIsStoreOwner,
+  planName: propPlanName,
+}: {
+  isStoreOwner?: boolean;
+  planName?: string | null;
+} = {}) {
   const { user, updateProfile, changePassword, forgotPassword } = useAuth();
   const { settings } = useSettings();
 
@@ -879,8 +885,12 @@ export function TabAccount() {
 
   const storeName = settings?.name || "Your Store";
   const isStoreOwner =
-    user?.is_superadmin ||
-    (user?.role ? user.role.toLowerCase() === "owner" : true);
+    propIsStoreOwner !== undefined
+      ? propIsStoreOwner
+      : Boolean(
+          user?.is_superadmin ||
+          (user?.role && user.role.toLowerCase() === "owner"),
+        );
 
   const isConfirmMatch =
     confirmStoreName.trim().toLowerCase() === storeName.trim().toLowerCase() ||
@@ -973,7 +983,9 @@ export function TabAccount() {
       .catch(() => {});
   }, []);
 
-  const currentPlan = resolvePlanTier(user?.plan || settings?.plan);
+  const currentPlan = resolvePlanTier(
+    propPlanName || user?.plan || settings?.plan,
+  );
   const maxMembers = currentPlan.maxMembers;
   const occupiedSeats = members.length;
   const availableSeats = Math.max(0, maxMembers - occupiedSeats);
@@ -2184,27 +2196,28 @@ export function TabAccount() {
                 sessions, and book couriers.
               </p>
             </div>
-            {isSeatLimitReached ? (
-              <Button
-                size="sm"
-                variant="outline"
-                type="button"
-                onClick={() => setAddMemberModalOpen(true)}
-                className="font-semibold shadow-2xs border-amber-300 text-amber-700 hover:bg-amber-50"
-              >
-                + Add Member (Limit Reached)
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="signal"
-                type="button"
-                onClick={() => setAddMemberModalOpen(true)}
-                className="font-semibold shadow-2xs"
-              >
-                + Add Team Member
-              </Button>
-            )}
+            {isStoreOwner &&
+              (isSeatLimitReached ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => setAddMemberModalOpen(true)}
+                  className="font-semibold shadow-2xs border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  + Add Member (Limit Reached)
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="signal"
+                  type="button"
+                  onClick={() => setAddMemberModalOpen(true)}
+                  className="font-semibold shadow-2xs"
+                >
+                  + Add Team Member
+                </Button>
+              ))}
           </div>
 
           <div className="overflow-x-auto">
@@ -2349,7 +2362,7 @@ export function TabAccount() {
                         </Badge>
                       </td>
                       <td className="p-4 text-right whitespace-nowrap w-24">
-                        {!isOwner ? (
+                        {isStoreOwner && !isOwner ? (
                           <div className="inline-flex items-center justify-end gap-1.5">
                             <button
                               type="button"
@@ -2373,9 +2386,13 @@ export function TabAccount() {
                               <IconTrash width={13} height={13} />
                             </button>
                           </div>
-                        ) : (
+                        ) : isOwner ? (
                           <span className="text-[11px] text-text-3/60 font-mono pr-1">
                             Owner
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-text-3/60 font-mono pr-1">
+                            Read Only
                           </span>
                         )}
                       </td>

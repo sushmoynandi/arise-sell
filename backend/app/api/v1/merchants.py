@@ -360,6 +360,129 @@ async def update_merchant_settings(
         user.business_id = biz.id
         user.role = "owner"
 
+    # Check if user is owner of the business or an invited teammate with granular permissions
+    extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
+    owner_id = str(extra.get("owner_id", ""))
+    owner_email = str(extra.get("owner_email", "")).strip().lower()
+    clean_user_email = user.email.strip().lower()
+
+    is_owner = bool(
+        (biz.id == user.business_id and user.role == "owner")
+        or (owner_id and owner_id == str(user.id))
+        or (owner_email and owner_email == clean_user_email)
+        or user.is_superadmin
+    )
+
+    req_dict = req.model_dump(exclude_unset=True)
+
+    if not is_owner:
+        team_members = extra.get("team_members", [])
+        matched_member = next(
+            (m for m in team_members if str(m.get("email", "")).strip().lower() == clean_user_email),
+            None,
+        )
+        teammate_perms = set((matched_member.get("permissions") if matched_member else []) or [])
+
+        if "all" not in teammate_perms:
+            # Website Orders fields
+            web_order_keys = {
+                "website_orders_enabled", "websiteOrdersEnabled",
+                "website_orders_api_url", "websiteOrdersApiUrl",
+                "website_orders_api_key", "websiteOrdersApiKey",
+                "website_orders_auth_header", "websiteOrdersAuthHeader",
+                "website_orders_payment_mode", "websiteOrdersPaymentMode",
+                "website_orders_template", "websiteOrdersTemplate",
+            }
+            if any(k in req_dict for k in web_order_keys):
+                if "settings:website-orders" not in teammate_perms and "/console/settings" not in teammate_perms:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Permission denied: You do not have permission to configure Website Orders.",
+                    )
+
+            # Couriers
+            courier_keys = {
+                "inside_dhaka_rate", "insideDhakaRate",
+                "outside_dhaka_rate", "outsideDhakaRate",
+                "sub_dhaka_rate", "subDhakaRate",
+                "fraud_shield_enabled", "fraudShieldEnabled",
+                "fraud_threshold", "fraudThreshold",
+                "courier_credentials", "courierCredentials",
+            }
+            if any(k in req_dict for k in courier_keys):
+                if "settings:courier" not in teammate_perms and "courier" not in teammate_perms and "/console/settings" not in teammate_perms:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Permission denied: You do not have permission to configure Courier settings.",
+                    )
+
+            # Invoices
+            invoice_keys = {
+                "invoice_layout", "invoiceLayout",
+                "invoice_prefix", "invoicePrefix",
+                "invoice_terms", "invoiceTerms",
+                "invoice_footer", "invoiceFooter",
+                "invoice_show_qr", "invoiceShowQr",
+                "invoice_show_tax", "invoiceShowTax",
+                "invoice_color_accent", "invoiceColorAccent",
+                "invoice_bin_vat", "invoiceBinVat",
+                "invoice_payment_notes", "invoicePaymentNotes",
+                "invoice_bank_wire", "invoiceBankWire",
+            }
+            if any(k in req_dict for k in invoice_keys):
+                if "settings:invoice" not in teammate_perms and "invoices" not in teammate_perms and "/console/settings" not in teammate_perms:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Permission denied: You do not have permission to configure Invoice settings.",
+                    )
+
+            # Meta CAPI
+            meta_keys = {
+                "meta_pixel_id", "metaPixelId",
+                "meta_capi_token", "metaCapiToken",
+                "meta_test_code", "metaTestCode",
+                "meta_auto_catalog_sync", "metaAutoCatalogSync",
+            }
+            if any(k in req_dict for k in meta_keys):
+                if "settings:meta" not in teammate_perms and "/console/settings" not in teammate_perms:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Permission denied: You do not have permission to configure Meta CAPI.",
+                    )
+
+            # Notifications
+            notif_keys = {
+                "sms_provider", "smsProvider",
+                "sms_api_key", "smsApiKey",
+                "sms_sender_id", "smsSenderId",
+                "telegram_bot_token", "telegramBotToken",
+                "telegram_chat_id", "telegramChatId",
+                "sms_order_confirmed", "smsOrderConfirmed",
+                "sms_parcel_dispatched", "smsParcelDispatched",
+            }
+            if any(k in req_dict for k in notif_keys):
+                if "settings:notifications" not in teammate_perms and "/console/settings" not in teammate_perms:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Permission denied: You do not have permission to configure Notifications.",
+                    )
+
+            # General Business profile
+            business_keys = {
+                "name", "name_bn", "kind", "currency", "timezone", "slug", "logo_hue",
+                "website", "support_email", "phone", "whatsapp_number", "address",
+                "city_division", "postal_code", "trade_license", "is_open_for_orders",
+                "isOpenForOrders", "schedule_mode", "scheduleMode", "open_time", "openTime",
+                "close_time", "closeTime", "weekly_off_day", "weeklyOffDay",
+                "enable_away_msg", "enableAwayMsg", "away_message", "awayMessage",
+            }
+            if any(k in req_dict for k in business_keys):
+                if "settings:business" not in teammate_perms and "/console/settings" not in teammate_perms:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Permission denied: You do not have permission to modify Store Profile settings.",
+                    )
+
     # Update top-level table columns
     if req.name is not None:
         biz.name = req.name
@@ -378,7 +501,6 @@ async def update_merchant_settings(
 
     # Persist all extra fields into biz.settings_data JSON
     current_settings = dict(biz.settings_data) if isinstance(biz.settings_data, dict) else {}
-    req_dict = req.model_dump(exclude_unset=True)
 
     current_settings.update(req_dict)
     biz.settings_data = current_settings
