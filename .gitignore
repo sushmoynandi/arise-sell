@@ -94,3 +94,6 @@ celerybeat.pid
 /Untracked
 nazmulp.md
 
+
+# ShipStudio metadata
+.shipstudio/

@@ -107,6 +107,10 @@ npm run build
 
 ## 7. Working Rules for AI Agents
 
-1. **Maintain Documentation:** Keep `SITE.md` and `AGENT.md` updated whenever features, routes, or UI architecture change.
-2. **Preserve Frontend Focus:** Do not introduce databases (PostgreSQL, MongoDB, Prisma, etc.) or external backend runtimes unless explicitly instructed.
-3. **Strict Design Discipline:** Adhere to typography rules, tokenized colors, Hind Siliguri font for Bangla text, and standard UI primitives.
+1. **Permission Required for Git Operations (MANDATORY):**
+   - **ALWAYS ask for explicit user permission before running `git commit` and `git push`.**
+   - **NEVER** automatically commit or push code without the user's prior approval.
+   - When changes are ready, summarize the files modified, propose the commit message, and ask the user if they want to commit and push.
+2. **Maintain Documentation:** Keep `SITE.md` and `AGENT.md` updated whenever features, routes, or UI architecture change.
+3. **Preserve Architectural Focus:** Maintain robust typing, security, and consistent API contracts between Next.js frontend and FastAPI backend.
+4. **Strict Design Discipline:** Adhere to typography rules, tokenized colors, Hind Siliguri font for Bangla text, and standard UI primitives.

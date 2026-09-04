@@ -206,6 +206,169 @@
           "detail": "Sent from Web Dashboard Inbox",
           "tone": "signal"
         }
+      },
+      {
+        "id": "m-22",
+        "from": "human",
+        "body": "আপনার সম্পূর্ণ ঠিকানা ও ফোন নাম্বারটি দিলে আমরা অর্ডার কনফার্ম করে দিচ্ছি।",
+        "at": "02:02",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-23",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "02:02"
+      },
+      {
+        "id": "m-24",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআমাদের শাড়ী, থ্রিপিস বা অন্য কোনো পণ্যের বিষয়ে কি কিছু জানতে চাচ্ছিলেন? বলুন, আমি সাহায্য করছি। \n\n🌾",
+        "at": "02:02",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-25",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "02:05"
+      },
+      {
+        "id": "m-26",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআমাদের শাড়ী, থ্রিপিস বা অন্য কোনো পণ্যের বিষয়ে কি কিছু জানতে চান? একটু বলুন, আমি সাহায্য করছি। \n\n🌾",
+        "at": "02:05",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-27",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "02:12"
+      },
+      {
+        "id": "m-28",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? আমাদের ঐতিহ্যবাহী শাড়ি, পাঞ্জাবি বা অন্য কোনো পণ্যের কি কিছু দেখছিলেন? \n\n🌾",
+        "at": "02:12",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-29",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "02:19"
+      },
+      {
+        "id": "m-30",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআমাদের ঐতিহ্যবাহী দেশীয় পণ্যের সম্ভার থেকে আজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? 🌾",
+        "at": "02:19",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-31",
+        "from": "human",
+        "body": "আমাদের সব পণ্যে ক্যাশ অন ডেলিভারি (COD) সুবিধা রয়েছে। 🌾",
+        "at": "02:19",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-32",
+        "from": "human",
+        "body": "hi",
+        "at": "02:51",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-33",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "Hi",
+        "at": "02:51"
+      },
+      {
+        "id": "m-34",
+        "from": "agent",
+        "body": "নমস্কার! আমাদের পেজে আপনাকে স্বাগতম। আশা করি ভালো আছেন। \n\nআজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন তো? আমাদের ঐতিহ্যবাহী শাড়ি, পাঞ্জাবি বা অন্য কোনো পণ্যের বিষয়ে কি জানতে চান? \n\n🌾",
+        "at": "02:51",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-35",
+        "from": "customer",
+        "lang": "banglish",
+        "body": "???????????? ?????? ???? ???, ????????? ??????? ???????? ?? ???????? ????",
+        "at": "04:11"
+      },
+      {
+        "id": "m-36",
+        "from": "agent",
+        "body": "শুভকামনা জানবেন। 🌾\n\nদুঃখিত, আপনার পাঠানো বার্তাটি কোনো যান্ত্রিক ত্রু",
+        "at": "04:11",
+        "action": {
+          "label": "AI Handled (Gemini)",
+          "detail": "Automated reasoning & sales reply",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-37",
+        "from": "human",
+        "body": "আমাদের সব পণ্যে ক্যাশ অন ডেলিভারি (COD) সুবিধা রয়েছে। 🌾",
+        "at": "04:14",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
+      },
+      {
+        "id": "m-38",
+        "from": "human",
+        "body": "ঢাকার ভেতরে ডেলিভারি চার্জ ৮০ টাকা এবং ঢাকার বাইরে ১৩০ টাকা।",
+        "at": "04:15",
+        "action": {
+          "label": "Human Agent Reply",
+          "detail": "Sent from Web Dashboard Inbox",
+          "tone": "signal"
+        }
       }
     ],
     "insights": {
