@@ -1,6 +1,7 @@
 """Authentication request/response schemas."""
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
@@ -69,13 +70,19 @@ class UserBrief(BaseModel):
     phone: str | None = None
     avatar_url: str | None = None
     hue: int = 82
+    auth_provider: str = "local"
+    has_password: bool = True
+    business_id: UUID | None = None
+    has_store: bool = True
+    scheduled_deletion_at: datetime | None = None
+    reactivated: bool = False
 
     model_config = {"from_attributes": True}
 
 
 class ChangePasswordRequest(BaseModel):
     """Change password payload."""
-    current_password: str
+    current_password: str | None = None
     new_password: str = Field(..., min_length=8)
     confirm_password: str | None = None
 
@@ -134,8 +141,10 @@ class DeleteAccountRequest(BaseModel):
 
 
 class DeleteAccountResponse(BaseModel):
-    """Response confirming account deletion."""
+    """Response confirming account deletion scheduling."""
     success: bool = True
-    message: str = "Account and associated data have been permanently deleted."
+    scheduled_deletion_at: datetime | None = None
+    grace_days: int = 30
+    message: str = "Account deletion scheduled. You have 30 days to log back in to cancel deletion and restore your account."
 
 

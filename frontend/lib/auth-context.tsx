@@ -25,6 +25,12 @@ export interface UserProfile {
   phone?: string | null;
   avatar_url?: string | null;
   hue?: number;
+  auth_provider?: string;
+  has_password?: boolean;
+  business_id?: string | null;
+  has_store?: boolean;
+  scheduled_deletion_at?: string | null;
+  reactivated?: boolean;
 }
 
 interface AuthContextType {
@@ -53,7 +59,7 @@ interface AuthContextType {
     hue?: number;
   }) => Promise<{ success: boolean; user?: UserProfile; error?: string }>;
   changePassword: (data: {
-    current_password: string;
+    current_password?: string;
     new_password: string;
     confirm_password?: string;
   }) => Promise<{ success: boolean; message?: string; error?: string }>;
@@ -87,7 +93,13 @@ interface AuthContextType {
   deleteAccount: (data: {
     password?: string;
     confirm_phrase: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{
+    success: boolean;
+    scheduled_deletion_at?: string;
+    grace_days?: number;
+    message?: string;
+    error?: string;
+  }>;
   logout: () => void;
 }
 
@@ -186,6 +198,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = res.user as unknown as UserProfile;
         setUser(userProfile);
         syncUserCookies(userProfile, days);
+        if (userProfile.reactivated) {
+          localStorage.setItem("arise_account_reactivated", "true");
+        }
         return { success: true, user: userProfile };
       }
       return { success: false, error: "Invalid response from server" };
@@ -244,13 +259,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const changePassword = async (data: {
-    current_password: string;
+    current_password?: string;
     new_password: string;
     confirm_password?: string;
   }) => {
     try {
       const res = await api.auth.changePassword(data);
       if (res.success) {
+        setUser((prev) => (prev ? { ...prev, has_password: true } : prev));
         return { success: true, message: res.message };
       }
       return { success: false, error: "Failed to change password" };
@@ -358,6 +374,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = res.user as unknown as UserProfile;
         setUser(userProfile);
         syncUserCookies(userProfile, 7);
+        if (userProfile.reactivated) {
+          localStorage.setItem("arise_account_reactivated", "true");
+        }
         return { success: true, user: userProfile };
       }
       return { success: false, error: "Invalid response from server" };
@@ -378,7 +397,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         api.clearTokens();
         syncUserCookies(null);
         setUser(null);
-        return { success: true };
+        return {
+          success: true,
+          scheduled_deletion_at: res.scheduled_deletion_at,
+          grace_days: res.grace_days,
+          message: res.message,
+        };
       }
       return { success: false, error: "Failed to delete account" };
     } catch (err: unknown) {

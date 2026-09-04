@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import {
-  Bricolage_Grotesque,
-  Inter_Tight,
+  Plus_Jakarta_Sans,
+  Inter,
   Hind_Siliguri,
   JetBrains_Mono,
 } from "next/font/google";
@@ -11,17 +11,18 @@ import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
 import { BRAND } from "@/lib/brand";
 
-const bricolage = Bricolage_Grotesque({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-display",
   display: "swap",
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const interTight = Inter_Tight({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter-tight",
+  variable: "--font-sans",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 const hind = Hind_Siliguri({
@@ -72,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${interTight.variable} ${hind.variable} ${jetbrains.variable}`}
+      className={`${plusJakarta.variable} ${inter.variable} ${hind.variable} ${jetbrains.variable}`}
     >
       <body
         className="bg-canvas text-text antialiased"

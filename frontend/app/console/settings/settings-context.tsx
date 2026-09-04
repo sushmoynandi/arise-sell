@@ -11,6 +11,8 @@ import { api } from "@/lib/api-client";
 import { TENANT } from "@/data/tenant";
 
 export interface MerchantSettings {
+  has_store?: boolean;
+  hasStore?: boolean;
   name: string;
   nameBn: string;
   kind: string;
@@ -176,19 +178,60 @@ export const DEFAULT_SETTINGS: MerchantSettings = {
   smsParcelDispatched: true,
 };
 
+export const EMPTY_STORE_SETTINGS: MerchantSettings = {
+  has_store: false,
+  hasStore: false,
+  name: "",
+  nameBn: "",
+  kind: "",
+  since: "",
+  plan: "free",
+  ordersUsed: 0,
+  ordersQuota: 0,
+  pages: 0,
+  logoHue: 82,
+  slug: "",
+  currency: "BDT",
+  timezone: "Asia/Dhaka",
+  dateFormat: "DD/MM/YYYY",
+  taxMode: "inclusive_75",
+  orderPrefix: "",
+  website: "",
+  support_email: "",
+  phone: "",
+  whatsapp_number: "",
+  address: "",
+  city_division: "",
+  postal_code: "",
+  trade_license: "",
+  isOpenForOrders: true,
+  scheduleMode: "custom",
+  openTime: "09:00 AM",
+  closeTime: "10:00 PM",
+  weeklyOffDay: "None (Open 7 Days)",
+  enableAwayMsg: true,
+  awayMessage: "",
+};
+
 interface SettingsContextType {
   settings: MerchantSettings;
+  hasStore: boolean;
   isLoading: boolean;
   isSaving: boolean;
   updateSettings: (partial: Partial<MerchantSettings>) => Promise<boolean>;
+  createStore: (
+    partial: Partial<MerchantSettings>,
+  ) => Promise<{ success: boolean; error?: string }>;
   refreshSettings: () => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
   settings: DEFAULT_SETTINGS,
+  hasStore: true,
   isLoading: false,
   isSaving: false,
   updateSettings: async () => false,
+  createStore: async () => ({ success: false }),
   refreshSettings: async () => {},
 });
 
@@ -201,10 +244,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await api.merchants.getProfile();
       if (data && typeof data === "object") {
-        setSettings((prev) => ({
-          ...prev,
-          ...(data as Record<string, unknown>),
-        }));
+        const profile = data as Record<string, unknown>;
+        if (profile.has_store === false || !profile.name) {
+          setSettings({
+            ...EMPTY_STORE_SETTINGS,
+            ...profile,
+            has_store: false,
+            hasStore: false,
+            name: "",
+          });
+        } else {
+          setSettings((prev) => ({
+            ...prev,
+            ...profile,
+            has_store: true,
+            hasStore: true,
+          }));
+        }
       }
     } catch {
       // Fallback silently to default settings on unauthenticated or network error
@@ -217,6 +273,37 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     loadSettings();
   }, [loadSettings]);
 
+  const createStore = useCallback(
+    async (
+      partial: Partial<MerchantSettings>,
+    ): Promise<{ success: boolean; error?: string }> => {
+      setIsSaving(true);
+      try {
+        const res = await api.merchants.createStore(
+          partial as Record<string, unknown>,
+        );
+        if (res && typeof res === "object") {
+          setSettings((prev) => ({
+            ...prev,
+            ...(res as Record<string, unknown>),
+            has_store: true,
+            hasStore: true,
+          }));
+          return { success: true };
+        }
+        return { success: false, error: "Failed to create store" };
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to create store";
+        console.error("Failed to create store:", msg);
+        return { success: false, error: msg };
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [],
+  );
+
   const updateSettings = useCallback(
     async (partial: Partial<MerchantSettings>): Promise<boolean> => {
       setIsSaving(true);
@@ -228,9 +315,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           setSettings((prev) => ({
             ...prev,
             ...(res as Record<string, unknown>),
+            has_store: true,
+            hasStore: true,
           }));
         } else {
-          setSettings((prev) => ({ ...prev, ...partial }));
+          setSettings((prev) => ({
+            ...prev,
+            ...partial,
+            has_store: true,
+            hasStore: true,
+          }));
         }
         return true;
       } catch (err) {
@@ -243,13 +337,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const hasStore = settings.has_store !== false && Boolean(settings.name);
+
   return (
     <SettingsContext.Provider
       value={{
         settings,
+        hasStore,
         isLoading,
         isSaving,
         updateSettings,
+        createStore,
         refreshSettings: loadSettings,
       }}
     >

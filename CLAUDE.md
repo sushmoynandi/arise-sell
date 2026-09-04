@@ -52,17 +52,18 @@ campaigns + comments + follow-ups = **Reach**; persona + knowledge + guardrails 
 **Light, production commerce-admin.** White cards on a soft grey field, hairline borders,
 tight low-opacity shadows, one jade accent. Tokens in `app/globals.css`.
 
-Deliberately *not* a dark developer-tool theme: merchants look at product photography,
+Deliberately _not_ a dark developer-tool theme: merchants look at product photography,
 invoices and courier slips all day, and light renders those honestly.
 
-- Canvas `#f7f8f9`, surfaces `#ffffff` / `#f1f3f5` / `#e4e7eb`, hairline `#e2e5e9`
+- Canvas `#faf9f7`, surfaces `#ffffff` / `#f4f3f0` / `#e8e6e1`, hairline `#e7e4de`
 - Text `#0f1419` / `#4a5561` / `#626b76`
 - **One** accent: jade `--signal: #0a6e50`, white text on it (`--signal-ink`)
 - Status/series only: `--mint --amber --coral --iris --azure`
-- Type: Bricolage Grotesque (display), Inter Tight (body), Hind Siliguri (Bangla),
+- Type: Plus Jakarta Sans (display/headings), Inter (body/UI), Hind Siliguri (Bangla),
   JetBrains Mono (data/IDs/code)
 
 **Rules**
+
 - No emoji as iconography — use `components/ui/icons.tsx`.
 - Use the `Panel` / `Badge` / `Button` / `Meter` / `Sparkline` primitives rather than
   bespoke markup.
@@ -73,7 +74,7 @@ invoices and courier slips all day, and light renders those honestly.
 - Decoration stays faint. On light, a strong glow or noise layer reads as dirt.
 
 **Colour rule (verified, don't regress):** every status colour also sits on its own 10% tint
-(`bg-amber/10 text-amber`), so it must clear 4.5:1 against *that*, not just against white —
+(`bg-amber/10 text-amber`), so it must clear 4.5:1 against _that_, not just against white —
 which is why the ramp is deeper than typical Tailwind values. The whole UI was audited with a
 scripted WCAG pass at 1440px and 380px; all pages are at zero AA failures. Re-run it after
 changing any colour token.
@@ -108,6 +109,7 @@ Specialized skills live in `.claude/skills/`. Keep `SITE.md` updated as the sing
 truth after any feature or UI change.
 
 ### Development commands
+
 - Typecheck: `npm run typecheck`
 - Lint: `npm run lint`
 - Build: `npm run build`

@@ -1,6 +1,8 @@
 """Subscriptions, Invoices, and Quota Top-Up."""
 from __future__ import annotations
 
+import re
+import uuid
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -34,21 +36,6 @@ async def select_plan(
     db: AsyncSession = Depends(get_db),
 ):
     """Save or update the subscription plan for the authenticated merchant's business."""
-    if not user.business_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not belong to a merchant business tenant.",
-        )
-
-    stmt = select(Business).where(Business.id == user.business_id)
-    res = await db.execute(stmt)
-    biz = res.scalar_one_or_none()
-    if not biz:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Business tenant not found.",
-        )
-
     # Fetch stored plans to dynamically match selected tier
     plans = await get_stored_plans()
     matched = next(
@@ -66,22 +53,98 @@ async def select_plan(
         quota = int(matched.get("messageLimit") or 200)
     else:
         QUOTA_MAP = {
-            "free": 40,
+            "free": 100,
             "basic": 200,
-            "growth": 200,
+            "grow": 500,
+            "growth": 500,
             "go": 500,
-            "pro": 1000,
-            "business": 2500,
-            "scale": 2500,
-            "enterprise": 5000,
+            "pro": 10000,
+            "business": 10000,
+            "scale": 15000,
+            "enterprise": 50000,
+            "custom": 50000,
         }
         plan_name = req.plan_id.capitalize()
-        quota = QUOTA_MAP.get(req.plan_id.lower(), 200)
+        quota = QUOTA_MAP.get(req.plan_id.lower(), 500)
+
+    # Save to user's permanent account
+    user.plan = plan_name
+    user.ai_quota = quota
+    db.add(user)
+
+    if not user.business_id:
+        clean_store_name = f"{user.first_name}'s Store" if user.first_name else "My Store"
+        base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", clean_store_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
+        unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+
+        biz = Business(
+            name=clean_store_name,
+            name_bn=clean_store_name,
+            kind="Ecommerce",
+            slug=unique_slug,
+            plan=plan_name,
+            orders_quota=quota,
+            orders_used=user.ai_used or 0,
+            currency="BDT",
+            timezone="Asia/Dhaka",
+            settings_data={
+                "owner_id": str(user.id),
+                "owner_email": user.email.lower(),
+                "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
+                "plan": plan_name,
+                "team_members": [],
+            },
+        )
+        db.add(biz)
+        await db.flush()
+        user.business_id = biz.id
+        user.role = "owner"
+        await db.commit()
+        await db.refresh(biz)
+        await db.refresh(user)
+
+        return SelectPlanResponse(
+            success=True,
+            plan=biz.plan,
+            orders_quota=biz.orders_quota,
+            message=f"Successfully launched {biz.name} on {biz.plan} plan with {quota} monthly quota.",
+        )
+
+    stmt = select(Business).where(Business.id == user.business_id)
+    res = await db.execute(stmt)
+    biz = res.scalar_one_or_none()
+    if not biz:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Business tenant not found.",
+        )
 
     biz.plan = plan_name
     biz.orders_quota = quota
+    extra = dict(biz.settings_data or {})
+    extra["plan"] = plan_name
+    biz.settings_data = extra
+    db.add(biz)
+
+    # Also sync any other stores owned by this user
+    all_biz = (await db.execute(select(Business))).scalars().all()
+    clean_user_email = user.email.strip().lower()
+    for b in all_biz:
+        if b.id != biz.id:
+            b_extra = b.settings_data if isinstance(b.settings_data, dict) else {}
+            if (
+                b_extra.get("owner_id") == str(user.id)
+                or b_extra.get("owner_email", "").strip().lower() == clean_user_email
+            ):
+                b.plan = plan_name
+                b.orders_quota = quota
+                b_extra["plan"] = plan_name
+                b.settings_data = b_extra
+                db.add(b)
+
     await db.commit()
     await db.refresh(biz)
+    await db.refresh(user)
 
     return SelectPlanResponse(
         success=True,

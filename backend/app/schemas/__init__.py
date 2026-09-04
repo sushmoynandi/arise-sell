@@ -69,6 +69,10 @@ from app.schemas.automation import (
 from app.schemas.merchant import (
     TenantResponse,
     TeamMemberResponse,
+    InviteTeamMemberRequest,
+    UpdateTeamMemberRequest,
+    StoreWorkspaceItem,
+    SwitchStoreRequest,
     ChannelResponse,
     UpdateSettingsRequest,
 )
@@ -139,6 +143,10 @@ __all__ = [
     "CreateAutomationRequest",
     "TenantResponse",
     "TeamMemberResponse",
+    "InviteTeamMemberRequest",
+    "UpdateTeamMemberRequest",
+    "StoreWorkspaceItem",
+    "SwitchStoreRequest",
     "ChannelResponse",
     "UpdateSettingsRequest",
     "PlanResponse",
