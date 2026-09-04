@@ -520,16 +520,13 @@ export function TabBilling() {
               type="button"
               onClick={() => setBillingCycle("yearly")}
               className={cx(
-                "px-3 py-1 rounded-md font-semibold transition-all flex items-center gap-1.5",
+                "px-3 py-1 rounded-md font-semibold transition-all",
                 billingCycle === "yearly"
                   ? "bg-white text-text shadow-2xs"
                   : "text-text-3 hover:text-text",
               )}
             >
-              <span>Yearly</span>
-              <span className="bg-signal/20 text-signal font-mono text-[9.5px] px-1.5 py-0.5 rounded font-bold">
-                Save ~17%
-              </span>
+              Yearly
             </button>
           </div>
         </div>
@@ -623,7 +620,8 @@ export function TabBilling() {
                     ? isUserOnCustom
                     : p.name.toLowerCase() === planName.toLowerCase();
                   const isSwitching = switchingPlanId === p.id;
-                  const displayTitle = isCurrent && isCustom ? planName : p.name;
+                  const displayTitle =
+                    isCurrent && isCustom ? planName : p.name;
                   const price =
                     billingCycle === "yearly"
                       ? Math.round(p.yearlyPriceBDT || p.priceBDT * 10)
@@ -634,7 +632,8 @@ export function TabBilling() {
                         ? Math.round(planPriceBDT * 10)
                         : planPriceBDT
                       : price;
-                  const periodLabel = billingCycle === "yearly" ? "/ yr" : "/ mo";
+                  const periodLabel =
+                    billingCycle === "yearly" ? "/ yr" : "/ mo";
 
                   return (
                     <div
@@ -735,40 +734,23 @@ export function TabBilling() {
               </div>
 
               {/* Enterprise Custom Plan & Voucher Redemption Banner (Below Plans Grid) */}
-              <div className="border-t border-line p-5 bg-linear-to-r from-surface-2/30 via-[#edf7f3]/40 to-surface-2/30">
-                <div className="rounded-2xl border border-signal/25 bg-white p-5 sm:p-6 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-                  <div className="space-y-2">
+              <div className="border-t border-line p-5 bg-surface-2/20">
+                <div className="rounded-2xl border border-line/80 bg-white p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="rounded-md bg-signal/15 px-2.5 py-0.5 text-[10px] font-bold font-mono text-signal uppercase tracking-wider">
+                      <h4 className="text-sm sm:text-base font-bold font-display text-text">
                         Custom Enterprise
-                      </span>
-                      <span className="text-[11px] text-text-3 font-medium">
-                        High-Volume Quotas · Multi-Store · Custom SLA
+                      </h4>
+                      <span className="rounded-md bg-signal/15 px-2 py-0.5 text-[10px] font-bold font-mono text-signal uppercase tracking-wider">
+                        Tailored
                       </span>
                     </div>
-                    <h4 className="text-base font-bold font-display text-text">
-                      Need 10,000+ to 100,000+ AI Messages or Multiple Stores?
-                    </h4>
-                    <p className="text-xs text-text-3 max-w-2xl leading-relaxed">
-                      We offer tailored enterprise tiers for high-volume merchants: 3–10+ connected stores, 10–30+ seats, custom webhook &amp; ERP integrations, and dedicated 24/7 priority SLA support.
+                    <p className="text-xs text-text-3 max-w-xl">
+                      Tailored AI message quotas, multi-store management (3–10+), and dedicated SLA for high-volume brands.
                     </p>
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1 text-[11px] font-mono text-text-2">
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-signal" />
-                        Quota: <strong className="text-signal font-bold">10k – 100k+ Messages</strong>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-signal" />
-                        Stores: <strong>3 – 10+ Workspaces</strong>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-signal" />
-                        Seats: <strong>10 – 30+ Seats</strong>
-                      </span>
-                    </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 min-w-[200px]">
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                     <Button
                       size="sm"
                       variant="signal"
@@ -783,7 +765,7 @@ export function TabBilling() {
                           features: [],
                         } as unknown as BillingPlan)
                       }
-                      className="justify-center text-xs gap-2 py-2.5 font-semibold shadow-xs"
+                      className="justify-center text-xs gap-2 py-2 px-3.5 font-semibold shadow-xs"
                     >
                       <svg
                         width="14"
@@ -802,7 +784,7 @@ export function TabBilling() {
                         setRedeemError(null);
                         setRedeemModalOpen(true);
                       }}
-                      className="flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl border border-line bg-surface-2/60 hover:bg-surface-2 hover:border-signal/50 text-xs font-semibold text-text shadow-2xs transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl border border-line bg-surface-2/50 hover:bg-surface-2 hover:border-signal/50 text-xs font-semibold text-text shadow-2xs transition-all cursor-pointer"
                     >
                       <svg
                         width="13"
