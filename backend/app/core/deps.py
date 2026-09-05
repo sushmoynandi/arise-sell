@@ -77,7 +77,7 @@ async def get_current_user(
         biz_id = uuid.UUID(payload.get("biz")) if payload.get("biz") else uuid.uuid4()
         user = User(
             id=user_id,
-            email=payload.get("email", "merchant@nextproduct.ai"),
+            email=payload.get("email", "merchant@arisesell.com"),
             hashed_password="",
             first_name="Merchant",
             last_name="User",

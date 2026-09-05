@@ -7,7 +7,7 @@ from httpx import AsyncClient
 async def test_admin_2fa_and_dashboard(client: AsyncClient):
     res = await client.post(
         "/api/v1/admin/auth/login",
-        json={"email": "admin@nextproduct.ai", "password": "MasterAdmin@2026"},
+        json={"email": "admin@arisesell.com", "password": "MasterAdmin@2026"},
     )
     assert res.status_code == 200
     data = res.json()
@@ -15,7 +15,7 @@ async def test_admin_2fa_and_dashboard(client: AsyncClient):
 
     verify_res = await client.post(
         "/api/v1/admin/auth/verify-2fa",
-        json={"email": "admin@nextproduct.ai", "totp_code": "123456"},
+        json={"email": "admin@arisesell.com", "totp_code": "123456"},
     )
     assert verify_res.status_code == 200
     admin_tokens = verify_res.json()

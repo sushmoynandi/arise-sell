@@ -1,8 +1,8 @@
-# NextProduct AI (Ship Studio Project)
+# AriseSell (Ship Studio Project)
 
 Next.js 16 App Router · Tailwind CSS v4 · TypeScript · Framer Motion.
 
-**NextProduct AI** is a 24/7 conversational commerce engine for Bangladeshi e-commerce and
+**AriseSell** is a 24/7 conversational commerce engine for Bangladeshi e-commerce and
 F-commerce. Positioning: it does not "answer customers" — it **closes and ships the order**.
 
 > **Current state: frontend only.** There is no backend, database or auth. Everything on

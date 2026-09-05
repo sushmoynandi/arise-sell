@@ -57,8 +57,8 @@ export default function PrivacyContent() {
           </h1>
           <p className="mt-4 text-[15.5px] leading-relaxed text-text-2">
             {t(
-              "How AriseSell (NextProduct AI) collects, protects, processes, and respects merchant and customer data across WhatsApp Cloud API, Facebook Messenger, Instagram DM, courier networks, and automated checkout.",
-              "হোয়াটসঅ্যাপ, ফেসবুক মেসেঞ্জার, ইনস্টাগ্রাম এবং কুরিয়ার ও পেমেন্ট অটোমেশনে AriseSell (NextProduct AI) কীভাবে মার্চেন্ট ও ক্রেতাদের ব্যক্তিগত তথ্যের সর্বোচ্চ নিরাপত্তা এবং সুরক্ষা নিশ্চিত করে।"
+              "How AriseSell collects, protects, processes, and respects merchant and customer data across WhatsApp Cloud API, Facebook Messenger, Instagram DM, courier networks, and automated checkout.",
+              "হোয়াটসঅ্যাপ, ফেসবুক মেসেঞ্জার, ইনস্টাগ্রাম এবং কুরিয়ার ও পেমেন্ট অটোমেশনে AriseSell কীভাবে মার্চেন্ট ও ক্রেতাদের ব্যক্তিগত তথ্যের সর্বোচ্চ নিরাপত্তা এবং সুরক্ষা নিশ্চিত করে।"
             )}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-4 text-[12.5px] text-text-3">
@@ -128,8 +128,8 @@ export default function PrivacyContent() {
             </div>
             <p>
               {t(
-                "Welcome to AriseSell (also operating under the technology identifier NextProduct AI, accessible via arisesell.com, alapai.app, and related portals). AriseSell is an enterprise SaaS platform engineered to provide autonomous conversational commerce, AI sales assistance, order management, and fulfillment automation for online merchants in Bangladesh and globally.",
-                "AriseSell (NextProduct AI হিসেবে পরিচালিত) প্ল্যাটফর্মে আপনাকে স্বাগতম। AriseSell হলো একটি আধুনিক কনভারসেশনাল কমার্স ও অটোমেশন প্ল্যাটফর্ম যা বাংলাদেশের অনলাইন মার্চেন্টদের হোয়াটসঅ্যাপ, ফেসবুক মেসেঞ্জার, ইনস্টাগ্রাম এবং ইকমার্স স্টোরের মাধ্যমে স্বয়ংক্রিয়ভাবে সেলস ক্লোজ ও ডেলিভারি নিশ্চিত করতে সহায়তা করে।"
+                "Welcome to AriseSell (also operating under the technology identifier AriseSell, accessible via arisesell.com, alapai.app, and related portals). AriseSell is an enterprise SaaS platform engineered to provide autonomous conversational commerce, AI sales assistance, order management, and fulfillment automation for online merchants in Bangladesh and globally.",
+                "AriseSell (AriseSell হিসেবে পরিচালিত) প্ল্যাটফর্মে আপনাকে স্বাগতম। AriseSell হলো একটি আধুনিক কনভারসেশনাল কমার্স ও অটোমেশন প্ল্যাটফর্ম যা বাংলাদেশের অনলাইন মার্চেন্টদের হোয়াটসঅ্যাপ, ফেসবুক মেসেঞ্জার, ইনস্টাগ্রাম এবং ইকমার্স স্টোরের মাধ্যমে স্বয়ংক্রিয়ভাবে সেলস ক্লোজ ও ডেলিভারি নিশ্চিত করতে সহায়তা করে।"
               )}
             </p>
             <p>

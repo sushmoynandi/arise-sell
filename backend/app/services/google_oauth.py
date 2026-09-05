@@ -51,7 +51,7 @@ async def verify_google_identity(
     # Sandbox / Demo fallback support for local testing
     if access_token and (access_token.startswith(("mock_", "demo_", "test_")) or access_token == "live_test_token"):
         return GoogleProfile(
-            email="merchant@nextproduct.ai",
+            email="merchant@arisesell.com",
             first_name="Merchant",
             last_name="Owner",
             avatar_url=None,

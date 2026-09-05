@@ -78,7 +78,7 @@ export default function PricingPage() {
                     <tr className="border-b border-line">
                       <th className="px-5 py-4 font-mono text-[10px] uppercase tracking-wider text-text-3" />
                       <th className="px-5 py-4 font-display text-[14px] font-semibold text-signal">
-                        NextProduct
+                        AriseSell
                       </th>
                       <th className="px-5 py-4 font-display text-[14px] font-medium text-text-3">
                         Per-conversation tools

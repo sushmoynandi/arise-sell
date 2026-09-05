@@ -35,7 +35,7 @@ const CONTACT_FAQS = [
   {
     qEn: "Do I need a technical person to manage this?",
     qBn: "এটি চালাতে কি কোনো টেকনিক্যাল লোক লাগবে?",
-    aEn: "Not at all. If you can use Facebook and WhatsApp, you can manage NextProduct effortlessly. Everything is designed in plain Bangla and English.",
+    aEn: "Not at all. If you can use Facebook and WhatsApp, you can manage AriseSell effortlessly. Everything is designed in plain Bangla and English.",
     aBn: "একদমই না। আপনি যদি ফেসবুক বা হোয়াটসঅ্যাপ চালাতে পারেন, তবে খুব সহজেই এটি চালাতে পারবেন। সবকিছু সহজ বাংলা ও ইংরেজিতে সাজানো।",
   },
   {
@@ -62,7 +62,7 @@ export default function ContactSection() {
   };
 
   const directWhatsAppUrl = `https://wa.me/8801710000000?text=${encodeURIComponent(
-    `Hello NextProduct, my name is ${name || "a merchant"}. I want to know more about automated sales.`
+    `Hello AriseSell, my name is ${name || "a merchant"}. I want to know more about automated sales.`
   )}`;
 
   return (

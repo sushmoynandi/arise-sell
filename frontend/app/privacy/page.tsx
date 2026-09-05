@@ -7,7 +7,7 @@ import PrivacyContent from "@/components/marketing/PrivacyContent";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Official Privacy Policy of AriseSell (NextProduct AI). How we securely manage, protect, and process data for WhatsApp Cloud API, Messenger, Instagram, and e-commerce fulfillment.",
+    "Official Privacy Policy of AriseSell. How we securely manage, protect, and process data for WhatsApp Cloud API, Messenger, Instagram, and e-commerce fulfillment.",
 };
 
 export default function PrivacyPage() {

@@ -1,5 +1,5 @@
 /**
- * NextProduct AI - Google OAuth 2.0 Client
+ * AriseSell - Google OAuth 2.0 Client
  *
  * Implements hardened same-tab OAuth 2.0 flow:
  * - Anti-CSRF cryptographic state parameter generation & validation.

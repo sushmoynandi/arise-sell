@@ -98,7 +98,7 @@ export default function ThreadsPage() {
       at: nowStr,
       action: {
         label: "Merchant Direct Reply",
-        detail: "Dispatched to WhatsApp",
+        detail: active.channel === "messenger" ? "Dispatched to Messenger" : "Dispatched to WhatsApp",
         tone: "signal" as const,
       },
     };
@@ -124,10 +124,11 @@ export default function ThreadsPage() {
           handle: active.handle,
           message: textToSend,
           thread_id: active.id,
+          channel: active.channel,
         }),
       });
     } catch (e) {
-      console.error("Failed to send WhatsApp message:", e);
+      console.error("Failed to send reply:", e);
     } finally {
       setSending(false);
       setTimeout(scrollToBottom, 100);
@@ -172,7 +173,10 @@ export default function ThreadsPage() {
             <Badge tone="mint" dot>
               ● WhatsApp Live Connected
             </Badge>
-            <Badge tone="signal">
+            <Badge tone="signal" dot>
+              ● Messenger Live Connected (Meta Cloud AI 🟢)
+            </Badge>
+            <Badge tone="iris">
               98.4% Handled by AI
             </Badge>
           </div>
@@ -217,7 +221,7 @@ export default function ThreadsPage() {
                 >
                   <Avatar
                     name={t.customer}
-                    hue={t.channel === "whatsapp" ? 142 : 262}
+                    hue={t.channel === "whatsapp" ? 142 : t.channel === "messenger" ? 210 : 262}
                     size={38}
                   />
                   <div className="min-w-0 flex-1">
@@ -257,7 +261,7 @@ export default function ThreadsPage() {
             <div className="flex min-w-0 items-center gap-3">
               <Avatar
                 name={active.customer}
-                hue={active.channel === "whatsapp" ? 142 : 262}
+                hue={active.channel === "whatsapp" ? 142 : active.channel === "messenger" ? 210 : 262}
                 size={36}
               />
               <div className="min-w-0">
@@ -265,22 +269,22 @@ export default function ThreadsPage() {
                   {active.customer}
                 </p>
                 <p className="flex items-center gap-1.5 font-mono text-[11px] text-slate-500">
-                  <ChannelIcon width={13} height={13} className="text-emerald-600" />
+                  <ChannelIcon width={13} height={13} className={active.channel === "messenger" ? "text-blue-600" : "text-emerald-600"} />
                   <span className="font-semibold text-slate-700">{active.handle}</span> · {active.district || "Dhaka"}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {active.status === "ai" ? (
-                <Button size="sm" variant="outline" onClick={handleTakeover} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                <Button size="sm" variant="outline" onClick={handleTakeover} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 cursor-pointer">
                   Take over (Human)
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" onClick={handleTakeover} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                <Button size="sm" variant="outline" onClick={handleTakeover} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer">
                   Return to AI
                 </Button>
               )}
-              <Button size="sm" onClick={handleResolve} variant="ghost" className="text-slate-600 hover:text-slate-900">
+              <Button size="sm" onClick={handleResolve} variant="ghost" className="text-slate-600 hover:text-slate-900 cursor-pointer">
                 Resolve
               </Button>
             </div>
@@ -316,66 +320,68 @@ export default function ThreadsPage() {
                       )}
                       {isAi && (
                         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-emerald-800 font-mono">
-                          ✨ AI AUTO-REPLY (GEMINI)
+                          ✨ AI AUTO-REPLY (GEMINI 3.5 FLASH)
                         </span>
                       )}
                       {isHuman && (
                         <span className="inline-flex items-center gap-1 rounded-md bg-indigo-100 px-1.5 py-0.5 text-indigo-800 font-mono">
-                          👤 YOU (MERCHANT)
+                          👤 HUMAN TAKEOVER (YOU)
                         </span>
                       )}
-                    </div>
-
-                    {/* Image Attachment (if any) */}
-                    {m.attachment && (
-                      <div className="mb-2 overflow-hidden rounded-xl border border-slate-200 shadow-sm bg-white">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={m.attachment.src}
-                          alt="Customer upload"
-                          className="h-36 w-full object-cover"
-                        />
-                        <div className="flex items-center justify-between bg-slate-50 px-3 py-1.5 border-t border-slate-100">
-                          <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-indigo-700">
-                            <IconEye width={12} height={12} />
-                            {m.attachment.matchedSku}
-                          </span>
-                          <span className="font-mono text-[11px] text-slate-500">
-                            {Math.round((m.attachment.confidence ?? 0) * 100)}% confidence
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* High-Contrast Message Bubble */}
-                    <div
-                      className={cx(
-                        "rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-xs",
-                        isCustomer &&
-                          "rounded-tl-xs border border-slate-200 bg-white text-slate-900 font-normal",
-                        isAi &&
-                          "rounded-tr-xs bg-emerald-700 text-white font-normal shadow-sm",
-                        isHuman &&
-                          "rounded-tr-xs bg-indigo-600 text-white font-normal shadow-sm",
-                      )}
-                    >
-                      <p className="whitespace-pre-wrap font-sans text-[14px]">
-                        {m.body}
-                      </p>
-                    </div>
-
-                    {/* Meta info / Action status */}
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="font-mono text-[10.5px] text-slate-400">
+                      <span className="font-mono text-[10px] text-slate-400">
                         {m.at}
                       </span>
-                      {m.action && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-200/80 px-1.5 py-0.5 font-mono text-[9.5px] text-slate-700">
-                          <IconCheck width={10} height={10} className="text-emerald-600" />
-                          {m.action.label}
-                        </span>
+                    </div>
+
+                    {/* Chat Bubble */}
+                    <div
+                      className={cx(
+                        "rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed shadow-xs transition-all",
+                        isCustomer
+                          ? "rounded-tl-xs bg-white text-slate-900 border border-slate-200/80 shadow-slate-100"
+                          : isAi
+                          ? "rounded-tr-xs bg-emerald-700 text-white font-normal"
+                          : "rounded-tr-xs bg-indigo-600 text-white font-normal"
+                      )}
+                    >
+                      {/* Image Attachment (Product / Invoice / Photo) */}
+                      {m.attachment && (
+                        <div className="mb-2.5 overflow-hidden rounded-xl border border-black/10 bg-black/5">
+                          <img
+                            src={m.attachment.src}
+                            alt="Attachment"
+                            className="max-h-56 w-full object-cover"
+                          />
+                          {m.attachment.matchedSku && (
+                            <div className="bg-black/40 px-2.5 py-1 text-[11px] font-mono text-white backdrop-blur-xs flex items-center justify-between">
+                              <span>Matched: {m.attachment.matchedSku}</span>
+                              <span className="text-emerald-300">
+                                {Math.round((m.attachment.confidence || 0.95) * 100)}% Match
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <p className="whitespace-pre-wrap">{m.body}</p>
+
+                      {/* Optional English Gloss */}
+                      {m.gloss && (
+                        <p className={cx("mt-1.5 text-[11px] italic border-t pt-1", isCustomer ? "text-slate-400 border-slate-100" : "text-emerald-200/80 border-emerald-600")}>
+                          "{m.gloss}"
+                        </p>
                       )}
                     </div>
+
+                    {/* AI Reasoning / System Action Pill */}
+                    {m.action && (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-200/70 px-2 py-0.5 text-[10.5px] font-medium text-slate-600 font-mono">
+                          <span className="size-1.5 rounded-full bg-emerald-500" />
+                          {m.action.label}: {m.action.detail}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -384,109 +390,121 @@ export default function ThreadsPage() {
           </div>
 
           {/* Quick Reply Suggestions */}
-          <div className="flex gap-2 overflow-x-auto border-t border-slate-200 bg-slate-50 px-4 py-2">
-            <span className="text-[11px] font-semibold text-slate-500 shrink-0 self-center">
-              Quick:
+          <div className="flex gap-2 overflow-x-auto border-t border-slate-200/80 bg-slate-100/80 px-4 py-2 text-[11.5px]">
+            <span className="shrink-0 font-bold text-slate-500 flex items-center gap-1">
+              ⚡ Quick:
             </span>
             {QUICK_TEMPLATES.map((tmpl, idx) => (
               <button
                 key={idx}
+                type="button"
                 onClick={() => handleSendMessage(tmpl)}
-                className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11.5px] text-slate-700 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/50 transition-all"
+                className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shadow-2xs cursor-pointer"
               >
-                {tmpl.slice(0, 32)}…
+                {tmpl.slice(0, 32)}...
               </button>
             ))}
           </div>
 
-          {/* Chat Composer Input */}
+          {/* Message Input Box */}
           <div className="border-t border-slate-200 bg-white p-3.5">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all"
-            >
+            <div className="flex items-center gap-2">
               <input
+                type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
                 placeholder={
                   active.status === "ai"
-                    ? "AI is handling — type here to take over and reply directly…"
-                    : "Write your reply to customer on WhatsApp…"
+                    ? "AI is handling this thread. Type to reply as Human..."
+                    : `Reply to ${active.customer} (${active.channel === "messenger" ? "Messenger" : "WhatsApp"})...`
                 }
-                className="min-w-0 flex-1 bg-transparent text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-[13px] text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-hidden transition-all shadow-inner"
               />
               <Button
-                size="sm"
-                type="submit"
-                disabled={sending || !replyText.trim()}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4"
+                onClick={() => handleSendMessage()}
+                disabled={!replyText.trim() || sending}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer"
               >
-                {sending ? "Sending…" : "Send"}
-                <IconArrow width={14} height={14} className="ml-1" />
+                {sending ? "Sending..." : "Reply ➔"}
               </Button>
-            </form>
+            </div>
           </div>
         </div>
 
-        {/* ---------- Context / Customer Insights Sidebar (Right) ---------- */}
-        <div className="hidden min-h-0 overflow-y-auto border-l border-slate-200 bg-white xl:block">
-          <div className="space-y-4 p-4">
-            <Panel className="p-4 border-slate-200 bg-slate-50/60">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Customer Profile
-              </p>
-              <p className="mt-1.5 text-[16px] font-bold text-slate-900">
-                {active.customer}
-              </p>
-              <p className="mt-0.5 font-mono text-[12px] text-emerald-700 font-semibold">
-                {active.handle}
-              </p>
-              <p className="mt-1 text-[12px] text-slate-600">
-                📍 {active.district || "Dhaka, Bangladesh"}
-              </p>
-            </Panel>
-
-            <Panel className="p-4 border-slate-200 bg-emerald-50/40">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                Estimated Order Value
-              </p>
-              <p className="mt-1 font-display text-[26px] font-extrabold tracking-tight text-emerald-700">
-                {bdt(active.value || 2500)}
-              </p>
-              <p className="mt-0.5 text-[12px] font-medium text-slate-700">
-                Intent: {active.intent}
-              </p>
-            </Panel>
-
-            <Panel className="p-4 border-slate-200 bg-slate-50/60">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Delivery & Payment Rules
-              </p>
-              <div className="mt-2 space-y-1 text-[12px] text-slate-700">
-                <p>• Inside Dhaka: <span className="font-semibold text-emerald-700">৳80</span></p>
-                <p>• Outside Dhaka: <span className="font-semibold text-emerald-700">৳130</span></p>
-                <p>• Cash on Delivery: <span className="font-semibold text-emerald-700">Active</span></p>
+        {/* ---------- Customer Intelligence Drawer (Right) ---------- */}
+        <div className="hidden xl:flex min-h-0 flex-col border-l border-slate-200 bg-white p-5 space-y-5">
+          <div>
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-slate-400">
+              Customer Details
+            </h3>
+            <div className="mt-3 flex items-center gap-3">
+              <Avatar
+                name={active.customer}
+                hue={active.channel === "whatsapp" ? 142 : active.channel === "messenger" ? 210 : 262}
+                size={44}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-bold text-slate-900">
+                  {active.customer}
+                </p>
+                <p className="font-mono text-[12px] text-slate-500">
+                  {active.handle}
+                </p>
               </div>
-            </Panel>
+            </div>
+          </div>
 
-            <Panel className="p-4 border-slate-200 bg-slate-50/60">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Guardrails & AI Safety
+          <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500">Channel</span>
+              <ChannelChip channel={active.channel} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500">District</span>
+              <span className="font-bold text-slate-800">{active.district || "Dhaka"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500">Delivery Fee</span>
+              <span className="font-mono font-bold text-emerald-700">
+                {active.district?.toLowerCase() === "dhaka" ? "৳80 (Inside Dhaka)" : "৳130 (Outside Dhaka)"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500">Est. Cart Value</span>
+              <span className="font-mono font-bold text-slate-900">
+                {bdt(active.value)}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-[12px] font-bold uppercase tracking-wider text-slate-400">
+              AI Sales Intelligence
+            </h4>
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 space-y-1.5 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-indigo-900">
+                <span>🤖 Gemini 3.5 Flash NLU</span>
+              </div>
+              <p className="text-[11.5px] leading-relaxed text-indigo-800">
+                Intent recognized: <strong>{active.intent}</strong>. Courier fee and product catalog synced from store inventory.
               </p>
-              <ul className="mt-3 space-y-2">
-                <li className="flex items-start gap-2 text-[12px] text-slate-700">
-                  <IconShield width={13} height={13} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <span>Bengali & Banglish dialect detection active</span>
-                </li>
-                <li className="flex items-start gap-2 text-[12px] text-slate-700">
-                  <IconShield width={13} height={13} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <span>Zero-hallucination catalog RAG pricing</span>
-                </li>
-              </ul>
-            </Panel>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleTakeover}
+              className="w-full rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/40 py-2 text-xs font-bold text-slate-700 hover:text-indigo-900 transition-all cursor-pointer"
+            >
+              {active.status === "ai" ? "Take Over Conversation (Human)" : "Return Thread to Autonomous AI"}
+            </button>
           </div>
         </div>
       </div>

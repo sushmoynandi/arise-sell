@@ -1,4 +1,4 @@
-"""Database Seeding Script for NextProduct AI."""
+"""Database Seeding Script for AriseSell."""
 from __future__ import annotations
 
 import asyncio
@@ -33,7 +33,7 @@ from app.models.admin import (
 
 async def seed_database():
     """Seed comprehensive initial dataset into PostgreSQL."""
-    print("🌱 Starting NextProduct AI Database Seeding...")
+    print("🌱 Starting AriseSell Database Seeding...")
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

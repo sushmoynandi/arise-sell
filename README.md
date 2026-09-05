@@ -1,9 +1,9 @@
-# NextProduct AI
+# AriseSell
 
 > **The commerce engine that closes the order.**
 > A 24/7 conversational commerce platform for Bangladeshi e-commerce and F-commerce.
 
-NextProduct AI is an automated commerce platform built for modern merchants in Bangladesh. Instead of just answering chats, the agent understands Bangla & Banglish inquiries, matches customer photo screenshots directly to SKU items, captures deliverable addresses, issues Bangla invoices (চালান), and automates courier bookings (Pathao, Steadfast, RedX).
+AriseSell is an automated commerce platform built for modern merchants in Bangladesh. Instead of just answering chats, the agent understands Bangla & Banglish inquiries, matches customer photo screenshots directly to SKU items, captures deliverable addresses, issues Bangla invoices (চালান), and automates courier bookings (Pathao, Steadfast, RedX).
 
 ---
 

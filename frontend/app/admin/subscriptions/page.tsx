@@ -346,7 +346,7 @@ export default function AdminSubscriptionsPage() {
   const handleExportCSV = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
     const csvRows = [
-      ["NextProduct AI - Subscription & Billing Revenue Report"],
+      ["AriseSell - Subscription & Billing Revenue Report"],
       [`Generated Date: ${today}`],
       [
         `Reporting Period: ${activePeriodData.periodName} (${activePeriodData.periodNameBn})`,

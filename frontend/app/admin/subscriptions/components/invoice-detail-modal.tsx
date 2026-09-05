@@ -233,10 +233,10 @@ export function InvoiceDetailModal({
             <div class="header">
               <div>
                 <img src="/logo.png" alt="AriseSell" style="height: 34px; width: auto; object-fit: contain; margin-bottom: 3px;" />
-                <div class="company-name">NextProduct AI Ltd.</div>
+                <div class="company-name">AriseSell Ltd.</div>
                 <div class="company-details">
                   <div>House 42, Road 11, Banani, Dhaka-1213</div>
-                  <div>support@nextproduct.ai</div>
+                  <div>support@arisesell.com</div>
                   <div style="font-family: ui-monospace, monospace; color: #4a5561; margin-top: 1px;">+880 9612-345678</div>
                 </div>
               </div>
@@ -312,8 +312,8 @@ export function InvoiceDetailModal({
             </div>
 
             <div class="footer">
-              <div class="footer-title">Thank you for partnering with NextProduct AI to power your commerce.</div>
-              <div>Official electronic tax invoice &amp; payment receipt. For priority billing support, contact <strong style="color: #0a6e50;">support@nextproduct.ai</strong></div>
+              <div class="footer-title">Thank you for partnering with AriseSell to power your commerce.</div>
+              <div>Official electronic tax invoice &amp; payment receipt. For priority billing support, contact <strong style="color: #0a6e50;">support@arisesell.com</strong></div>
             </div>
           </div>
         </body>
@@ -423,11 +423,11 @@ export function InvoiceDetailModal({
                   unoptimized
                 />
                 <h2 className="font-bold text-[14px] text-text">
-                  NextProduct AI Ltd.
+                  AriseSell Ltd.
                 </h2>
                 <div className="text-[11.5px] text-text-3 leading-snug">
                   <p>House 42, Road 11, Banani, Dhaka-1213</p>
-                  <p>support@nextproduct.ai</p>
+                  <p>support@arisesell.com</p>
                   <p className="font-mono text-[11px] text-text-2">
                     +880 9612-345678
                   </p>
@@ -553,14 +553,14 @@ export function InvoiceDetailModal({
             {/* Footer */}
             <div className="border-t border-line pt-3.5 text-center text-[11px] text-text-3 leading-relaxed">
               <p className="font-semibold text-text text-[12px]">
-                Thank you for partnering with NextProduct AI to power your
+                Thank you for partnering with AriseSell to power your
                 commerce.
               </p>
               <p className="text-[10px] text-text-3 mt-0.5">
                 Official electronic tax invoice &amp; payment receipt. For
                 priority billing support, contact{" "}
                 <span className="text-signal font-mono font-medium">
-                  support@nextproduct.ai
+                  support@arisesell.com
                 </span>
               </p>
             </div>

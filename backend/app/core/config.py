@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     """Central configuration — all values come from .env or environment."""
 
     # ── Database ──
-    DATABASE_URL: str = "postgresql+asyncpg://nextproduct:nextproduct@localhost:5432/nextproduct"
-    DATABASE_URL_SYNC: str = "postgresql://nextproduct:nextproduct@localhost:5432/nextproduct"
+    DATABASE_URL: str = "postgresql+asyncpg://arisesell:arisesell@localhost:5432/arisesell"
+    DATABASE_URL_SYNC: str = "postgresql://arisesell:arisesell@localhost:5432/arisesell"
 
     # ── Redis ──
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     # ── S3 / Cloud Storage ──
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_S3_BUCKET: str = "nextproduct-uploads"
+    AWS_S3_BUCKET: str = "arisesell-uploads"
     AWS_REGION: str = "ap-southeast-1"
 
     # ── Courier APIs ──
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     SSLCOMMERZ_STORE_PASSWORD: str = ""
 
     # ── Application ──
-    APP_NAME: str = "NextProduct AI"
+    APP_NAME: str = "AriseSell"
     APP_ENV: str = "development"
     CORS_ORIGINS: str = '["http://localhost:3000","http://127.0.0.1:3000","http://192.168.0.103:3000","https://alapai.app"]'
     ADMIN_2FA_SECRET: str = ""

@@ -1,4 +1,4 @@
-# NextProduct AI - Production Backend Architecture
+# AriseSell - Production Backend Architecture
 
 Autonomous conversational commerce & fulfillment automation platform designed for modern Bangladeshi lifestyle & retail brands.
 

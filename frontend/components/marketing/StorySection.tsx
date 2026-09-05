@@ -119,8 +119,8 @@ export default function StorySection() {
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-text-2">
               {t(
-                "Not competitor pricing or ad budget — an answer delivered hours late is why buyers leave. NextProduct was created in Dhaka to solve this for good.",
-                "কম্পিটিটরের দামের জন্য নয়, ঘণ্টার পর ঘণ্টা মেসেজ ফেলে রাখার কারণেই কাস্টমার অন্য দোকান থেকে কিনে ফেলে। এই সমস্যা দূর করতেই NextProduct তৈরি।",
+                "Not competitor pricing or ad budget — an answer delivered hours late is why buyers leave. AriseSell was created in Dhaka to solve this for good.",
+                "কম্পিটিটরের দামের জন্য নয়, ঘণ্টার পর ঘণ্টা মেসেজ ফেলে রাখার কারণেই কাস্টমার অন্য দোকান থেকে কিনে ফেলে। এই সমস্যা দূর করতেই AriseSell তৈরি।",
               )}
             </p>
           </div>

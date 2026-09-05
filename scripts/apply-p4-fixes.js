@@ -315,7 +315,7 @@ async def verify_hub_challenge(
     hub_challenge: str = Query(..., alias="hub.challenge"),
 ):
     """Meta Webhook Handshake Verification."""
-    expected_token = settings.META_VERIFY_TOKEN or "nextproduct_verify_token"
+    expected_token = settings.META_VERIFY_TOKEN or "arisesell_verify_token"
     if hub_mode == "subscribe" and hub_verify_token == expected_token:
         return Response(content=hub_challenge, media_type="text/plain")
     raise HTTPException(status_code=403, detail="Verification token mismatch")

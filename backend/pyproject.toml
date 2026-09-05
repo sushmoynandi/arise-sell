@@ -1,7 +1,7 @@
 [project]
-name = "nextproduct-backend"
+name = "arisesell-backend"
 version = "1.0.0"
-description = "NextProduct AI - Production FastAPI Multi-Tenant Backend for AI-Powered Sales & Support Automation"
+description = "AriseSell - Production FastAPI Multi-Tenant Backend for AI-Powered Sales & Support Automation"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",

@@ -1,6 +1,6 @@
 import { INITIAL_ADMIN_PLANS, type AdminPlan } from "@/data/admin";
 
-const STORAGE_KEY = "nextproduct_admin_plans";
+const STORAGE_KEY = "arisesell_admin_plans";
 
 let cachedPlans: AdminPlan[] = INITIAL_ADMIN_PLANS;
 let cachedRaw: string | null = null;

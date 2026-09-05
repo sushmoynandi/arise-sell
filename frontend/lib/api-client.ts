@@ -1,5 +1,5 @@
 /**
- * NextProduct AI - Centralized Frontend API Client
+ * AriseSell - Centralized Frontend API Client
  * Connects the Next.js frontend directly to the FastAPI backend.
  * Handles JWT auth headers, token refresh, and typed request methods.
  */

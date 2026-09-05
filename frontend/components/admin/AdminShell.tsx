@@ -560,7 +560,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                             : "Platform Admin"}
                         </p>
                         <p className="text-[11px] text-text-3 font-mono truncate mt-0.5">
-                          {user?.email || "admin@nextproduct.ai"}
+                          {user?.email || "admin@arisesell.com"}
                         </p>
                       </div>
                     </div>

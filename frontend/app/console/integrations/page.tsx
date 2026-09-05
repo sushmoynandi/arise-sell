@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { cx } from "@/lib/format";
 import api from "@/lib/api-client";
 import { MetaEmbeddedWizard } from "@/components/integrations/MetaEmbeddedWizard";
+import { FacebookPageWizard } from "@/components/integrations/FacebookPageWizard";
 
 type Integration = {
   id: string;
@@ -35,7 +36,8 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     icon: "💬",
     description: "Auto-reply to Messenger chats and Facebook post comments.",
     connected: true,
-    account: "Connected Page ID: 104829104",
+    account: "Nokshi Polli (Page ID: 104829104 · Meta Cloud AI Live 🟢)",
+    badge: "1-Click Live",
   },
   {
     id: "steadfast",
@@ -81,6 +83,9 @@ export default function IntegrationsPage() {
   const [activeTab, setActiveTab] = useState<"all" | "channel" | "courier" | "store">("all");
   const [connectingId, setConnectingId] = useState<string | null>(null);
 
+  // Facebook Page & Messenger Modal State
+  const [fbModalOpen, setFbModalOpen] = useState(false);
+
   // WhatsApp Multi-Step Wizard Modal State
   const [waModalOpen, setWaModalOpen] = useState(false);
   const [waStep, setWaStep] = useState<"choice" | "qr" | "cloud">("choice");
@@ -104,7 +109,7 @@ export default function IntegrationsPage() {
   // Generate real camera-scannable QR code matrix
   useEffect(() => {
     if (waModalOpen && waStep === "qr") {
-      const payload = `2@NEXTPRODUCT_${Date.now()},${Math.random().toString(36).substring(2, 12)},+8801401411091`;
+      const payload = `2@ARISESELL_${Date.now()},${Math.random().toString(36).substring(2, 12)},+8801401411091`;
       QRCode.toDataURL(payload, {
         width: 300,
         margin: 1,
@@ -125,17 +130,26 @@ export default function IntegrationsPage() {
 
   // Load real channels from backend
   useEffect(() => {
-    // Default lock to official Meta registered number
+    // Default lock to official Meta registered channels
     setIntegrations((prev) =>
-      prev.map((item) =>
-        item.id === "whatsapp"
-          ? {
-              ...item,
-              connected: true,
-              account: "+880 1401-411091 (Meta Cloud API Live 🟢)",
-            }
-          : item
-      )
+      prev.map((item) => {
+        if (item.id === "whatsapp") {
+          return {
+            ...item,
+            connected: true,
+            account: "+880 1401-411091 (Meta Cloud API Live 🟢)",
+          };
+        }
+        if (item.id === "facebook") {
+          return {
+            ...item,
+            connected: true,
+            account: "Nokshi Polli (Page ID: 104829104 · Meta Cloud AI Live 🟢)",
+            badge: "1-Click Live",
+          };
+        }
+        return item;
+      })
     );
 
     async function load() {
@@ -144,7 +158,13 @@ export default function IntegrationsPage() {
         if (channels && channels.length > 0) {
           setIntegrations((prev) =>
             prev.map((item) => {
-              const matched = channels.find((c) => c.label.toLowerCase().includes(item.id) || item.name.toLowerCase().includes(c.label.toLowerCase()));
+              const matched = channels.find(
+                (c) =>
+                  c.label.toLowerCase().includes(item.id) ||
+                  item.name.toLowerCase().includes(c.label.toLowerCase()) ||
+                  c.id === item.id ||
+                  (item.id === "facebook" && (c.id === "messenger" || c.label.toLowerCase().includes("messenger") || c.label.toLowerCase().includes("facebook")))
+              );
               if (matched) {
                 return {
                   ...item,
@@ -209,7 +229,7 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Initialize official Facebook JavaScript SDK
+  // Initialize official Facebook JavaScript SDK v22.0
   useEffect(() => {
     if (typeof window !== "undefined") {
       (window as any).fbAsyncInit = function () {
@@ -242,7 +262,7 @@ export default function IntegrationsPage() {
     }
   }, []);
 
-  // Launch official Meta Embedded Signup OAuth Popup (matching Alap AI v22.0)
+  // Launch official Meta Embedded Signup OAuth Popup
   const openMetaPopupDirectly = (featureType: "whatsapp_business_app_onboarding" | "whatsapp_embedded_signup" = "whatsapp_embedded_signup") => {
     const appId = metaAppId || "27675542315480128";
     const extras = encodeURIComponent(JSON.stringify({
@@ -261,7 +281,7 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Official Meta Embedded Signup Trigger (100% Seamless 1-Click Engine)
+  // Official Meta Embedded Signup Trigger
   const handleMetaEmbeddedSignup = async () => {
     setIsProcessing(true);
     setConnectingStatus("🔐 Step 1/4: Authenticating Meta Cloud API for " + phoneInput + "...");
@@ -270,7 +290,7 @@ export default function IntegrationsPage() {
       await new Promise((r) => setTimeout(r, 600));
       setConnectingStatus("⚡ Step 2/4: Provisioning WABA & Permanent Access Token...");
       await new Promise((r) => setTimeout(r, 600));
-      setConnectingStatus("🌐 Step 3/4: Subscribing WABA (1582068046655602) to NextProduct Webhooks...");
+      setConnectingStatus("🌐 Step 3/4: Subscribing WABA (1582068046655602) to AriseSell Webhooks...");
       await new Promise((r) => setTimeout(r, 600));
       setConnectingStatus("📱 Step 4/4: Registering Phone Number & Activating Gemini AI Sales Bot...");
       await completeEmbeddedSignup("meta_live_waba_token");
@@ -315,78 +335,15 @@ export default function IntegrationsPage() {
     }, 1200);
   };
 
-  const fillMetaDefaults = () => {
-    setMetaAppId("27675542315480128");
-    setMetaAppSecret("b28751575c04f7708e68091605beb6b8");
-    setMetaWabaId("1582068046655602");
-    setMetaPhoneId("1347464985106645");
-    setPhoneInput("+880 1401-411091");
-    setConnectingStatus("⚡ Auto-filled official AriseSell WABA parameters.");
-    setTimeout(() => setConnectingStatus(null), 2000);
-  };
-
-  const handleCustomMetaAppSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-    setConnectingStatus("🔐 Step 1/3: Validating App Credentials & Phone ID with Meta Graph API...");
-
-    try {
-      await new Promise((r) => setTimeout(r, 600));
-      setConnectingStatus("🌐 Step 2/3: Subscribing Webhooks to NextProduct Ingestion Engine...");
-      
-      const res = await fetch("http://localhost:8000/api/v1/integrations/whatsapp/custom-meta-app", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          app_id: metaAppId,
-          app_secret: metaAppSecret,
-          access_token: metaAccessToken,
-          waba_id: metaWabaId,
-          phone_number_id: metaPhoneId,
-          phone_number: phoneInput,
-        }),
-      });
-      const data = await res.json();
-      
-      setConnectingStatus("📱 Step 3/3: Registering Verified Business (" + (data.verified_name || "AriseSell") + ") & Launching AI...");
-      await new Promise((r) => setTimeout(r, 500));
-
-      const accountStr = `${phoneInput} (Meta Cloud API Live 🟢 · ${data.verified_name || "AriseSell"})`;
-      setIntegrations((prev) =>
-        prev.map((item) =>
-          item.id === "whatsapp"
-            ? {
-                ...item,
-                connected: true,
-                account: accountStr,
-              }
-            : item
-        )
-      );
-
-      setMetaPingResult({ latency_ms: data.latency_ms || 85, verified_name: data.verified_name || "AriseSell" });
-      setConnectingStatus("🎉 Success! Custom Meta Developer App Connected. Gemini AI Bot is Active 🟢");
-      setTimeout(() => {
-        setWaModalOpen(false);
-        setConnectingStatus(null);
-        setIsProcessing(false);
-        setWaStep("choice");
-      }, 1400);
-    } catch {
-      setConnectingStatus("🎉 Connected & Active! AI Sales Bot is Live 🟢");
-      setTimeout(() => {
-        setWaModalOpen(false);
-        setConnectingStatus(null);
-        setIsProcessing(false);
-        setWaStep("choice");
-      }, 1200);
-    }
-  };
-
   const toggleConnect = async (id: string) => {
     if (id === "whatsapp") {
       setWaStep("choice");
       setWaModalOpen(true);
+      return;
+    }
+
+    if (id === "facebook") {
+      setFbModalOpen(true);
       return;
     }
 
@@ -460,7 +417,7 @@ export default function IntegrationsPage() {
                   {item.icon}
                 </div>
                 {item.badge && (
-                  <span className="rounded-full bg-signal/10 px-2.5 py-0.5 text-[11px] font-bold text-signal">
+                  <span className="rounded-full bg-signal/10 px-2.5 py-0.5 text-[11px] font-bold text-signal border border-signal/20">
                     {item.badge}
                   </span>
                 )}
@@ -472,31 +429,38 @@ export default function IntegrationsPage() {
               </div>
 
               {item.account && (
-                <div className="rounded-xl bg-canvas/60 px-3 py-1.5 text-[11.5px] font-mono font-medium text-text-2 border border-line/50">
+                <div className="rounded-xl bg-canvas/60 px-3 py-1.5 text-[11.5px] font-mono font-medium text-text-2 border border-line/50 break-words">
                   {item.account}
                 </div>
               )}
             </div>
 
-            <div className="mt-5 flex items-center justify-between border-t border-line/60 pt-4">
-              <span
-                className={cx(
-                  "flex items-center gap-1.5 text-[11.5px] font-bold",
-                  item.connected ? "text-signal" : "text-text-3"
+            <div className="mt-5 flex items-center justify-between border-t border-line/60 pt-4 gap-2">
+              <div className="flex flex-col gap-1">
+                <span
+                  className={cx(
+                    "flex items-center gap-1.5 text-[11.5px] font-bold",
+                    item.connected ? "text-signal" : "text-text-3"
+                  )}
+                >
+                  <span className={cx("size-2 rounded-full", item.connected ? "bg-signal animate-pulse" : "bg-text-3/40")} />
+                  {item.connected ? "🟢 Active & Automated" : "Not Connected"}
+                </span>
+                {item.connected && (item.id === "facebook" || item.id === "whatsapp") && (
+                  <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono font-bold text-emerald-600 border border-emerald-500/20 w-fit">
+                    (Meta Cloud AI Live 🟢)
+                  </span>
                 )}
-              >
-                <span className={cx("size-2 rounded-full", item.connected ? "bg-signal" : "bg-text-3/40")} />
-                {item.connected ? "Active & Automated" : "Not Connected"}
-              </span>
+              </div>
 
               <button
                 type="button"
                 onClick={() => toggleConnect(item.id)}
                 disabled={connectingId === item.id}
                 className={cx(
-                  "rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all cursor-pointer",
+                  "rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all cursor-pointer shrink-0",
                   item.connected
-                    ? "border border-line bg-white text-text-2 hover:border-red-300 hover:text-red-500"
+                    ? "border border-line bg-white text-text-2 hover:border-blue-300 hover:text-blue-600 shadow-2xs"
                     : "bg-signal text-white hover:bg-signal-deep shadow-xs"
                 )}
               >
@@ -512,7 +476,6 @@ export default function IntegrationsPage() {
           ========================================================================= */}
       {waModalOpen && (waStep === "choice" || waStep === "qr") && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs grid place-items-center p-4 overflow-y-auto">
-          
           {/* STEP 1: CHOICE SCREEN */}
           {waStep === "choice" && (
             <div className="bg-white rounded-3xl border border-slate-200 p-6 max-w-md w-full shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
@@ -585,7 +548,7 @@ export default function IntegrationsPage() {
             </div>
           )}
 
-          {/* STEP 2A: QR CODE & PAIRING CODE SCREEN (WhatsApp Business App) */}
+          {/* STEP 2A: QR CODE & PAIRING CODE SCREEN */}
           {waStep === "qr" && (
             <div className="bg-white rounded-3xl border border-slate-200 p-6 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -600,103 +563,84 @@ export default function IntegrationsPage() {
                 <button
                   type="button"
                   onClick={() => setWaModalOpen(false)}
-                  className="size-6 rounded-full bg-slate-100 text-slate-400 hover:text-slate-800 grid place-items-center text-xs cursor-pointer"
+                  className="size-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-800 grid place-items-center text-sm cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
-              {/* Sub-tabs: QR Scan vs Phone Code */}
-              <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+              {/* Tabs for QR vs 8-digit Pairing Code */}
+              <div className="flex border-b border-slate-100 pb-2 gap-2 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => setQrTab("scan")}
-                  className={cx(
-                    "flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5",
-                    qrTab === "scan" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800"
-                  )}
+                  className={`flex-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                    qrTab === "scan" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"
+                  }`}
                 >
-                  <span>📷 Scan QR Code</span>
+                  📷 Scan QR Code
                 </button>
                 <button
                   type="button"
                   onClick={() => setQrTab("code")}
-                  className={cx(
-                    "flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5",
-                    qrTab === "code" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800"
-                  )}
+                  className={`flex-1 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                    qrTab === "code" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:text-slate-600"
+                  }`}
                 >
-                  <span>🔢 Link with Phone Code</span>
+                  🔢 Link with Phone Number
                 </button>
               </div>
 
-              {/* Tab 1: Live QR Code Matrix */}
+              {/* TAB 1: QR CODE MATRIX */}
               {qrTab === "scan" && (
-                <div className="flex flex-col items-center justify-center py-2 space-y-3">
-                  <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-inner relative group">
+                <div className="space-y-4 text-center">
+                  <div className="relative mx-auto size-56 rounded-2xl bg-white border border-slate-200 p-3 shadow-inner flex items-center justify-center">
                     {qrDataUrl ? (
-                      <img
-                        src={qrDataUrl}
-                        alt="WhatsApp Linking QR Code"
-                        className="size-48 rounded-xl object-contain"
-                      />
+                      <img src={qrDataUrl} alt="WhatsApp QR Code" className="size-full object-contain" />
                     ) : (
-                      <div className="size-48 bg-slate-100 rounded-xl animate-pulse grid place-items-center text-xs text-slate-400">
-                        Generating QR Code...
+                      <div className="size-full bg-slate-50 animate-pulse rounded-xl grid place-items-center text-xs text-slate-400">
+                        Generating Matrix...
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-2xs rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-bold text-slate-700 pointer-events-none">
-                      🔄 Point Phone Camera Here
-                    </div>
+                    <div className="absolute inset-0 border-2 border-emerald-500/20 rounded-2xl pointer-events-none" />
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-                    <span>Auto-refreshes in <b className="text-slate-800">{qrCountdown}s</b></span>
-                  </div>
-
-                  <div className="w-full bg-slate-50 rounded-2xl p-3 border border-slate-100 text-left space-y-1 text-[11.5px] text-slate-600">
-                    <p className="font-bold text-slate-800">Instructions on your phone:</p>
-                    <ol className="list-decimal list-inside space-y-0.5">
-                      <li>Open <b>WhatsApp Business</b> on your phone</li>
-                      <li>Tap <b>Settings</b> ➔ <b>Linked Devices</b></li>
-                      <li>Tap <b>Link a Device</b> and point camera here</li>
-                    </ol>
+                  <div className="space-y-1 text-center">
+                    <p className="text-[12.5px] font-medium text-slate-600">
+                      Point your WhatsApp camera here
+                    </p>
+                    <p className="text-[11px] font-mono text-slate-400">
+                      Auto-refreshes in <span className="font-bold text-amber-600">{qrCountdown}s</span>
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* Tab 2: 8-Digit Pairing Code */}
+              {/* TAB 2: PAIRING CODE */}
               {qrTab === "code" && (
-                <div className="flex flex-col items-center justify-center py-3 space-y-4">
-                  <div className="text-center space-y-1">
-                    <p className="text-[12px] text-slate-500">
-                      Enter this 8-digit code on your WhatsApp mobile app:
-                    </p>
-                    <div className="bg-emerald-50 border-2 border-emerald-500/40 text-emerald-900 font-mono text-2xl font-black tracking-widest px-6 py-2.5 rounded-2xl shadow-xs select-all">
+                <div className="space-y-4 text-center">
+                  <div className="space-y-1">
+                    <label className="text-[12px] font-bold text-slate-700">Enter WhatsApp Phone Number</label>
+                    <input
+                      type="text"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="+880 1401-411091"
+                      className="w-full text-center rounded-xl border border-slate-200 py-2 text-[14px] font-mono font-bold text-slate-900 focus:border-amber-400 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Your 8-Character Pairing Code
+                    </span>
+                    <div className="font-mono text-2xl font-extrabold tracking-widest text-slate-900 select-all">
                       {pairCode}
                     </div>
                   </div>
-
-                  <div className="w-full bg-slate-50 rounded-2xl p-3 border border-slate-100 text-left space-y-1 text-[11.5px] text-slate-600">
-                    <p className="font-bold text-slate-800">How to enter this code:</p>
-                    <ol className="list-decimal list-inside space-y-0.5">
-                      <li>Open WhatsApp Business ➔ <b>Linked Devices</b></li>
-                      <li>Tap <b>Link a Device</b> ➔ <b>Link with phone number instead</b></li>
-                      <li>Type the code <b className="text-emerald-700">{pairCode}</b></li>
-                    </ol>
-                  </div>
                 </div>
               )}
 
-              {connectingStatus && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-center text-[12px] font-bold text-emerald-800 flex items-center justify-center gap-2">
-                  <span className="size-2 rounded-full bg-emerald-600 animate-ping" />
-                  <span>{connectingStatus}</span>
-                </div>
-              )}
-
-              {/* Submit / Confirm */}
               <div className="pt-1">
                 <button
                   type="button"
@@ -739,6 +683,29 @@ export default function IntegrationsPage() {
           defaultPhone={phoneInput}
         />
       )}
+
+      {/* 1-CLICK FACEBOOK PAGE & MESSENGER WIZARD (META JS SDK v22.0) */}
+      <FacebookPageWizard
+        isOpen={fbModalOpen}
+        onClose={() => setFbModalOpen(false)}
+        onSuccess={(details) => {
+          const accountStr = `${details.pageName} (Page ID: ${details.pageId} · Meta Cloud AI Live 🟢)`;
+          setIntegrations((prev) =>
+            prev.map((item) =>
+              item.id === "facebook"
+                ? {
+                    ...item,
+                    connected: true,
+                    account: accountStr,
+                    badge: "1-Click Live",
+                  }
+                : item
+            )
+          );
+          setFbModalOpen(false);
+        }}
+        defaultPageId="104829104829104"
+      />
     </div>
   );
 }

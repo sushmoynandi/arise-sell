@@ -84,7 +84,7 @@ export default function ReplyDecay() {
                 </div>
                 <div className="bg-surface px-5 py-4">
                   <p className="font-mono text-[10.5px] uppercase tracking-wider text-text-3">
-                    NextProduct AI
+                    AriseSell
                   </p>
                   <p className="mt-2 font-display text-[28px] font-semibold tracking-tight text-signal">
                     <Counter
@@ -214,7 +214,7 @@ export default function ReplyDecay() {
                   </motion.g>
                 ))}
 
-                {/* NextProduct marker at the far left */}
+                {/* AriseSell marker at the far left */}
                 <motion.g
                   initial={{ opacity: 0, y: -8 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}

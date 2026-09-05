@@ -7,7 +7,7 @@ import ContactSection from "@/components/marketing/ContactSection";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch with the NextProduct team in Dhaka. WhatsApp, phone, email, or send an inquiry to automate your sales in Bangla.",
+    "Get in touch with the AriseSell team in Dhaka. WhatsApp, phone, email, or send an inquiry to automate your sales in Bangla.",
 };
 
 export default function ContactPage() {

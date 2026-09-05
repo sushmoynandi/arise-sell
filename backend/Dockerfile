@@ -1,5 +1,5 @@
 # =============================================================================
-# NextProduct AI - Production Dockerfile (Multi-stage)
+# AriseSell - Production Dockerfile (Multi-stage)
 # =============================================================================
 FROM python:3.12-slim AS base
 

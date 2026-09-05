@@ -104,7 +104,7 @@ export function MetaEmbeddedWizard({
 
     try {
       await new Promise((r) => setTimeout(r, 600));
-      setStatusMessage("🌐 Step 2/3: Subscribing Webhooks to NextProduct Ingestion Engine...");
+      setStatusMessage("🌐 Step 2/3: Subscribing Webhooks to AriseSell Ingestion Engine...");
 
       await fetch("http://localhost:8000/api/v1/integrations/whatsapp/custom-meta-app", {
         method: "POST",

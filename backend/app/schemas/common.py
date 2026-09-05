@@ -1,4 +1,4 @@
-"""Common shared types and generic models for the NextProduct AI API."""
+"""Common shared types and generic models for the AriseSell API."""
 from __future__ import annotations
 
 from typing import Generic, Literal, TypeVar

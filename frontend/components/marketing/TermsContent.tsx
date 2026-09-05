@@ -60,8 +60,8 @@ export default function TermsContent() {
           </h1>
           <p className="mt-4 text-[15.5px] leading-relaxed text-text-2">
             {t(
-              "Please read these Terms of Service carefully before utilizing the AriseSell (NextProduct AI) platform, connected messaging channels, AI sales agent, or automated fulfillment services.",
-              "AriseSell (NextProduct AI) প্ল্যাটফর্ম, এর এআই সেলস অ্যাসিস্ট্যান্ট, কানেক্টেড চ্যানেল এবং কুরিয়ার অটোমেশন ব্যবহার করার পূর্বে অনুগ্রহ করে ব্যবহারের শর্তাবলীগুলো ভালোভাবে পড়ে নিন।"
+              "Please read these Terms of Service carefully before utilizing the AriseSell platform, connected messaging channels, AI sales agent, or automated fulfillment services.",
+              "AriseSell প্ল্যাটফর্ম, এর এআই সেলস অ্যাসিস্ট্যান্ট, কানেক্টেড চ্যানেল এবং কুরিয়ার অটোমেশন ব্যবহার করার পূর্বে অনুগ্রহ করে ব্যবহারের শর্তাবলীগুলো ভালোভাবে পড়ে নিন।"
             )}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-4 text-[12.5px] text-text-3">
@@ -153,7 +153,7 @@ export default function TermsContent() {
             </div>
             <p>
               {t(
-                "AriseSell (NextProduct AI) provides a multi-tenant cloud software platform that enables e-commerce and social commerce sellers to:",
+                "AriseSell provides a multi-tenant cloud software platform that enables e-commerce and social commerce sellers to:",
                 "AriseSell মার্চেন্টদের নিম্নলিখিত আধুনিক স্বয়ংক্রিয় সেবা প্রদান করে:"
               )}
             </p>

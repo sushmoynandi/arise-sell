@@ -13,11 +13,11 @@ export default function AdminSettingsPage() {
   const [terminatedSessions, setTerminatedSessions] = useState(false);
 
   // 1. General Settings State
-  const [platformName, setPlatformName] = useState("NextProduct AI");
+  const [platformName, setPlatformName] = useState("AriseSell");
   const [legalEntity, setLegalEntity] = useState(
-    "NextProduct Technologies BD Ltd.",
+    "AriseSell Technologies BD Ltd.",
   );
-  const [supportEmail, setSupportEmail] = useState("support@nextproduct.ai");
+  const [supportEmail, setSupportEmail] = useState("support@arisesell.com");
   const [supportHotline, setSupportHotline] = useState("+880 1700-123456");
   const [currency, setCurrency] = useState("BDT (৳)");
   const [timezone, setTimezone] = useState("Asia/Dhaka (GMT+6)");
@@ -25,9 +25,9 @@ export default function AdminSettingsPage() {
   const [trialMsgAllowance, setTrialMsgAllowance] = useState("500");
   const [allowRegistration, setAllowRegistration] = useState(true);
   const [requirePhoneOtp, setRequirePhoneOtp] = useState(true);
-  const [termsUrl, setTermsUrl] = useState("https://nextproduct.ai/terms");
+  const [termsUrl, setTermsUrl] = useState("https://arisesell.com/terms");
   const [privacyUrl, setPrivacyUrl] = useState(
-    "https://nextproduct.ai/privacy",
+    "https://arisesell.com/privacy",
   );
 
   // 2. Security & Access State
@@ -42,7 +42,7 @@ export default function AdminSettingsPage() {
   const [autoBanBruteForce, setAutoBanBruteForce] = useState(true);
 
   // 3. Notifications & Alerts State
-  const [alertEmail, setAlertEmail] = useState("alerts@nextproduct.ai");
+  const [alertEmail, setAlertEmail] = useState("alerts@arisesell.com");
   const [smsGatewayToken, setSmsGatewayToken] = useState(
     "sms_teletalk_gw_88a91c0b",
   );
@@ -374,7 +374,7 @@ export default function AdminSettingsPage() {
                       </p>
                       <p className="text-[12px] text-text-3">
                         Permit new eCommerce stores to register on
-                        nextproduct.ai
+                        arisesell.com
                       </p>
                     </div>
                     <button

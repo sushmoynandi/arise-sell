@@ -163,7 +163,7 @@ export default function SiteHeader() {
         <nav className="mx-auto flex h-17 lg:h-17.5 max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
           <Link
             href="/"
-            aria-label="NextProduct home"
+            aria-label="AriseSell home"
             onClick={(e) => handleNavClick(e, "/")}
             className="shrink-0 p-0 m-0 leading-none transition-transform active:scale-[0.98]"
           >

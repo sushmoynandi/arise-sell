@@ -1,4 +1,4 @@
-"""NextProduct AI - Production FastAPI Multi-Tenant Backend Application."""
+"""AriseSell - Production FastAPI Multi-Tenant Backend Application."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -61,7 +61,7 @@ from app.core.database import async_session_factory
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup & shutdown events."""
-    print("🚀 NextProduct AI FastAPI Backend Starting...")
+    print("🚀 AriseSell FastAPI Backend Starting...")
     try:
         async with async_session_factory() as session:
             await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS settings_data JSON DEFAULT '{}'::json;"))
@@ -79,7 +79,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"⚠️ Auto-migration note: {e}")
     yield
-    print("🛑 NextProduct AI FastAPI Backend Stopping...")
+    print("🛑 AriseSell FastAPI Backend Stopping...")
 
 
 app = FastAPI(

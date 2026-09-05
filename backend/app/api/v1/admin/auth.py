@@ -68,7 +68,7 @@ async def admin_login(req: AdminLoginRequest, request: Request, db: AsyncSession
     # Supported Superadmin Accounts
     valid_admin_accounts = {
         "admin@arisesell.com": ["MasterAdmin@2026!", "MasterAdmin@2026", "SuperAdmin123!"],
-        "admin@nextproduct.ai": ["MasterAdmin@2026", "MasterAdmin@2026!", "SuperAdmin123!"],
+        "admin@arisesell.com": ["MasterAdmin@2026", "MasterAdmin@2026!", "SuperAdmin123!"],
         "farhana@nokshi.co": ["DemoPass123!", "SuperAdmin123!"],
         "admin@alapai.app": ["SuperAdmin123!"],
     }

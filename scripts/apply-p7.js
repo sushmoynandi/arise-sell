@@ -154,7 +154,7 @@ from httpx import AsyncClient
 async def test_admin_2fa_and_dashboard(client: AsyncClient):
     res = await client.post(
         "/api/v1/admin/auth/login",
-        json={"email": "admin@nextproduct.ai", "password": "MasterAdmin@2026"},
+        json={"email": "admin@arisesell.com", "password": "MasterAdmin@2026"},
     )
     assert res.status_code == 200
     data = res.json()
@@ -162,7 +162,7 @@ async def test_admin_2fa_and_dashboard(client: AsyncClient):
 
     verify_res = await client.post(
         "/api/v1/admin/auth/verify-2fa",
-        json={"email": "admin@nextproduct.ai", "totp_code": "123456"},
+        json={"email": "admin@arisesell.com", "totp_code": "123456"},
     )
     assert verify_res.status_code == 200
     admin_tokens = verify_res.json()
@@ -184,7 +184,7 @@ const composeProdYml = `version: "3.9"
 services:
   nginx:
     image: nginx:1.25-alpine
-    container_name: nextproduct-nginx
+    container_name: arisesell-nginx
     restart: always
     ports:
       - "80:80"
@@ -198,12 +198,12 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: nextproduct-postgres
+    container_name: arisesell-postgres
     restart: always
     environment:
       POSTGRES_USER: \${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-postgres_secure_pass_2026}
-      POSTGRES_DB: \${POSTGRES_DB:-nextproduct_db}
+      POSTGRES_DB: \${POSTGRES_DB:-arisesell_db}
     ports:
       - "5432:5432"
     volumes:
@@ -216,7 +216,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: nextproduct-redis
+    container_name: arisesell-redis
     restart: always
     ports:
       - "6379:6379"
@@ -233,11 +233,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nextproduct-backend
+    container_name: arisesell-backend
     restart: always
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql+asyncpg://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/\${POSTGRES_DB:-nextproduct_db}
+      - DATABASE_URL=postgresql+asyncpg://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/\${POSTGRES_DB:-arisesell_db}
       - REDIS_URL=redis://:\${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
       - JWT_SECRET_KEY=\${JWT_SECRET_KEY:-np_prod_super_secret_jwt_key_2026}
       - META_APP_ID=\${META_APP_ID}
@@ -257,10 +257,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nextproduct-celery-worker
+    container_name: arisesell-celery-worker
     restart: always
     environment:
-      - DATABASE_URL=postgresql+asyncpg://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/\${POSTGRES_DB:-nextproduct_db}
+      - DATABASE_URL=postgresql+asyncpg://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/\${POSTGRES_DB:-arisesell_db}
       - REDIS_URL=redis://:\${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
       - CELERY_BROKER_URL=redis://:\${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:\${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
@@ -273,10 +273,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nextproduct-celery-beat
+    container_name: arisesell-celery-beat
     restart: always
     environment:
-      - DATABASE_URL=postgresql+asyncpg://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/\${POSTGRES_DB:-nextproduct_db}
+      - DATABASE_URL=postgresql+asyncpg://\${POSTGRES_USER:-postgres}:\${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/\${POSTGRES_DB:-arisesell_db}
       - REDIS_URL=redis://:\${REDIS_PASSWORD:-redis_secure_pass_2026}@redis:6379/0
     depends_on:
       - redis
@@ -286,7 +286,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile.frontend
-    container_name: nextproduct-frontend
+    container_name: arisesell-frontend
     restart: always
     environment:
       - NEXT_PUBLIC_API_URL=http://web:8000/api/v1
@@ -368,7 +368,7 @@ fs.writeFileSync(path.join(backendDir, 'nginx.conf'), nginxConf, 'utf8');
 const deploySh = `#!/bin/bash
 set -e
 
-echo "🚀 Starting NextProduct AI Production Deployment..."
+echo "🚀 Starting AriseSell Production Deployment..."
 
 if [ ! -f .env ]; then
     echo "⚠️ .env file missing! Copying from .env.example..."
@@ -390,7 +390,7 @@ docker compose -f docker-compose.prod.yml run --rm web python seed.py
 echo "⚡ Upgrading Web API, Celery Workers, and Nginx..."
 docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-echo "✅ NextProduct AI Production Deployment Completed Successfully!"
+echo "✅ AriseSell Production Deployment Completed Successfully!"
 echo "🌐 API Gateway: http://localhost:8000"
 echo "🌐 Console App: http://localhost:3000"
 echo "📚 API Docs:    http://localhost:8000/docs"
@@ -398,7 +398,7 @@ echo "📚 API Docs:    http://localhost:8000/docs"
 fs.writeFileSync(path.join(backendDir, 'deploy.sh'), deploySh, 'utf8');
 
 // 8. backend/README.md
-const readmeMd = `# NextProduct AI - Production Backend Architecture
+const readmeMd = `# AriseSell - Production Backend Architecture
 
 Autonomous conversational commerce & fulfillment automation platform designed for modern Bangladeshi lifestyle & retail brands.
 

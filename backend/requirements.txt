@@ -1,4 +1,4 @@
-# NextProduct AI - FastAPI Backend Dependencies
+# AriseSell - FastAPI Backend Dependencies
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 sqlalchemy[asyncio]>=2.0.35

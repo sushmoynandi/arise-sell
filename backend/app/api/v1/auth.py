@@ -277,7 +277,7 @@ async def get_me(
     is_super = bool(
         getattr(user, "is_superadmin", False) or
         getattr(user, "role", "") == "superadmin" or
-        clean_email in ["admin@arisesell.com", "admin@nextproduct.ai", "farhana@nokshi.co", "admin@alapai.app"]
+        clean_email in ["admin@arisesell.com", "admin@arisesell.com", "farhana@nokshi.co", "admin@alapai.app"]
     )
 
     return UserBrief(
@@ -333,7 +333,7 @@ async def update_profile(
     is_super = bool(
         getattr(db_user, "is_superadmin", False) or
         getattr(db_user, "role", "") == "superadmin" or
-        clean_email in ["admin@arisesell.com", "admin@nextproduct.ai"]
+        clean_email in ["admin@arisesell.com", "admin@arisesell.com"]
     )
     plan_name, has_plan = "growth", True
     try:

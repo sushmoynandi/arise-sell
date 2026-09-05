@@ -334,8 +334,8 @@ export default function PricingPreview() {
               </h3>
               <p className="mt-2 text-[14px] text-text-3">
                 {t(
-                  "Most tools charge for empty greetings. NextProduct charges only when an order is actually closed.",
-                  "সাধারণ চ্যাটবট প্রতিটি সাধারণ মেসেজের জন্য বিল কাটে। NextProduct কেবল নিশ্চিত বিক্রির পর কাজ করে।",
+                  "Most tools charge for empty greetings. AriseSell charges only when an order is actually closed.",
+                  "সাধারণ চ্যাটবট প্রতিটি সাধারণ মেসেজের জন্য বিল কাটে। AriseSell কেবল নিশ্চিত বিক্রির পর কাজ করে।",
                 )}
               </p>
             </div>
@@ -350,7 +350,7 @@ export default function PricingPreview() {
                       {t("Pricing Metric", "বিলিং মডেল")}
                     </th>
                     <th className="px-5 py-4 font-display text-[14px] font-bold text-signal">
-                      NextProduct AI
+                      AriseSell
                     </th>
                     <th className="px-5 py-4 font-display text-[14px] font-medium text-text-3">
                       {t("Per-conversation bots", "মেসেজ-ভিত্তিক বট")}

@@ -180,7 +180,7 @@ export default function TestAIPage() {
               </div>
               <div>
                 <p className="text-[13px] font-bold text-text leading-tight">
-                  NextProduct Sales Bot ({activeProvider})
+                  AriseSell Sales Bot ({activeProvider})
                 </p>
                 <p className="text-[10.5px] text-signal font-mono">
                   ● Persona: Warm, polite, uses আপনি (Bangla NLU)

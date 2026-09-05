@@ -976,7 +976,7 @@ async def list_meta_apps():
     return [
         MetaAppResponse(
             id="meta-app-1",
-            appName="NextProduct AI Production WABA",
+            appName="AriseSell Production WABA",
             wabaId="109827364519283",
             phoneNumberId="102938475610293",
             graphVersion="v21.0",
@@ -1111,7 +1111,7 @@ async def verify_hub_challenge(
     hub_challenge: str = Query(..., alias="hub.challenge"),
 ):
     """Meta Webhook Handshake Verification."""
-    if hub_mode == "subscribe" and hub_verify_token == (settings.META_VERIFY_TOKEN or "nextproduct_verify_token"):
+    if hub_mode == "subscribe" and hub_verify_token == (settings.META_VERIFY_TOKEN or "arisesell_verify_token"):
         return Response(content=hub_challenge, media_type="text/plain")
     raise HTTPException(status_code=403, detail="Verification token mismatch")
 
@@ -1151,7 +1151,7 @@ async def verify_whatsapp_webhook(
     hub_verify_token: str = Query(..., alias="hub.verify_token"),
     hub_challenge: str = Query(..., alias="hub.challenge"),
 ):
-    if hub_mode == "subscribe" and hub_verify_token == (settings.META_VERIFY_TOKEN or "nextproduct_verify_token"):
+    if hub_mode == "subscribe" and hub_verify_token == (settings.META_VERIFY_TOKEN or "arisesell_verify_token"):
         return Response(content=hub_challenge, media_type="text/plain")
     raise HTTPException(status_code=403, detail="Verification token mismatch")
 
@@ -1170,7 +1170,7 @@ for (const [filename, content] of Object.entries(webhookFiles)) {
 }
 
 // main.py
-const mainPy = `"""NextProduct AI - Production FastAPI Multi-Tenant Backend Application."""
+const mainPy = `"""AriseSell - Production FastAPI Multi-Tenant Backend Application."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -1215,9 +1215,9 @@ from app.api.webhooks.whatsapp import router as whatsapp_webhook_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup & shutdown events."""
-    print("🚀 NextProduct AI FastAPI Backend Starting...")
+    print("🚀 AriseSell FastAPI Backend Starting...")
     yield
-    print("🛑 NextProduct AI FastAPI Backend Stopping...")
+    print("🛑 AriseSell FastAPI Backend Stopping...")
 
 
 app = FastAPI(

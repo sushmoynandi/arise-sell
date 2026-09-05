@@ -149,10 +149,10 @@ async def verify_whatsapp_webhook(
     hub_challenge: str = Query(..., alias="hub.challenge"),
 ):
     """WhatsApp Cloud API Webhook Handshake Verification."""
-    expected_token = (settings.META_VERIFY_TOKEN or "").strip() or "nextproduct_verify_token"
+    expected_token = (settings.META_VERIFY_TOKEN or "").strip() or "arisesell_verify_token"
     if hub_mode == "subscribe" and (
         hmac.compare_digest(hub_verify_token, expected_token)
-        or hmac.compare_digest(hub_verify_token, "nextproduct_verify_token")
+        or hmac.compare_digest(hub_verify_token, "arisesell_verify_token")
     ):
         return Response(content=hub_challenge, media_type="text/plain")
     raise HTTPException(status_code=403, detail="Verification token mismatch")

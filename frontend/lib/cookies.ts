@@ -1,5 +1,5 @@
 /**
- * NextProduct AI - Cookie Management Utility
+ * AriseSell - Cookie Management Utility
  * Keeps browser cookies in sync with authentication tokens for Next.js Middleware.
  */
 

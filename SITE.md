@@ -1,4 +1,4 @@
-# NextProduct AI — Site Documentation
+# AriseSell — Site Documentation
 
 > **The commerce engine that closes the order.**
 > A 24/7 conversational commerce platform for Bangladeshi e-commerce and F-commerce.
@@ -8,7 +8,7 @@
 
 ## 1. What this product claims to do
 
-Most tools in this category sell "an AI that answers your customers." NextProduct sells
+Most tools in this category sell "an AI that answers your customers." AriseSell sells
 **shipped orders**. The agent reads the Bangla or Banglish message, matches a customer's
 screenshot to a real SKU, collects a deliverable address, commits the order to the
 merchant's own store, books Steadfast or Pathao, issues a Bangla invoice, and reports the
@@ -282,7 +282,7 @@ npm run build      # production build
   preview reads as a physical document, and decorative glows were pulled right back.
 - **Accessibility pass.** Scripted WCAG audit across all pages at two viewports; deepened the
   status ramp and `--text-3` until every page hit zero AA failures.
-- **Full rebuild.** Replaced the leftover launch-page template with the NextProduct marketing
+- **Full rebuild.** Replaced the leftover launch-page template with the AriseSell marketing
   site and an eight-route console.
 - New dark design system with a single lime signal colour; removed all emoji iconography in
   favour of a hand-built line icon set.

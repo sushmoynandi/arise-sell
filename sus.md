@@ -9,7 +9,7 @@
 > **মেটা ক্লাউড এপিআই-তে যুক্ত করার আগে:**
 > আপনার যে নাম্বারটি যুক্ত করতে চান, সেটি যদি বর্তমানে আপনার মোবাইলের সাধারণ **WhatsApp** বা **WhatsApp Business** অ্যাপে লগইন করা থাকে, তবে ক্লাউড এপিআই-তে যুক্ত করার আগে অ্যাপ থেকে অ্যাকাউন্টটি ডিলিট করতে হবে:
 > * মোবাইলে WhatsApp ওপেন করুন $\rightarrow$ **Settings** $\rightarrow$ **Account** $\rightarrow$ **Delete Account** চাপুন।
-> *(কারণ একটি নাম্বার একই সাথে মোবাইল অ্যাপ এবং ক্লাউড এপিআই সার্ভার দুটিতে থাকতে পারে না। ক্লাউড এপিআই-তে যুক্ত হলে সব মেসেজ সরাসরি আপনার NextProduct AI ড্যাশবোর্ডে আসবে।)*
+> *(কারণ একটি নাম্বার একই সাথে মোবাইল অ্যাপ এবং ক্লাউড এপিআই সার্ভার দুটিতে থাকতে পারে না। ক্লাউড এপিআই-তে যুক্ত হলে সব মেসেজ সরাসরি আপনার AriseSell ড্যাশবোর্ডে আসবে।)*
 
 ---
 
@@ -47,7 +47,7 @@
 মেটার টেস্ট টোকেন ২৪ ঘণ্টা পর মেয়াদোত্তীর্ণ হয়ে যায়। সারাজীবন নিরবচ্ছিন্নভাবে চলার জন্য পার্মানেন্ট টোকেন নিন:
 1. যান: **[business.facebook.com/settings](https://business.facebook.com/settings)**
 2. বাম পাশের মেন্যু থেকে **Users > System Users**-এ ক্লিক করুন।
-3. **Add** বাটনে ক্লিক করে নাম দিন `NextProduct Bot` এবং Role দিন **Admin**।
+3. **Add** বাটনে ক্লিক করে নাম দিন `AriseSell Bot` এবং Role দিন **Admin**।
 4. তৈরি হওয়া System User-এর পাশে **"Generate New Token"** চাপুন।
 5. আপনার App সিলেক্ট করে নিচের পারমিশন দুটিতে টিক দিন:
    * ✅ `whatsapp_business_messaging`
@@ -68,7 +68,7 @@ GEMINI_API_KEY=AIzaSy...
 WHATSAPP_PHONE_NUMBER_ID=109283746501928     <-- (আপনার নিজস্ব নাম্বারের Phone ID)
 WHATSAPP_WABA_ID=192837465019283             <-- (আপনার WABA ID)
 META_PAGE_ACCESS_TOKEN=EAAG...               <-- (আপনার পার্মানেন্ট System User Token)
-META_VERIFY_TOKEN=nextproduct_verify_token   <-- (যেকোনো গোপন শব্দ)
+META_VERIFY_TOKEN=arisesell_verify_token   <-- (যেকোনো গোপন শব্দ)
 ```
 
 ---
@@ -83,7 +83,7 @@ ngrok http 8000
 
 ২. Meta Developer Portal-এ গিয়ে **WhatsApp > Configuration**-এ যান:
 * **Callback URL:** `https://abc-123.ngrok-free.app/api/v1/webhooks/whatsapp`
-* **Verify Token:** `nextproduct_verify_token`
+* **Verify Token:** `arisesell_verify_token`
 * **Verify and Save** চাপুন।
 
 ৩. **Webhook Fields** তালিকা থেকে **`messages`** অপশনটিতে **Subscribe** ক্লিক করুন।

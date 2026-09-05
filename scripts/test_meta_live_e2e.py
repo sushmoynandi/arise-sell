@@ -33,11 +33,11 @@ def generate_hmac_signature(payload_bytes: bytes, secret: str) -> str:
 
 async def test_meta_automation():
     print("=" * 80)
-    print(" 🚀 NEXTPRODUCT AI — WHATSAPP & FACEBOOK AUTOMATION LIVE E2E TEST")
+    print(" 🚀 ARISESELL AI — WHATSAPP & FACEBOOK AUTOMATION LIVE E2E TEST")
     print("=" * 80)
 
     secret = settings.META_APP_SECRET or "test_secret_key_2026"
-    verify_token = settings.META_VERIFY_TOKEN or "nextproduct_verify_token"
+    verify_token = settings.META_VERIFY_TOKEN or "arisesell_verify_token"
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
 

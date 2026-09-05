@@ -1,4 +1,4 @@
-# 🛠️ NextProduct AI — Meta Embedded Signup & WhatsApp AI Reply Master Fix Plan
+# 🛠️ AriseSell — Meta Embedded Signup & WhatsApp AI Reply Master Fix Plan
 
 This document outlines the diagnosis and complete technical resolution for:
 1. **Meta Official Automated OTP Flow (Embedded Signup via Meta SDK)** vs. custom OTP.
@@ -58,7 +58,7 @@ This document outlines the diagnosis and complete technical resolution for:
 [Meta Returns { code, waba_id, phone_number_id }]
       │
       ▼ (POST /api/v1/integrations/whatsapp/embedded-signup)
-[NextProduct AI Registers Channel & Activates Live AI]
+[AriseSell Registers Channel & Activates Live AI]
 
 ──────────────────────────────────────────────────────────────────
 

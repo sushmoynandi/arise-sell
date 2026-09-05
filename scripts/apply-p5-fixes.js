@@ -7,7 +7,7 @@ const rootDir = path.join(__dirname, '..');
 const useApiContent = `"use client";
 
 /**
- * NextProduct AI - Real-Time API Data Hooks
+ * AriseSell - Real-Time API Data Hooks
  * Connects UI pages directly to FastAPI endpoints with automatic fallback to domain mock data.
  */
 

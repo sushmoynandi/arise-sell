@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-**NextProduct AI** is a 24/7 conversational commerce engine tailored specifically for Bangladeshi e-commerce and F-commerce (Facebook/Messenger/WhatsApp).
+**AriseSell** is a 24/7 conversational commerce engine tailored specifically for Bangladeshi e-commerce and F-commerce (Facebook/Messenger/WhatsApp).
 
 - **Core Positioning:** It does not merely "answer customer questions" — it **closes and ships the order**.
 - **Tech Stack:** Next.js 16 (App Router), React, Tailwind CSS v4, TypeScript, Framer Motion.

@@ -5,7 +5,7 @@ description: Implementation and architecture skill for 1-Click Meta WhatsApp Emb
 
 # 1-Click WhatsApp Embedded Signup & Automation Skill
 
-This skill provides the architectural rules, backend endpoints, and frontend components required to deliver 1-click WhatsApp Business onboarding for SaaS merchants on NextProduct AI.
+This skill provides the architectural rules, backend endpoints, and frontend components required to deliver 1-click WhatsApp Business onboarding for SaaS merchants on AriseSell.
 
 ---
 
@@ -21,7 +21,7 @@ This skill provides the architectural rules, backend endpoints, and frontend com
 [Backend API] (POST /api/v1/integrations/whatsapp/embedded-signup)
       │
       ├─ 1. Exchange OAuth code for permanent WABA access token
-      ├─ 2. Subscribe WABA to NextProduct AI Webhooks
+      ├─ 2. Subscribe WABA to AriseSell Webhooks
       ├─ 3. Register or update `connected_channels` table:
       │     - business_id: user.business_id
       │     - channel_type: "whatsapp"

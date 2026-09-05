@@ -1,7 +1,7 @@
-# NextProduct AI — Complete Meta WhatsApp Cloud API Integration Guide
+# AriseSell — Complete Meta WhatsApp Cloud API Integration Guide
 **Document Version:** 1.0.0  
 **Last Updated:** September 4, 2026  
-**System:** NextProduct AI Omnichannel Autonomous E-Commerce Engine  
+**System:** AriseSell Omnichannel Autonomous E-Commerce Engine  
 
 ---
 
@@ -19,12 +19,12 @@
 
 ## 1. Executive Summary & Architecture Overview
 
-NextProduct AI connects Bangladeshi e-commerce merchants directly to their customers via WhatsApp. When a customer sends a query (in Bengali, English, or Banglish), the system:
+AriseSell connects Bangladeshi e-commerce merchants directly to their customers via WhatsApp. When a customer sends a query (in Bengali, English, or Banglish), the system:
 1. Ingests the inbound webhook event from Meta's global edge servers in `<10ms`.
 2. Resolves customer identity, contact details, and session state.
 3. Uses **Google Gemini 3.5 Flash** with custom e-commerce system prompts to reason over product catalog, pricing, and delivery fees (৳80 Dhaka, ৳130 Outside Dhaka, Cash on Delivery).
 4. Dispatches the conversational sales response back through Meta Cloud API.
-5. Displays the conversation live in the NextProduct Web Dashboard (`/console/inbox`) allowing merchants to monitor conversations or take over manually at any moment.
+5. Displays the conversation live in the AriseSell Web Dashboard (`/console/inbox`) allowing merchants to monitor conversations or take over manually at any moment.
 
 ```mermaid
 flowchart LR
@@ -184,4 +184,4 @@ Open your browser and navigate to:
 | **Send button not sending from Web Dashboard** | Missing live reply endpoint or unmounted router. | Verify `POST /api/v1/threads/live/reply` is reachable and CORS headers allow `http://localhost:3000`. |
 
 ---
-*Documentation prepared for NextProduct AI by Google DeepMind Antigravity Pair Programming System.*
+*Documentation prepared for AriseSell by Google DeepMind Antigravity Pair Programming System.*

@@ -59,19 +59,19 @@ export async function generateInvoicePdfBlob(inv: AdminInvoice): Promise<Blob> {
   } catch {
     ctx.font = "bold 52px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
     ctx.fillStyle = "#0a6e50";
-    ctx.fillText("nextproduct.ai", marginX, cursorY + 60);
+    ctx.fillText("arisesell.com", marginX, cursorY + 60);
   }
 
   // Company details (Left)
   ctx.textAlign = "left";
   ctx.font = "bold 38px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
   ctx.fillStyle = "#0f1419";
-  ctx.fillText("NextProduct AI Ltd.", marginX, cursorY + 150);
+  ctx.fillText("AriseSell Ltd.", marginX, cursorY + 150);
 
   ctx.font = "28px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
   ctx.fillStyle = "#626b76";
   ctx.fillText("House 42, Road 11, Banani, Dhaka-1213", marginX, cursorY + 198);
-  ctx.fillText("support@nextproduct.ai", marginX, cursorY + 242);
+  ctx.fillText("support@arisesell.com", marginX, cursorY + 242);
 
   ctx.font = "28px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
   ctx.fillStyle = "#4a5561";
@@ -295,7 +295,7 @@ export async function generateInvoicePdfBlob(inv: AdminInvoice): Promise<Blob> {
   ctx.font = "bold 28px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
   ctx.fillStyle = "#0f1419";
   ctx.fillText(
-    "Thank you for partnering with NextProduct AI to power your commerce.",
+    "Thank you for partnering with AriseSell to power your commerce.",
     width / 2,
     cursorY,
   );
@@ -304,7 +304,7 @@ export async function generateInvoicePdfBlob(inv: AdminInvoice): Promise<Blob> {
   ctx.font = "25px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
   ctx.fillStyle = "#626b76";
   ctx.fillText(
-    "Official electronic tax invoice & payment receipt. For billing support: support@nextproduct.ai",
+    "Official electronic tax invoice & payment receipt. For billing support: support@arisesell.com",
     width / 2,
     cursorY,
   );

@@ -1,5 +1,5 @@
 /**
- * NextProduct AI Multi-Provider Gateway & Automated Failover Engine
+ * AriseSell Multi-Provider Gateway & Automated Failover Engine
  *
  * Implements priority cascading, exponential backoff, timeout circuit breakers,
  * and zero-downtime failover across Google Gemini, OpenAI, Claude & DeepSeek.

@@ -131,7 +131,7 @@ export default function AdminLoginPage() {
   };
 
   const fillDemoCreds = () => {
-    setEmail("admin@nextproduct.ai");
+    setEmail("admin@arisesell.com");
     setPassword("MasterAdmin@2026");
     setError(null);
   };
@@ -208,7 +208,7 @@ export default function AdminLoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@nextproduct.ai"
+                    placeholder="name@arisesell.com"
                     className="w-full rounded-xl border border-line bg-canvas/40 pl-9.5 pr-3.5 py-2.5 text-[13px] text-text placeholder:text-text-3/60 focus:bg-white focus:border-signal focus:ring-2 focus:ring-signal/15 focus:outline-none transition-all"
                   />
                 </div>

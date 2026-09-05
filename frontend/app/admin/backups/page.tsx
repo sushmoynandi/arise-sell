@@ -30,7 +30,7 @@ export default function AdminBackupsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `NextProduct_Merchants_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `AriseSell_Merchants_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
 
@@ -54,7 +54,7 @@ export default function AdminBackupsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `NextProduct_Invoices_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `AriseSell_Invoices_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
 

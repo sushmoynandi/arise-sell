@@ -203,7 +203,7 @@ export default function AdminMetaAppsPage() {
               <button
                 type="button"
                 onClick={() =>
-                  handleCopy("https://nextproduct.ai/api/webhooks/meta", "wh-url")
+                  handleCopy("https://arisesell.com/api/webhooks/meta", "wh-url")
                 }
                 className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-signal hover:underline cursor-pointer"
               >
@@ -221,7 +221,7 @@ export default function AdminMetaAppsPage() {
               </button>
             </div>
             <p className="font-mono text-text text-[13.5px] select-all bg-surface-2/40 px-3.5 py-2 rounded-xl border border-line/60">
-              https://nextproduct.ai/api/webhooks/meta
+              https://arisesell.com/api/webhooks/meta
             </p>
           </div>
 
@@ -494,7 +494,7 @@ export default function AdminMetaAppsPage() {
                     setChannelType(c);
                     setAppName(
                       c === "whatsapp"
-                        ? "NextProduct Production WABA"
+                        ? "AriseSell Production WABA"
                         : "Messenger & Instagram Gateway",
                     );
                   }}
@@ -514,7 +514,7 @@ export default function AdminMetaAppsPage() {
                   required
                   value={appName}
                   onChange={(e) => setAppName(e.target.value)}
-                  placeholder="e.g. NextProduct Production WABA"
+                  placeholder="e.g. AriseSell Production WABA"
                   className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
                 />
               </div>

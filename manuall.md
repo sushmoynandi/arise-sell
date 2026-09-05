@@ -1,4 +1,4 @@
-# 🧪 NextProduct AI — WhatsApp AI ম্যানুয়ালি টেস্ট করার ৩টি সহজ উপায় (Manual Testing Guide)
+# 🧪 AriseSell — WhatsApp AI ম্যানুয়ালি টেস্ট করার ৩টি সহজ উপায় (Manual Testing Guide)
 
 আপনার WhatsApp ইন্টিগ্রেশন এবং **Google Gemini 3.5 Flash** AI সেলস বট পরীক্ষা করার জন্য নিচের যেকোনো একটি উপায় অনুসরণ করুন:
 
@@ -80,7 +80,7 @@ ngrok http 8000
 ### ৩. Meta Developer Portal-এ Webhook সেট করুন:
 1. যান **[developers.facebook.com/apps](https://developers.facebook.com/apps)** $\rightarrow$ আপনার App সিলেক্ট করুন $\rightarrow$ **WhatsApp > Configuration**-এ যান।
 2. **Callback URL:** `https://<your-ngrok-url>.ngrok-free.app/api/v1/webhooks/whatsapp`
-3. **Verify Token:** `nextproduct_verify_token`
+3. **Verify Token:** `arisesell_verify_token`
 4. **Verify and Save** চাপুন এবং `messages` ফিল্ডটি Subscribe করুন।
 
 ### ৪. লাইভ টেস্ট করুন:

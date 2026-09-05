@@ -22,7 +22,7 @@ from app.services.whatsapp_cloud import send_whatsapp_text
 
 async def test_live_pipeline():
     print("=" * 75)
-    print(" 🧪 NEXTPRODUCT AI — LIVE GEMINI & META AUTOMATION TEST")
+    print(" 🧪 ARISESELL AI — LIVE GEMINI & META AUTOMATION TEST")
     print("=" * 75)
 
     # 1. Verify Gemini API Key
@@ -78,7 +78,7 @@ async def test_live_pipeline():
     print(f"      - META_APP_SECRET:          {'Configured ✅' if settings.META_APP_SECRET else 'Optional / Missing'}")
     print(f"      - WHATSAPP_PHONE_NUMBER_ID: {'Configured ✅' if settings.WHATSAPP_PHONE_NUMBER_ID else 'Optional / Missing'}")
     print(f"      - META_PAGE_ACCESS_TOKEN:   {'Configured ✅' if settings.META_PAGE_ACCESS_TOKEN else 'Optional / Missing'}")
-    print(f"      - META_VERIFY_TOKEN:        '{settings.META_VERIFY_TOKEN or 'nextproduct_verify_token'}'")
+    print(f"      - META_VERIFY_TOKEN:        '{settings.META_VERIFY_TOKEN or 'arisesell_verify_token'}'")
 
     print("\n[4/4] Summary:")
     print("      🎉 AI NLU and Sales Reasoning Engine is 100% operational!")

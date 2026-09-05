@@ -150,7 +150,7 @@ export default function Lifecycle() {
             {t("Most tools stop at the reply.", "সাধারণ চ্যাটবট শুধু কথায় আটকে থাকে।")}
             <span className="text-text-3">
               {" "}
-              {t("This one keeps going until the parcel moves.", "NextProduct পার্সেল ডেলিভারি হওয়া পর্যন্ত কাজ চালিয়ে যায়।")}
+              {t("This one keeps going until the parcel moves.", "AriseSell পার্সেল ডেলিভারি হওয়া পর্যন্ত কাজ চালিয়ে যায়।")}
             </span>
           </h2>
         </Reveal>

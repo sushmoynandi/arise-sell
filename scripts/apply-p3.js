@@ -52,7 +52,7 @@ async def admin_login(req: AdminLoginRequest, db: AsyncSession = Depends(get_db)
 
     is_demo_admin = (
         (req.email == "admin@alapai.app" and req.password == "SuperAdmin123!") or
-        (req.email == "admin@nextproduct.ai" and req.password in ["MasterAdmin@2026", "SuperAdmin123!"]) or
+        (req.email == "admin@arisesell.com" and req.password in ["MasterAdmin@2026", "SuperAdmin123!"]) or
         (req.email == "farhana@nokshi.co" and req.password in ["DemoPass123!", "SuperAdmin123!"])
     )
 

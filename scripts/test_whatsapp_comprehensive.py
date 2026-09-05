@@ -17,7 +17,7 @@ from app.services.ai_engine import generate_production_ai_response
 
 async def run_whatsapp_e2e_tests():
     print("=" * 80)
-    print(" 🚀 NEXTPRODUCT AI — WHATSAPP COMPREHENSIVE E2E VERIFICATION SUITE")
+    print(" 🚀 ARISESELL AI — WHATSAPP COMPREHENSIVE E2E VERIFICATION SUITE")
     print("=" * 80)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -28,7 +28,7 @@ async def run_whatsapp_e2e_tests():
         print("\n[TEST 1] Meta Webhook GET Handshake (Verification Token):")
         params = {
             "hub.mode": "subscribe",
-            "hub.verify_token": "nextproduct_verify_token",
+            "hub.verify_token": "arisesell_verify_token",
             "hub.challenge": "1153257763",
         }
         hs_res = await client.get("/api/v1/webhooks/whatsapp", params=params)

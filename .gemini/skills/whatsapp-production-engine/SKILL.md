@@ -1,6 +1,6 @@
 ---
 name: whatsapp-production-engine
-description: Complete production engineering guidelines, architecture, and verification procedures for Meta WhatsApp Business Cloud API & Autonomous AI Sales Engine on NextProduct AI.
+description: Complete production engineering guidelines, architecture, and verification procedures for Meta WhatsApp Business Cloud API & Autonomous AI Sales Engine on AriseSell.
 ---
 
 # 📱 WhatsApp Production Engine Skill

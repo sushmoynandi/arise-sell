@@ -7,7 +7,7 @@ import TermsContent from "@/components/marketing/TermsContent";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "Official Terms of Service and Merchant Agreement for AriseSell (NextProduct AI). Conversational commerce SaaS, pay-per-closed-order billing, Meta messaging compliance, and courier fulfillment terms.",
+    "Official Terms of Service and Merchant Agreement for AriseSell. Conversational commerce SaaS, pay-per-closed-order billing, Meta messaging compliance, and courier fulfillment terms.",
 };
 
 export default function TermsPage() {

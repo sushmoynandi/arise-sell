@@ -78,8 +78,8 @@ export default function Hero() {
             className="mt-5 max-w-lg text-pretty text-[16.5px] leading-relaxed text-text-2"
           >
             {t(
-              "NextProduct handles the conversation, matches the right product, validates the phone and address, confirms COD or payment, books Steadfast or Pathao, and returns the tracking info immediately — without you needing to monitor every message.",
-              "NextProduct কথোপকথন সামলায়, সঠিক পণ্য খুঁজে দেয়, ফোন ও ঠিকানা যাচাই করে, COD বা পেমেন্ট কনফার্ম করে, স্টেডফাস্ট বা পাঠাও বুক করে, আর ট্র্যাকিং তথ্য একই চ্যাটেই ফেরত পাঠায় — আপনাকে প্রতিটি মেসেজ ধরে রাখতে হয় না।",
+              "AriseSell handles the conversation, matches the right product, validates the phone and address, confirms COD or payment, books Steadfast or Pathao, and returns the tracking info immediately — without you needing to monitor every message.",
+              "AriseSell কথোপকথন সামলায়, সঠিক পণ্য খুঁজে দেয়, ফোন ও ঠিকানা যাচাই করে, COD বা পেমেন্ট কনফার্ম করে, স্টেডফাস্ট বা পাঠাও বুক করে, আর ট্র্যাকিং তথ্য একই চ্যাটেই ফেরত পাঠায় — আপনাকে প্রতিটি মেসেজ ধরে রাখতে হয় না।",
             )}
           </motion.p>
 

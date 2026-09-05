@@ -635,7 +635,7 @@ async def list_meta_apps(db: AsyncSession = Depends(get_db)):
         return [
             MetaAppResponse(
                 id="meta-app-1",
-                appName="NextProduct AI Production WABA",
+                appName="AriseSell Production WABA",
                 wabaId="109827364519283",
                 phoneNumberId="102938475610293",
                 graphVersion="v21.0",

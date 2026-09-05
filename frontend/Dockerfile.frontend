@@ -1,5 +1,5 @@
 # ==============================================================================
-# NextProduct AI - Production Next.js 15 Standalone Dockerfile
+# AriseSell - Production Next.js 15 Standalone Dockerfile
 # ==============================================================================
 
 FROM node:20-alpine AS base

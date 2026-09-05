@@ -4,15 +4,15 @@
  */
 
 export const BRAND = {
-  name: "NextProduct",
-  nameFull: "NextProduct AI",
+  name: "AriseSell",
+  nameFull: "AriseSell",
   mark: "NP",
-  domain: "nextproduct.ai",
+  domain: "arisesell.com",
   tagline: "The commerce engine that closes the order",
   taglineBn: "কথা থেকে অর্ডার, অর্ডার থেকে ডেলিভারি",
   description:
-    "NextProduct runs the whole sale — reads the message, matches the product, takes the address, books the courier and reports the revenue. One engine across WhatsApp, Messenger, Instagram and your storefront.",
-  supportEmail: "hello@nextproduct.ai",
+    "AriseSell runs the whole sale — reads the message, matches the product, takes the address, books the courier and reports the revenue. One engine across WhatsApp, Messenger, Instagram and your storefront.",
+  supportEmail: "hello@arisesell.com",
 } as const;
 
 export const SITE_NAV = [
@@ -116,7 +116,7 @@ export const CONSOLE_NAV = [
 ] as const;
 
 export const SOCIALS = {
-  x: "https://x.com/nextproductai",
-  github: "https://github.com/nextproductai",
-  linkedin: "https://linkedin.com/company/nextproductai",
+  x: "https://x.com/arisesellai",
+  github: "https://github.com/arisesellai",
+  linkedin: "https://linkedin.com/company/arisesellai",
 } as const;

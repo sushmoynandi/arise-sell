@@ -37,7 +37,7 @@ export default function AdminFraudShieldPage() {
           </h3>
           <p className="text-[13px] text-text-2 leading-relaxed">
             Maintains a synchronized, anonymized database of frequent parcel
-            rejecters and fake buyers across all 148+ NextProduct merchants in
+            rejecters and fake buyers across all 148+ AriseSell merchants in
             Bangladesh.
           </p>
         </div>

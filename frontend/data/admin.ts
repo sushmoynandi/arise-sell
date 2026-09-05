@@ -223,7 +223,7 @@ export type MetaAppConfig = {
 export const INITIAL_META_APPS: MetaAppConfig[] = [
   {
     id: "meta-app-1",
-    appName: "NextProduct AI Production WABA",
+    appName: "AriseSell Production WABA",
     wabaId: "109827364519283",
     phoneNumberId: "102938475610293",
     graphVersion: "v21.0",
@@ -374,7 +374,7 @@ export const INITIAL_ADMIN_PLANS: AdminPlan[] = [
   },
 ];
 
-export const SUPPORT_INBOX_STORAGE_KEY = "nextproduct-support-inbox";
+export const SUPPORT_INBOX_STORAGE_KEY = "arisesell-support-inbox";
 
 export type SupportMessage = {
   id: string;

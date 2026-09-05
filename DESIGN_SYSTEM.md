@@ -1,4 +1,4 @@
-# AriseSell / NextProduct AI — Design System & Guidelines
+# AriseSell — Design System & Guidelines
 
 This document establishes the official design system, typography standards, and UI patterns for the project. **All contributors and developers must adhere to these standards to maintain visual consistency.**
 

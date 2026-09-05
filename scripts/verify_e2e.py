@@ -1,4 +1,4 @@
-"""NextProduct AI - Live End-to-End System Verification Suite (Windows & Linux Clean Encoding)."""
+"""AriseSell - Live End-to-End System Verification Suite (Windows & Linux Clean Encoding)."""
 from __future__ import annotations
 
 import asyncio
@@ -23,7 +23,7 @@ from app.core.security import create_access_token, verify_password, hash_passwor
 
 async def run_live_verification():
     print("=" * 70)
-    print(" [*] NEXTPRODUCT AI - LIVE SYSTEM VERIFICATION AUDIT")
+    print(" [*] ARISESELL AI - LIVE SYSTEM VERIFICATION AUDIT")
     print("=" * 70)
 
     # 1. FastAPI App & Routes

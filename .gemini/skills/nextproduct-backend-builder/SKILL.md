@@ -1,12 +1,12 @@
 ---
-name: nextproduct-backend-builder
-description: Build and integrate the NextProduct AI FastAPI backend with the existing Next.js frontend. Covers project setup, database models, API endpoints, webhook ingestion, AI RAG pipeline, frontend wiring, and deployment.
+name: arisesell-backend-builder
+description: Build and integrate the AriseSell FastAPI backend with the existing Next.js frontend. Covers project setup, database models, API endpoints, webhook ingestion, AI RAG pipeline, frontend wiring, and deployment.
 ---
 
-# NextProduct AI Backend Builder Skill
+# AriseSell Backend Builder Skill
 
 ## Overview
-This skill guides the implementation of a **production-grade FastAPI backend** for the NextProduct AI platform — a multi-tenant SaaS for AI-powered sales & support automation on Facebook, Instagram, WhatsApp, and web chat, targeting Bangladeshi e-commerce.
+This skill guides the implementation of a **production-grade FastAPI backend** for the AriseSell platform — a multi-tenant SaaS for AI-powered sales & support automation on Facebook, Instagram, WhatsApp, and web chat, targeting Bangladeshi e-commerce.
 
 ## Reference Documents (MUST READ BEFORE STARTING)
 1. **Implementation Plan:** `plan.md` — Full phase-by-phase roadmap with mock-to-API replacement map
