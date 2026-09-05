@@ -1022,7 +1022,9 @@ export function TabAccount({
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setMembers(
-            data.map((m) => ({
+            data
+              .filter((m) => (m.role || "").toLowerCase() !== "superadmin")
+              .map((m) => ({
               id: m.id,
               name: m.name || "Teammate",
               email: m.email || "",

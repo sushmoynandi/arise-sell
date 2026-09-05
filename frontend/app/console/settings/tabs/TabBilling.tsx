@@ -122,7 +122,7 @@ export function TabBilling() {
         setStores(storesData.value);
       }
       if (teamData.status === "fulfilled" && Array.isArray(teamData.value)) {
-        setTeamMembers(teamData.value);
+        setTeamMembers(teamData.value.filter((m) => (m.role || "").toLowerCase() !== "superadmin"));
       }
 
       // Check for pending enterprise contract proposal assigned to this store/email

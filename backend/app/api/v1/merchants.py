@@ -35,6 +35,7 @@ from app.schemas.merchant import (
     DeleteStoreResponse,
     ToggleStoreFreezeRequest,
 )
+from app.services.plans_service import get_lowest_tier_plan
 
 router = APIRouter(prefix="/merchants", tags=["Merchant Settings"])
 
@@ -881,6 +882,7 @@ async def update_merchant_settings(
 
     if not biz:
         # If user has no store yet, auto-provision store from payload
+        lowest_tier = await get_lowest_tier_plan(db)
         clean_name = (req.name or f"{user.first_name}'s Store").strip()
         base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", clean_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
         unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
@@ -889,20 +891,27 @@ async def update_merchant_settings(
             name_bn=req.name_bn or clean_name,
             kind=req.kind or "Ecommerce",
             slug=unique_slug,
-            plan="Free",
-            orders_quota=100,
+            plan=lowest_tier["name"],
+            orders_quota=lowest_tier["orders_quota"],
             currency=req.currency or "BDT",
             timezone=req.timezone or "Asia/Dhaka",
             settings_data={
                 "owner_id": str(user.id),
                 "owner_email": user.email.strip().lower(),
                 "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
+                "plan": lowest_tier["name"],
+                "max_stores": lowest_tier["max_stores"],
+                "max_seats": lowest_tier["max_seats"],
+                "plan_price_bdt": lowest_tier["price_bdt"],
+                "team_members": [],
             },
         )
         db.add(biz)
         await db.flush()
         user.business_id = biz.id
         user.role = "owner"
+        user.plan = lowest_tier["name"]
+        user.ai_quota = lowest_tier["ai_quota"]
 
     # Check if user is owner of the business or an invited teammate with granular permissions
     extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
@@ -1074,7 +1083,7 @@ async def list_team_members(
     saved_members = list(extra.get("team_members", []))
 
     # 1. Resolve store owner details
-    owner_stmt = select(User).where(User.business_id == biz.id, User.role == "owner")
+    owner_stmt = select(User).where(User.business_id == biz.id, User.role == "owner", User.is_superadmin.is_(False))
     owner_res = await db.execute(owner_stmt)
     owner_user = owner_res.scalars().first()
 
@@ -1136,9 +1145,15 @@ async def list_team_members(
         m_email = str(m.get("email", "")).strip().lower()
         if not m_email or m_email in seen_emails:
             continue
-        seen_emails.add(m_email)
 
         matched_db_u = matched_users_by_email.get(m_email)
+        # Never expose superadmins in store team member list
+        if matched_db_u and matched_db_u.is_superadmin:
+            continue
+        if (m.get("role") or "").lower() == "superadmin":
+            continue
+
+        seen_emails.add(m_email)
         m_name = (
             f"{matched_db_u.first_name} {matched_db_u.last_name}".strip()
             if (matched_db_u and (matched_db_u.first_name or matched_db_u.last_name))
@@ -1177,7 +1192,7 @@ async def list_team_members(
         )
 
     # 3. Include any existing users in DB associated with this store that weren't in settings
-    db_users_stmt = select(User).where(User.business_id == biz.id)
+    db_users_stmt = select(User).where(User.business_id == biz.id, User.is_superadmin.is_(False))
     db_users_res = await db.execute(db_users_stmt)
     db_users = db_users_res.scalars().all()
     for u in db_users:
@@ -1287,7 +1302,13 @@ async def invite_team_member(
             detail=f"Seat limit of {max_seats} reached on your {plan_display} plan. Please upgrade to invite additional team members.",
         )
 
-    # 2. Prevent duplicate invitations
+    # 2. Prevent duplicate invitations or superadmin assignment
+    if req.role.strip().lower() == "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot assign superadmin role to a store team member.",
+        )
+
     clean_email = req.email.strip().lower()
     if clean_email == user.email.strip().lower():
         raise HTTPException(
@@ -1299,6 +1320,15 @@ async def invite_team_member(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"A team member with email '{clean_email}' already exists in this store.",
+        )
+
+    target_u_stmt = select(User).where(func.lower(User.email) == clean_email)
+    target_u_res = await db.execute(target_u_stmt)
+    target_u = target_u_res.scalars().first()
+    if target_u and target_u.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Superadmin accounts cannot be added to a merchant store team.",
         )
 
     # 3. Create member record

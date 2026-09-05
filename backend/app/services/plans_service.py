@@ -441,3 +441,65 @@ async def delete_stored_festival_offer(offer_id: str) -> bool:
     return deleted
 
 
+async def get_lowest_tier_plan(db: Any = None) -> dict[str, Any]:
+    """Dynamically fetches the lowest-priced active plan from the database.
+    Ensures that newly registered users are automatically assigned to the lowest tier
+    with all resource limits (orders_quota, max_stores, max_seats, price) dynamically pulled."""
+    if db is not None:
+        try:
+            from sqlalchemy import select
+            from app.models.billing import SubscriptionPlan
+            stmt = (
+                select(SubscriptionPlan)
+                .where(SubscriptionPlan.status == "active")
+                .order_by(SubscriptionPlan.price_bdt.asc())
+                .limit(1)
+            )
+            res = await db.execute(stmt)
+            plan = res.scalar_one_or_none()
+            if plan:
+                p_name_lower = (plan.name or "").lower()
+                def_stores = 2 if "business" in p_name_lower else 1
+                def_seats = 1 if "free" in p_name_lower else (4 if "pro" in p_name_lower else 2)
+                return {
+                    "name": plan.name,
+                    "plan_code": plan.plan_code,
+                    "price_bdt": float(plan.price_bdt or 0.0),
+                    "orders_quota": int(plan.message_limit or 100),
+                    "ai_quota": int(plan.message_limit or 100),
+                    "max_stores": int(plan.max_stores) if plan.max_stores is not None else def_stores,
+                    "max_seats": int(plan.max_seats) if plan.max_seats is not None else def_seats,
+                }
+        except Exception as err:
+            print("Failed to query lowest tier via SQLAlchemy session:", err)
+
+    # Fallback to stored plans
+    try:
+        plans = await get_stored_plans()
+        active_plans = [p for p in plans if p.get("status") == "active"]
+        if active_plans:
+            active_plans.sort(key=lambda x: float(x.get("priceBDT", 0)))
+            lowest = active_plans[0]
+            return {
+                "name": lowest.get("name", "Free"),
+                "plan_code": lowest.get("id", "plan-free"),
+                "price_bdt": float(lowest.get("priceBDT", 0.0)),
+                "orders_quota": int(lowest.get("messageLimit", 100)),
+                "ai_quota": int(lowest.get("messageLimit", 100)),
+                "max_stores": int(lowest.get("maxStores", 1)),
+                "max_seats": int(lowest.get("maxSeats", 1)),
+            }
+    except Exception as err:
+        print("Fallback to get_stored_plans failed:", err)
+
+    return {
+        "name": "Free",
+        "plan_code": "plan-free",
+        "price_bdt": 0.0,
+        "orders_quota": 100,
+        "ai_quota": 100,
+        "max_stores": 1,
+        "max_seats": 1,
+    }
+
+
