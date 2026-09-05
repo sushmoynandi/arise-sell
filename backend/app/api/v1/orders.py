@@ -262,9 +262,9 @@ async def download_invoice(
         "discount": float(order.discount),
     }
     biz_dict = {
-        "name": biz.name if biz else "Nokshi & Co.",
-        "nameBn": biz.name_bn if biz else "নকশী অ্যান্ড কোং",
-        "kind": biz.kind if biz else "Handloom & Lifestyle",
+        "name": biz.name if biz else "Your Store",
+        "nameBn": biz.name_bn if biz else "আপনার স্টোর",
+        "kind": biz.kind if biz else "Ecommerce",
     }
 
     html = generate_invoice_html(order_dict, biz_dict)

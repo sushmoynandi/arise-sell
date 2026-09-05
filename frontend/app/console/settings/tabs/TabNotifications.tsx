@@ -441,9 +441,9 @@ export function TabNotifications() {
                     <div className="bg-[#f0f2f5] p-3 rounded-2xl text-xs text-text leading-relaxed">
                       {orderSmsTemplate
                         .replace("{{customer_name}}", "Farhana")
-                        .replace("{{order_id}}", "NOK-1043")
+                        .replace("{{order_id}}", "ORD-1043")
                         .replace("{{total_amount}}", "3,450")
-                        .replace("{{store_name}}", TENANT.name)}
+                        .replace("{{store_name}}", settings.name || TENANT.name)}
                     </div>
                     <div className="flex items-center justify-between text-[10px] text-text-3 font-mono pt-1">
                       <span>Delivered via {smsGateway.toUpperCase()}</span>

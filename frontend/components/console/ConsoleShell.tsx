@@ -549,25 +549,43 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
     pendingSetupTasks.length > 0,
   );
 
+  // Dynamic Default Store Name based on authenticated user
+  const defaultStoreName = useMemo(() => {
+    const fName = user?.first_name?.trim();
+    if (fName && !["merchant", "user", "admin", "store"].includes(fName.toLowerCase())) {
+      return `${fName}'s Store`;
+    }
+    const fullName = (user as unknown as { name?: string })?.name?.trim();
+    if (fullName && !["merchant", "user", "admin", "store owner"].includes(fullName.toLowerCase())) {
+      const p = fullName.split(" ")[0];
+      if (p) return `${p}'s Store`;
+    }
+    return "Your Store";
+  }, [user?.first_name, user]);
+
   // Dynamic Tenant Info
   const [tenantInfo, setTenantInfo] = useState({
-    name: "Nokshi & Co.",
-    plan: "Pro",
+    name: "Your Store",
+    plan: "Free",
     maxStores: 1,
-    messagesUsed: 23,
-    messagesQuota: 500,
-    remainingQuota: 477,
-    remainingPercent: 95,
+    messagesUsed: 0,
+    messagesQuota: 100,
+    remainingQuota: 100,
+    remainingPercent: 100,
   });
 
   // Dynamic Subscription Plans from database
   const [dynamicPlans, setDynamicPlans] = useState<BillingPlan[]>([]);
 
   const activeStoreName =
-    activeWorkspace?.name || tenantInfo.name || TENANT.name;
+    activeWorkspace?.name && activeWorkspace.name !== "Nokshi & Co."
+      ? activeWorkspace.name
+      : tenantInfo.name && tenantInfo.name !== "Nokshi & Co." && tenantInfo.name !== "Your Store"
+        ? tenantInfo.name
+        : defaultStoreName;
   const activeStoreInitial = (activeStoreName || "S").charAt(0).toUpperCase();
   const activeStorePlan =
-    activeWorkspace?.plan || tenantInfo.plan || TENANT.plan;
+    activeWorkspace?.plan || tenantInfo.plan || "Free";
 
   const maxAllowedStores = useMemo(() => {
     let max = 1;
@@ -685,7 +703,12 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
         .getMyStores()
         .then((res: unknown) => {
           if (Array.isArray(res)) {
-            setWorkspaces(res as StoreWorkspace[]);
+            setWorkspaces(
+              (res as StoreWorkspace[]).map((w) => ({
+                ...w,
+                name: w.name && w.name !== "Nokshi & Co." ? w.name : defaultStoreName,
+              }))
+            );
           }
         })
         .catch(() => {});
@@ -727,15 +750,17 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 tasks: SetupTaskItem[];
               };
             };
-            const quota = d.messagesQuota || d.ordersQuota || 500;
+            const quota = d.messagesQuota || d.ordersQuota || 100;
             const used = d.messagesUsed ?? d.ordersUsed ?? 0;
             const remaining = d.remainingQuota ?? Math.max(0, quota - used);
             const pct =
               d.remainingPercent ??
               (quota > 0 ? Math.round((remaining / quota) * 100) : 100);
+            const resolvedName =
+              d.name && d.name !== "Nokshi & Co." ? d.name : defaultStoreName;
             setTenantInfo({
-              name: d.name || "Nokshi & Co.",
-              plan: d.plan || "Pro",
+              name: resolvedName,
+              plan: d.plan || "Free",
               maxStores: d.maxStores ?? 1,
               messagesUsed: used,
               messagesQuota: quota,
@@ -1034,7 +1059,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                     </span>
                     {isTeammateInActiveStore ? (
                       <span className="block truncate text-[10.5px] font-mono font-medium text-emerald-600 dark:text-emerald-400">
-                        {activeWorkspace.role} · Owner Paid
+                        {activeWorkspace?.role} · Owner Paid
                       </span>
                     ) : activeWorkspace?.is_frozen ? (
                       <span className="block truncate text-[10.5px] font-mono font-bold text-amber-600 dark:text-amber-400">

@@ -1,10 +1,10 @@
 /** The demo tenant everything in the console is scoped to. */
 
 export const TENANT = {
-  name: "Nokshi & Co.",
-  nameBn: "নকশী অ্যান্ড কোং",
-  kind: "Handloom, home & lifestyle · Dhaka",
-  since: "2021",
+  name: "Your Store",
+  nameBn: "আপনার স্টোর",
+  kind: "Ecommerce · Bangladesh",
+  since: "2024",
   plan: "Free",
   ordersUsed: 0,
   ordersQuota: 100,

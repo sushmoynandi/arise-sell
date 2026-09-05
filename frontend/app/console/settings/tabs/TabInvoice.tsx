@@ -411,11 +411,11 @@ export function TabInvoice() {
                       className="size-10 rounded-xl grid place-items-center text-white font-bold font-display text-sm shadow-xs"
                       style={{ backgroundColor: brandColor }}
                     >
-                      ন
+                      {(settings.name || TENANT.name || "S").charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <h4 className="font-bold text-base text-text font-display">
-                        {TENANT.name}
+                        {settings.name || TENANT.name}
                       </h4>
                       <p className="text-[10.5px] text-text-3">
                         {invoiceTagline}
@@ -566,7 +566,7 @@ export function TabInvoice() {
               /* POS Thermal 80mm Slip Preview */
               <div className="p-6 font-mono text-[11px] bg-[#fafafa] space-y-3 border-x-4 border-dashed border-line/40">
                 <div className="text-center space-y-1 border-b border-dashed border-line pb-2">
-                  <h4 className="font-bold text-sm uppercase">{TENANT.name}</h4>
+                  <h4 className="font-bold text-sm uppercase">{settings.name || TENANT.name}</h4>
                   <p className="text-[10px] text-text-3">{invoiceTagline}</p>
                   <p className="text-[10px] font-bold">
                     INV: {invoicePrefix}

@@ -327,11 +327,11 @@ export function TabBranding() {
                       className="size-7 rounded-lg grid place-items-center text-white font-bold text-xs font-display"
                       style={{ backgroundColor: brandColor }}
                     >
-                      {monogramText || "ন"}
+                      {monogramText || (settings.name || TENANT.name || "S").charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="text-xs font-bold text-text">
-                        {TENANT.name}
+                        {settings.name || TENANT.name}
                       </p>
                       <p className="text-[10px] text-text-3">
                         WhatsApp Order Update

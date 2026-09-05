@@ -352,7 +352,7 @@ async def get_merchant_profile(
             )
         else:
             first_name = user.first_name.strip() if user.first_name else ""
-            default_name = f"{first_name}'s Store" if first_name else "My Store"
+            default_name = f"{first_name}'s Store" if (first_name and first_name.lower() not in ["merchant", "user", "admin", "store"]) else "Your Store"
             base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", default_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
             unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
 
@@ -788,14 +788,11 @@ async def quick_create_default_store(
         )
 
     # 2. Determine default store name
-    owner_name = f"{user.first_name} {user.last_name}".strip()
     first_name = user.first_name.strip() if user.first_name else ""
-    if first_name:
+    if first_name and first_name.lower() not in ["merchant", "user", "admin", "store"]:
         base_name = f"{first_name}'s Store"
-    elif user.email:
-        base_name = f"{user.email.split('@')[0].capitalize()}'s Store"
     else:
-        base_name = "My Store"
+        base_name = "Your Store"
 
     if len(owned_stores) > 0:
         clean_name = f"{base_name} {len(owned_stores) + 1}"
@@ -883,7 +880,9 @@ async def update_merchant_settings(
     if not biz:
         # If user has no store yet, auto-provision store from payload
         lowest_tier = await get_lowest_tier_plan(db)
-        clean_name = (req.name or f"{user.first_name}'s Store").strip()
+        first_n = user.first_name.strip() if user.first_name else ""
+        def_name = f"{first_n}'s Store" if (first_n and first_n.lower() not in ["merchant", "user", "admin", "store"]) else "Your Store"
+        clean_name = (req.name or def_name).strip()
         base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", clean_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
         unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
         biz = Business(
@@ -1621,6 +1620,57 @@ async def list_my_stores(
                 permissions=perms,
                 max_stores=max_allowed,
                 maxStores=max_allowed,
+            )
+        )
+
+    if not workspaces and not user.is_superadmin:
+        first_name = user.first_name.strip() if user.first_name else ""
+        default_name = f"{first_name}'s Store" if (first_name and first_name.lower() not in ["merchant", "user", "admin", "store"]) else "Your Store"
+        lowest_tier = await get_lowest_tier_plan(db)
+        base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", default_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
+        unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+        new_biz = Business(
+            name=default_name,
+            name_bn=default_name,
+            kind="Ecommerce",
+            slug=unique_slug,
+            plan=lowest_tier["name"],
+            orders_quota=lowest_tier["orders_quota"],
+            currency="BDT",
+            timezone="Asia/Dhaka",
+            settings_data={
+                "owner_id": str(user.id),
+                "owner_email": user.email.lower(),
+                "owner_name": f"{user.first_name} {user.last_name}".strip() or "Store Owner",
+                "plan": lowest_tier["name"],
+                "max_stores": lowest_tier["max_stores"],
+                "max_seats": lowest_tier["max_seats"],
+                "plan_price_bdt": lowest_tier["price_bdt"],
+                "team_members": [],
+            },
+        )
+        db.add(new_biz)
+        await db.flush()
+        user.business_id = new_biz.id
+        user.role = "owner"
+        await db.commit()
+        await db.refresh(new_biz)
+        workspaces.append(
+            StoreWorkspaceItem(
+                id=str(new_biz.id),
+                name=new_biz.name,
+                slug=new_biz.slug,
+                plan=lowest_tier["name"],
+                role="Owner",
+                is_owner=True,
+                owner_name=f"{user.first_name} {user.last_name}".strip() or "You",
+                plan_covered_by_owner=False,
+                is_active=True,
+                is_frozen=False,
+                channels_count=3,
+                permissions=["all", "chat", "orders", "courier", "catalog", "invoices", "settings"],
+                max_stores=lowest_tier["max_stores"],
+                maxStores=lowest_tier["max_stores"],
             )
         )
 

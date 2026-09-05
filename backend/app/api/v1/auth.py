@@ -102,11 +102,16 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         first_name = parts[0]
         last_name = parts[1] if len(parts) > 1 else ""
 
-    first_name = (first_name or "Merchant").strip()
+    first_name = (first_name or "").strip()
     last_name = (last_name or "").strip()
 
-    # Determine store name
-    store_name = (req.store_name or f"{first_name}'s Store").strip()
+    # Determine store name: manual signup without store/user name defaults to "Your Store"
+    if req.store_name and req.store_name.strip():
+        store_name = req.store_name.strip()
+    elif first_name and first_name.lower() not in ["merchant", "user", "admin", "store"]:
+        store_name = f"{first_name}'s Store"
+    else:
+        store_name = "Your Store"
     store_slug = f"store-{uuid.uuid4().hex[:6]}"
 
     # Fetch dynamic lowest tier plan from DB
@@ -292,7 +297,7 @@ async def get_me(
     is_super = bool(
         getattr(user, "is_superadmin", False) or
         getattr(user, "role", "") == "superadmin" or
-        clean_email in ["admin@arisesell.com", "admin@arisesell.com", "farhana@nokshi.co", "admin@alapai.app"]
+        clean_email in ["admin@arisesell.com", "admin@alapai.app"]
     )
 
     return UserBrief(

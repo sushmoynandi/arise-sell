@@ -302,7 +302,7 @@ export function TabBusiness() {
               label="Business Name (English)"
               value={storeName}
               onChange={setStoreName}
-              placeholder="e.g. Nokshi & Co."
+              placeholder="e.g. Your Store"
               icon={
                 <svg
                   width="15"
@@ -396,7 +396,7 @@ export function TabBusiness() {
                 label="Store Website URL"
                 value={website}
                 onChange={setWebsite}
-                placeholder="https://nokshi.co"
+                placeholder="https://yourstore.com"
                 badge={isNoStore ? undefined : "Verified 🟢"}
                 badgeTone="mint"
                 icon={
@@ -498,7 +498,7 @@ export function TabBusiness() {
               label="Customer Support Email"
               value={supportEmail}
               onChange={setSupportEmail}
-              placeholder="support@nokshi.co"
+              placeholder="support@yourstore.com"
               type="email"
               icon={
                 <svg

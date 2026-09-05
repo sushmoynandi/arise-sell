@@ -42,8 +42,8 @@ def generate_invoice_html(order: dict[str, Any], tenant: dict[str, Any]) -> str:
     <body>
       <div class="header">
         <div>
-          <h2>{tenant.get('name', 'Nokshi & Co.')}</h2>
-          <p>{tenant.get('nameBn', 'নকশী অ্যান্ড কোং')} · {tenant.get('kind', 'Handloom & Lifestyle')}</p>
+          <h2>{tenant.get('name', 'Your Store')}</h2>
+          <p>{tenant.get('nameBn', 'আপনার স্টোর')} · {tenant.get('kind', 'Ecommerce')}</p>
         </div>
         <div style="text-align: right;">
           <h1>চালান</h1>
