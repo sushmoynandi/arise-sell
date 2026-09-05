@@ -368,7 +368,7 @@ export default function ThreadsPage() {
                       {/* Optional English Gloss */}
                       {m.gloss && (
                         <p className={cx("mt-1.5 text-[11px] italic border-t pt-1", isCustomer ? "text-slate-400 border-slate-100" : "text-emerald-200/80 border-emerald-600")}>
-                          "{m.gloss}"
+                          &ldquo;{m.gloss}&rdquo;
                         </p>
                       )}
                     </div>

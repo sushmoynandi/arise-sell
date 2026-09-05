@@ -143,28 +143,6 @@ export default function IntegrationsPage() {
 
   // Load real channels from backend
   useEffect(() => {
-    // Default lock to official Meta registered channels
-    setIntegrations((prev) =>
-      prev.map((item) => {
-        if (item.id === "whatsapp") {
-          return {
-            ...item,
-            connected: true,
-            account: "+880 1401-411091 (Meta Cloud API Live 🟢)",
-          };
-        }
-        if (item.id === "facebook") {
-          return {
-            ...item,
-            connected: true,
-            account: "Nokshi Polli (Page ID: 104829104 · Meta Cloud AI Live 🟢)",
-            badge: "1-Click Live",
-          };
-        }
-        return item;
-      })
-    );
-
     async function load() {
       try {
         const channels = (await api.integrations.listChannels()) as Array<{

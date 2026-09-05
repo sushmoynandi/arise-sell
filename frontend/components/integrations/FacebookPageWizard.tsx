@@ -2,6 +2,59 @@
 
 import React, { useState, useEffect } from "react";
 
+interface FacebookAuthResponse {
+  accessToken: string;
+  expiresIn?: number;
+  signedRequest?: string;
+  userID?: string;
+}
+
+interface FacebookLoginResponse {
+  authResponse?: FacebookAuthResponse | null;
+  status?: string;
+}
+
+interface FacebookRawPage {
+  id: string;
+  name: string;
+  category?: string;
+  fan_count?: number;
+  picture?: {
+    data?: {
+      url?: string;
+    };
+  };
+  tasks?: string[];
+  access_token?: string;
+}
+
+interface FacebookAccountsResponse {
+  data?: FacebookRawPage[];
+}
+
+interface FacebookSDK {
+  init: (options: {
+    appId: string;
+    cookie?: boolean;
+    xfbml?: boolean;
+    version: string;
+  }) => void;
+  login: (
+    callback: (response: FacebookLoginResponse) => void,
+    options?: { scope: string }
+  ) => void;
+  api: (
+    path: string,
+    params: Record<string, unknown>,
+    callback: (response: FacebookAccountsResponse) => void
+  ) => void;
+}
+
+interface WindowWithFB extends Window {
+  FB?: FacebookSDK;
+  fbAsyncInit?: () => void;
+}
+
 export interface FacebookDiscoveredPage {
   id: string;
   name: string;
@@ -92,7 +145,6 @@ export function FacebookPageWizard({
   // Status & loading indicators
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [sdkInitialized, setSdkInitialized] = useState(false);
   const [isSandboxMode, setIsSandboxMode] = useState(false);
 
   // Initialize Meta JS SDK v22.0
@@ -100,16 +152,16 @@ export function FacebookPageWizard({
     if (typeof window === "undefined" || !isOpen) return;
 
     const appId = metaAppId || "27675542315480128";
+    const fbWindow = window as unknown as WindowWithFB;
 
     // Setup fbAsyncInit callback
-    (window as any).fbAsyncInit = function () {
-      (window as any).FB.init({
+    fbWindow.fbAsyncInit = function () {
+      fbWindow.FB?.init({
         appId: appId,
         cookie: true,
         xfbml: true,
         version: "v22.0",
       });
-      setSdkInitialized(true);
     };
 
     // Load SDK script if not already loaded
@@ -120,28 +172,26 @@ export function FacebookPageWizard({
       js.async = true;
       js.defer = true;
       js.onload = () => {
-        if ((window as any).FB) {
+        if (fbWindow.FB) {
           try {
-            (window as any).FB.init({
+            fbWindow.FB.init({
               appId: appId,
               cookie: true,
               xfbml: true,
               version: "v22.0",
             });
-            setSdkInitialized(true);
           } catch {}
         }
       };
       document.body.appendChild(js);
-    } else if ((window as any).FB) {
+    } else if (fbWindow.FB) {
       try {
-        (window as any).FB.init({
+        fbWindow.FB.init({
           appId: appId,
           cookie: true,
           xfbml: true,
           version: "v22.0",
         });
-        setSdkInitialized(true);
       } catch {}
     }
   }, [isOpen, metaAppId]);
@@ -154,11 +204,12 @@ export function FacebookPageWizard({
     setStatusMessage("🔐 Launching Meta Facebook Login Dialog (v22.0)...");
 
     const permissions = "pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_posts,public_profile";
+    const fbWindow = typeof window !== "undefined" ? (window as unknown as WindowWithFB) : null;
 
-    if (typeof window !== "undefined" && (window as any).FB) {
+    if (fbWindow?.FB) {
       try {
-        (window as any).FB.login(
-          async (response: any) => {
+        fbWindow.FB.login(
+          async (response: FacebookLoginResponse) => {
             if (response.authResponse) {
               const userAccessToken = response.authResponse.accessToken;
               setStatusMessage("⚡ Discovering owned Facebook Pages via Graph API v22.0...");
@@ -186,13 +237,13 @@ export function FacebookPageWizard({
               }
 
               // Fallback to direct client FB.api call
-              (window as any).FB.api(
+              fbWindow.FB?.api(
                 "/me/accounts",
                 { fields: "id,name,category,tasks,access_token,fan_count,picture{url}" },
-                (accResponse: any) => {
+                (accResponse: FacebookAccountsResponse) => {
                   setIsProcessing(false);
                   if (accResponse && accResponse.data && accResponse.data.length > 0) {
-                    const discovered: FacebookDiscoveredPage[] = accResponse.data.map((p: any) => ({
+                    const discovered: FacebookDiscoveredPage[] = accResponse.data.map((p: FacebookRawPage) => ({
                       id: p.id,
                       name: p.name,
                       category: p.category || "Business Page",
@@ -497,8 +548,8 @@ export function FacebookPageWizard({
 
               <div className="flex items-center gap-2 text-[11.5px] text-slate-500 font-medium self-end sm:self-auto">
                 <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Subscribed Webhooks Active</span>
+                  <span className={`size-2 rounded-full ${isSandboxMode ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`} />
+                  <span>{isSandboxMode ? "Sandbox Simulation" : "Subscribed Webhooks Active"}</span>
                 </span>
                 <span>·</span>
                 <span className="text-slate-700 font-bold">{pages.length} Pages Available</span>
@@ -517,6 +568,8 @@ export function FacebookPageWizard({
                     className={`rounded-2xl border p-4 transition-all flex flex-col justify-between gap-3 ${
                       isConnected
                         ? "border-emerald-200 bg-emerald-50/20 shadow-xs"
+                        : page.id === selectedPageId
+                        ? "border-blue-500 bg-blue-50/20 shadow-xs"
                         : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
                     }`}
                   >
@@ -525,9 +578,11 @@ export function FacebookPageWizard({
                       <div className="flex items-start gap-3">
                         <div className="relative size-12 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
                           {page.avatar ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={page.avatar}
                               alt={page.name}
+                              referrerPolicy="no-referrer"
                               className="size-full object-cover"
                             />
                           ) : (
