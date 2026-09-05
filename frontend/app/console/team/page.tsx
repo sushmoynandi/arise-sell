@@ -256,7 +256,9 @@ export default function TeamMembersPage() {
 
       if (Array.isArray(teamRes) && teamRes.length > 0) {
         setMembers(
-          teamRes.map((m) => ({
+          teamRes
+            .filter((m) => (m.role || "").toLowerCase() !== "superadmin")
+            .map((m) => ({
             id: m.id,
             name: m.name || "Teammate",
             email: m.email || "",

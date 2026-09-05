@@ -754,9 +754,9 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
       api.merchants
         .getTeam()
         .then((res: unknown) => {
-          if (Array.isArray(res) && res.length > 0) {
+          if (Array.isArray(res)) {
             setTeamMembers(
-              res as Array<{
+              (res as Array<{
                 id?: string;
                 name: string;
                 email?: string;
@@ -767,7 +767,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                 platforms?: string[];
                 avatar_url?: string | null;
                 is_owner?: boolean;
-              }>,
+              }>).filter((m) => (m.role || "").toLowerCase() !== "superadmin"),
             );
           }
         })

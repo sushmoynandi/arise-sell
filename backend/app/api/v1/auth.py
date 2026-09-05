@@ -29,6 +29,7 @@ from app.core.security_middleware import (
     get_client_ip,
 )
 from app.services.google_oauth import verify_google_identity, GoogleAuthError
+from app.services.plans_service import get_lowest_tier_plan
 from app.core.deps import get_current_active_user, oauth2_scheme
 from app.models.user import User
 from app.models.tenant import Business
@@ -56,14 +57,17 @@ async def _resolve_user_plan(user: User, db: AsyncSession) -> tuple[str | None, 
     try:
         if getattr(user, "is_superadmin", False):
             return "enterprise", True
+        lowest_tier = await get_lowest_tier_plan(db)
+        default_name = lowest_tier["name"]
+
         if not getattr(user, "business_id", None):
-            return getattr(user, "plan", None) or "Free", True
+            return getattr(user, "plan", None) or default_name, True
         stmt = select(Business).where(Business.id == user.business_id)
         res = await db.execute(stmt)
         biz = res.scalar_one_or_none()
         if biz and biz.plan and biz.plan.lower() not in ("none", "pending", ""):
             return biz.plan, True
-        return getattr(user, "plan", None) or "Free", True
+        return getattr(user, "plan", None) or default_name, True
     except Exception:
         return "Free", True
 
@@ -105,12 +109,15 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
     store_name = (req.store_name or f"{first_name}'s Store").strip()
     store_slug = f"store-{uuid.uuid4().hex[:6]}"
 
-    # Create business tenant with plan="Free"
+    # Fetch dynamic lowest tier plan from DB
+    lowest_tier = await get_lowest_tier_plan(db)
+
+    # Create business tenant with dynamic lowest tier
     biz = Business(
         name=store_name,
         slug=store_slug,
-        plan="Free",
-        orders_quota=100,
+        plan=lowest_tier["name"],
+        orders_quota=lowest_tier["orders_quota"],
     )
     db.add(biz)
     await db.flush()
@@ -125,8 +132,8 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         is_active=True,
         is_verified=True,
         last_login=datetime.now(timezone.utc),
-        plan="Free",
-        ai_quota=100,
+        plan=lowest_tier["name"],
+        ai_quota=lowest_tier["ai_quota"],
         ai_used=0,
     )
     db.add(user)
@@ -136,7 +143,11 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         "owner_id": str(user.id),
         "owner_email": clean_email,
         "owner_name": f"{first_name} {last_name}".strip() or "Store Owner",
-        "plan": "Free",
+        "plan": lowest_tier["name"],
+        "max_stores": lowest_tier["max_stores"],
+        "max_seats": lowest_tier["max_seats"],
+        "plan_price_bdt": lowest_tier["price_bdt"],
+        "team_members": [],
     }
 
     await db.commit()
@@ -156,7 +167,7 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
             is_verified=user.is_verified,
             role=user.role,
             is_superadmin=user.is_superadmin,
-            plan="Free",
+            plan=lowest_tier["name"],
             has_plan=True,
         ),
     )
@@ -557,10 +568,16 @@ async def google_auth(
                 user.avatar_url = profile.avatar_url
             await db.commit()
         else:
-            # Provision store & merchant user account with Free tier
+            # Provision store & merchant user account with dynamic lowest tier
+            lowest_tier = await get_lowest_tier_plan(db)
             store_name = f"{profile.first_name}'s Store"
             store_slug = f"store-{uuid.uuid4().hex[:6]}"
-            biz = Business(name=store_name, slug=store_slug, plan="Free", orders_quota=100)
+            biz = Business(
+                name=store_name,
+                slug=store_slug,
+                plan=lowest_tier["name"],
+                orders_quota=lowest_tier["orders_quota"],
+            )
             db.add(biz)
             await db.flush()
 
@@ -578,8 +595,8 @@ async def google_auth(
                 last_login=datetime.now(timezone.utc),
                 auth_provider="google",
                 has_password=False,
-                plan="Free",
-                ai_quota=100,
+                plan=lowest_tier["name"],
+                ai_quota=lowest_tier["ai_quota"],
                 ai_used=0,
             )
             db.add(user)
@@ -589,7 +606,11 @@ async def google_auth(
                 "owner_id": str(user.id),
                 "owner_email": profile.email.lower(),
                 "owner_name": f"{profile.first_name} {profile.last_name}".strip() or "Store Owner",
-                "plan": "Free",
+                "plan": lowest_tier["name"],
+                "max_stores": lowest_tier["max_stores"],
+                "max_seats": lowest_tier["max_seats"],
+                "plan_price_bdt": lowest_tier["price_bdt"],
+                "team_members": [],
             }
 
             await db.commit()
