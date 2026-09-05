@@ -77,7 +77,8 @@ export default function ThreadsPage() {
     return () => clearInterval(interval);
   }, [activeId]);
 
-  const active = allThreads.find((t) => t.id === activeId) ?? allThreads[0] ?? THREADS[0];
+  const active =
+    allThreads.find((t) => t.id === activeId) ?? allThreads[0] ?? THREADS[0];
   const ChannelIcon = CHANNEL_ICON[active.channel] || CHANNEL_ICON.whatsapp;
 
   useEffect(() => {
@@ -90,7 +91,10 @@ export default function ThreadsPage() {
     setReplyText("");
     setSending(true);
 
-    const nowStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const nowStr = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     const localMsg = {
       id: `m-${Date.now()}`,
       from: "human" as const,
@@ -98,7 +102,10 @@ export default function ThreadsPage() {
       at: nowStr,
       action: {
         label: "Merchant Direct Reply",
-        detail: active.channel === "messenger" ? "Dispatched to Messenger" : "Dispatched to WhatsApp",
+        detail:
+          active.channel === "messenger"
+            ? "Dispatched to Messenger"
+            : "Dispatched to WhatsApp",
         tone: "signal" as const,
       },
     };
@@ -112,8 +119,8 @@ export default function ThreadsPage() {
               status: "human",
               messages: [...t.messages, localMsg],
             }
-          : t
-      )
+          : t,
+      ),
     );
 
     try {
@@ -140,18 +147,16 @@ export default function ThreadsPage() {
       prev.map((t) =>
         t.id === active.id
           ? { ...t, status: t.status === "ai" ? "human" : "ai" }
-          : t
-      )
+          : t,
+      ),
     );
   };
 
   const handleResolve = () => {
     setAllThreads((prev) =>
       prev.map((t) =>
-        t.id === active.id
-          ? { ...t, status: "resolved", unread: 0 }
-          : t
-      )
+        t.id === active.id ? { ...t, status: "resolved", unread: 0 } : t,
+      ),
     );
   };
 
@@ -176,9 +181,7 @@ export default function ThreadsPage() {
             <Badge tone="signal" dot>
               ● Messenger Live Connected (Meta Cloud AI 🟢)
             </Badge>
-            <Badge tone="iris">
-              98.4% Handled by AI
-            </Badge>
+            <Badge tone="iris">98.4% Handled by AI</Badge>
           </div>
         }
       />
@@ -193,7 +196,9 @@ export default function ThreadsPage() {
                 onClick={() => setFilter(f)}
                 className={cx(
                   "relative shrink-0 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-colors",
-                  filter === f ? "text-slate-900 bg-slate-100" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/60",
+                  filter === f
+                    ? "text-slate-900 bg-slate-100"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/60",
                 )}
               >
                 {f}
@@ -221,7 +226,13 @@ export default function ThreadsPage() {
                 >
                   <Avatar
                     name={t.customer}
-                    hue={t.channel === "whatsapp" ? 142 : t.channel === "messenger" ? 210 : 262}
+                    hue={
+                      t.channel === "whatsapp"
+                        ? 142
+                        : t.channel === "messenger"
+                          ? 210
+                          : 262
+                    }
                     size={38}
                   />
                   <div className="min-w-0 flex-1">
@@ -261,7 +272,13 @@ export default function ThreadsPage() {
             <div className="flex min-w-0 items-center gap-3">
               <Avatar
                 name={active.customer}
-                hue={active.channel === "whatsapp" ? 142 : active.channel === "messenger" ? 210 : 262}
+                hue={
+                  active.channel === "whatsapp"
+                    ? 142
+                    : active.channel === "messenger"
+                      ? 210
+                      : 262
+                }
                 size={36}
               />
               <div className="min-w-0">
@@ -269,22 +286,48 @@ export default function ThreadsPage() {
                   {active.customer}
                 </p>
                 <p className="flex items-center gap-1.5 font-mono text-[11px] text-slate-500">
-                  <ChannelIcon width={13} height={13} className={active.channel === "messenger" ? "text-blue-600" : "text-emerald-600"} />
-                  <span className="font-semibold text-slate-700">{active.handle}</span> · {active.district || "Dhaka"}
+                  <ChannelIcon
+                    width={13}
+                    height={13}
+                    className={
+                      active.channel === "messenger"
+                        ? "text-blue-600"
+                        : "text-emerald-600"
+                    }
+                  />
+                  <span className="font-semibold text-slate-700">
+                    {active.handle}
+                  </span>{" "}
+                  · {active.district || "Dhaka"}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {active.status === "ai" ? (
-                <Button size="sm" variant="outline" onClick={handleTakeover} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 cursor-pointer">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTakeover}
+                  className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 cursor-pointer"
+                >
                   Take over (Human)
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" onClick={handleTakeover} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTakeover}
+                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer"
+                >
                   Return to AI
                 </Button>
               )}
-              <Button size="sm" onClick={handleResolve} variant="ghost" className="text-slate-600 hover:text-slate-900 cursor-pointer">
+              <Button
+                size="sm"
+                onClick={handleResolve}
+                variant="ghost"
+                className="text-slate-600 hover:text-slate-900 cursor-pointer"
+              >
                 Resolve
               </Button>
             </div>
@@ -340,8 +383,8 @@ export default function ThreadsPage() {
                         isCustomer
                           ? "rounded-tl-xs bg-white text-slate-900 border border-slate-200/80 shadow-slate-100"
                           : isAi
-                          ? "rounded-tr-xs bg-emerald-700 text-white font-normal"
-                          : "rounded-tr-xs bg-indigo-600 text-white font-normal"
+                            ? "rounded-tr-xs bg-emerald-700 text-white font-normal"
+                            : "rounded-tr-xs bg-indigo-600 text-white font-normal",
                       )}
                     >
                       {/* Image Attachment (Product / Invoice / Photo) */}
@@ -356,7 +399,10 @@ export default function ThreadsPage() {
                             <div className="bg-black/40 px-2.5 py-1 text-[11px] font-mono text-white backdrop-blur-xs flex items-center justify-between">
                               <span>Matched: {m.attachment.matchedSku}</span>
                               <span className="text-emerald-300">
-                                {Math.round((m.attachment.confidence || 0.95) * 100)}% Match
+                                {Math.round(
+                                  (m.attachment.confidence || 0.95) * 100,
+                                )}
+                                % Match
                               </span>
                             </div>
                           )}
@@ -367,7 +413,14 @@ export default function ThreadsPage() {
 
                       {/* Optional English Gloss */}
                       {m.gloss && (
-                        <p className={cx("mt-1.5 text-[11px] italic border-t pt-1", isCustomer ? "text-slate-400 border-slate-100" : "text-emerald-200/80 border-emerald-600")}>
+                        <p
+                          className={cx(
+                            "mt-1.5 text-[11px] italic border-t pt-1",
+                            isCustomer
+                              ? "text-slate-400 border-slate-100"
+                              : "text-emerald-200/80 border-emerald-600",
+                          )}
+                        >
                           &ldquo;{m.gloss}&rdquo;
                         </p>
                       )}
@@ -446,7 +499,13 @@ export default function ThreadsPage() {
             <div className="mt-3 flex items-center gap-3">
               <Avatar
                 name={active.customer}
-                hue={active.channel === "whatsapp" ? 142 : active.channel === "messenger" ? 210 : 262}
+                hue={
+                  active.channel === "whatsapp"
+                    ? 142
+                    : active.channel === "messenger"
+                      ? 210
+                      : 262
+                }
                 size={44}
               />
               <div className="min-w-0">
@@ -467,12 +526,16 @@ export default function ThreadsPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">District</span>
-              <span className="font-bold text-slate-800">{active.district || "Dhaka"}</span>
+              <span className="font-bold text-slate-800">
+                {active.district || "Dhaka"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Delivery Fee</span>
               <span className="font-mono font-bold text-emerald-700">
-                {active.district?.toLowerCase() === "dhaka" ? "৳80 (Inside Dhaka)" : "৳130 (Outside Dhaka)"}
+                {active.district?.toLowerCase() === "dhaka"
+                  ? "৳80 (Inside Dhaka)"
+                  : "৳130 (Outside Dhaka)"}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -492,7 +555,8 @@ export default function ThreadsPage() {
                 <span>🤖 Gemini 3.5 Flash NLU</span>
               </div>
               <p className="text-[11.5px] leading-relaxed text-indigo-800">
-                Intent recognized: <strong>{active.intent}</strong>. Courier fee and product catalog synced from store inventory.
+                Intent recognized: <strong>{active.intent}</strong>. Courier fee
+                and product catalog synced from store inventory.
               </p>
             </div>
           </div>
@@ -503,7 +567,9 @@ export default function ThreadsPage() {
               onClick={handleTakeover}
               className="w-full rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/40 py-2 text-xs font-bold text-slate-700 hover:text-indigo-900 transition-all cursor-pointer"
             >
-              {active.status === "ai" ? "Take Over Conversation (Human)" : "Return Thread to Autonomous AI"}
+              {active.status === "ai"
+                ? "Take Over Conversation (Human)"
+                : "Return Thread to Autonomous AI"}
             </button>
           </div>
         </div>

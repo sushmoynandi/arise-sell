@@ -162,7 +162,7 @@ export default function IntegrationsPage() {
                   (item.id === "facebook" &&
                     (c.id === "messenger" ||
                       c.label.toLowerCase().includes("messenger") ||
-                      c.label.toLowerCase().includes("facebook")))
+                      c.label.toLowerCase().includes("facebook"))),
               );
               if (matched) {
                 return {
@@ -575,13 +575,15 @@ export default function IntegrationsPage() {
                 <span
                   className={cx(
                     "flex items-center gap-1.5 text-[11.5px] font-bold",
-                    item.connected ? "text-signal" : "text-text-3"
+                    item.connected ? "text-signal" : "text-text-3",
                   )}
                 >
                   <span
                     className={cx(
                       "size-2 rounded-full",
-                      item.connected ? "bg-signal animate-pulse" : "bg-text-3/40"
+                      item.connected
+                        ? "bg-signal animate-pulse"
+                        : "bg-text-3/40",
                     )}
                   />
                   {item.connected ? "🟢 Active & Automated" : "Not Connected"}
@@ -602,7 +604,7 @@ export default function IntegrationsPage() {
                   "rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all cursor-pointer shrink-0",
                   item.connected
                     ? "border border-line bg-white text-text-2 hover:border-blue-300 hover:text-blue-600 shadow-2xs"
-                    : "bg-signal text-white hover:bg-signal-deep shadow-xs"
+                    : "bg-signal text-white hover:bg-signal-deep shadow-xs",
                 )}
               >
                 {connectingId === item.id
@@ -733,7 +735,7 @@ export default function IntegrationsPage() {
                     "flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5",
                     qrTab === "scan"
                       ? "bg-slate-100 text-slate-900 font-bold shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      : "text-slate-500 hover:text-slate-800",
                   )}
                 >
                   📷 Scan QR Code
@@ -745,7 +747,7 @@ export default function IntegrationsPage() {
                     "flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5",
                     qrTab === "code"
                       ? "bg-slate-100 text-slate-900 font-bold shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      : "text-slate-500 hover:text-slate-800",
                   )}
                 >
                   🔢 Link with Phone Number
@@ -905,8 +907,8 @@ export default function IntegrationsPage() {
                     account: accountStr,
                     badge: "1-Click Live",
                   }
-                : item
-            )
+                : item,
+            ),
           );
           setFbModalOpen(false);
         }}

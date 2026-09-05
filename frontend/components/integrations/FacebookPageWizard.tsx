@@ -41,12 +41,12 @@ interface FacebookSDK {
   }) => void;
   login: (
     callback: (response: FacebookLoginResponse) => void,
-    options?: { scope: string }
+    options?: { scope: string },
   ) => void;
   api: (
     path: string,
     params: Record<string, unknown>,
-    callback: (response: FacebookAccountsResponse) => void
+    callback: (response: FacebookAccountsResponse) => void,
   ) => void;
 }
 
@@ -85,7 +85,8 @@ const DEFAULT_SANDBOX_PAGES: FacebookDiscoveredPage[] = [
     name: "Nokshi Polli - নকশী পল্লী",
     category: "Handicraft & Clothing",
     followers: "48,500",
-    avatar: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80",
     tasks: ["MANAGE", "MESSAGING", "MODERATE", "CREATE_CONTENT"],
     accessToken: "EAAG_PAGE_PERMANENT_NOKSHI_104829104",
     connected: true,
@@ -95,7 +96,8 @@ const DEFAULT_SANDBOX_PAGES: FacebookDiscoveredPage[] = [
     name: "AriseSell Official - অ্যারাইজ সেল",
     category: "E-Commerce & Retail",
     followers: "112,000",
-    avatar: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=120&auto=format&fit=crop&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=120&auto=format&fit=crop&q=80",
     tasks: ["MANAGE", "MESSAGING", "MODERATE", "CREATE_CONTENT"],
     accessToken: "EAAG_PAGE_PERMANENT_ARISESELL_209384",
     connected: false,
@@ -105,7 +107,8 @@ const DEFAULT_SANDBOX_PAGES: FacebookDiscoveredPage[] = [
     name: "Dhaka Artisan Crafts",
     category: "Fashion & Lifestyle",
     followers: "24,300",
-    avatar: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=120&auto=format&fit=crop&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=120&auto=format&fit=crop&q=80",
     tasks: ["MANAGE", "MESSAGING", "MODERATE"],
     accessToken: "EAAG_PAGE_PERMANENT_ARTISAN_304958",
     connected: false,
@@ -115,7 +118,8 @@ const DEFAULT_SANDBOX_PAGES: FacebookDiscoveredPage[] = [
     name: "Cholo Bazar - চলো বাজার",
     category: "Supermarket & Grocery",
     followers: "67,200",
-    avatar: "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=120&auto=format&fit=crop&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=120&auto=format&fit=crop&q=80",
     tasks: ["MANAGE", "MESSAGING"],
     accessToken: "EAAG_PAGE_PERMANENT_CHOLO_402918",
     connected: false,
@@ -128,19 +132,29 @@ export function FacebookPageWizard({
   onSuccess,
   defaultPageId = "104829104829104",
 }: FacebookPageWizardProps) {
-  const [activeTab, setActiveTab] = useState<"discovery" | "custom_app">("discovery");
-  const [pages, setPages] = useState<FacebookDiscoveredPage[]>(DEFAULT_SANDBOX_PAGES);
+  const [activeTab, setActiveTab] = useState<"discovery" | "custom_app">(
+    "discovery",
+  );
+  const [pages, setPages] = useState<FacebookDiscoveredPage[]>(
+    DEFAULT_SANDBOX_PAGES,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPageId, setSelectedPageId] = useState<string>(defaultPageId);
   const [connectingPageId, setConnectingPageId] = useState<string | null>(null);
 
   // Meta Developer Credentials (for custom token tab)
   const [metaAppId, setMetaAppId] = useState("27675542315480128");
-  const [metaAppSecret, setMetaAppSecret] = useState("b28751575c04f7708e68091605beb6b8");
+  const [metaAppSecret, setMetaAppSecret] = useState(
+    "b28751575c04f7708e68091605beb6b8",
+  );
   const [manualPageId, setManualPageId] = useState("104829104829104");
-  const [manualPageName, setManualPageName] = useState("Nokshi Polli - নকশী পল্লী");
+  const [manualPageName, setManualPageName] = useState(
+    "Nokshi Polli - নকশী পল্লী",
+  );
   const [manualPageToken, setManualPageToken] = useState("");
-  const [verifyToken, setVerifyToken] = useState("arisesell_fb_webhook_verify_2026");
+  const [verifyToken, setVerifyToken] = useState(
+    "arisesell_fb_webhook_verify_2026",
+  );
 
   // Status & loading indicators
   const [isProcessing, setIsProcessing] = useState(false);
@@ -203,8 +217,12 @@ export function FacebookPageWizard({
     setIsProcessing(true);
     setStatusMessage("🔐 Launching Meta Facebook Login Dialog (v22.0)...");
 
-    const permissions = "pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_posts,public_profile";
-    const fbWindow = typeof window !== "undefined" ? (window as unknown as WindowWithFB) : null;
+    const permissions =
+      "pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_posts,public_profile";
+    const fbWindow =
+      typeof window !== "undefined"
+        ? (window as unknown as WindowWithFB)
+        : null;
 
     if (fbWindow?.FB) {
       try {
@@ -212,21 +230,32 @@ export function FacebookPageWizard({
           async (response: FacebookLoginResponse) => {
             if (response.authResponse) {
               const userAccessToken = response.authResponse.accessToken;
-              setStatusMessage("⚡ Discovering owned Facebook Pages via Graph API v22.0...");
+              setStatusMessage(
+                "⚡ Discovering owned Facebook Pages via Graph API v22.0...",
+              );
 
               try {
                 // Call backend oauth-exchange or fallback to Graph API
-                const res = await fetch("http://localhost:8000/api/v1/integrations/facebook/oauth-exchange", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ access_token: userAccessToken }),
-                });
+                const res = await fetch(
+                  "http://localhost:8000/api/v1/integrations/facebook/oauth-exchange",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ access_token: userAccessToken }),
+                  },
+                );
 
                 if (res.ok) {
                   const data = await res.json();
-                  if (data.pages && Array.isArray(data.pages) && data.pages.length > 0) {
+                  if (
+                    data.pages &&
+                    Array.isArray(data.pages) &&
+                    data.pages.length > 0
+                  ) {
                     setPages(data.pages);
-                    setStatusMessage(`🎉 Found ${data.pages.length} Facebook Page(s) owned by your account!`);
+                    setStatusMessage(
+                      `🎉 Found ${data.pages.length} Facebook Page(s) owned by your account!`,
+                    );
                     setTimeout(() => setStatusMessage(null), 2500);
                     setIsProcessing(false);
                     return;
@@ -239,37 +268,53 @@ export function FacebookPageWizard({
               // Fallback to direct client FB.api call
               fbWindow.FB?.api(
                 "/me/accounts",
-                { fields: "id,name,category,tasks,access_token,fan_count,picture{url}" },
+                {
+                  fields:
+                    "id,name,category,tasks,access_token,fan_count,picture{url}",
+                },
                 (accResponse: FacebookAccountsResponse) => {
                   setIsProcessing(false);
-                  if (accResponse && accResponse.data && accResponse.data.length > 0) {
-                    const discovered: FacebookDiscoveredPage[] = accResponse.data.map((p: FacebookRawPage) => ({
-                      id: p.id,
-                      name: p.name,
-                      category: p.category || "Business Page",
-                      followers: p.fan_count ? `${p.fan_count.toLocaleString()}` : "1.2K",
-                      avatar: p.picture?.data?.url || "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80",
-                      tasks: p.tasks || [],
-                      accessToken: p.access_token,
-                      connected: false,
-                    }));
+                  if (
+                    accResponse &&
+                    accResponse.data &&
+                    accResponse.data.length > 0
+                  ) {
+                    const discovered: FacebookDiscoveredPage[] =
+                      accResponse.data.map((p: FacebookRawPage) => ({
+                        id: p.id,
+                        name: p.name,
+                        category: p.category || "Business Page",
+                        followers: p.fan_count
+                          ? `${p.fan_count.toLocaleString()}`
+                          : "1.2K",
+                        avatar:
+                          p.picture?.data?.url ||
+                          "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=120&auto=format&fit=crop&q=80",
+                        tasks: p.tasks || [],
+                        accessToken: p.access_token,
+                        connected: false,
+                      }));
                     setPages(discovered);
-                    setStatusMessage(`🎉 Discovered ${discovered.length} Facebook Page(s) ready to connect!`);
+                    setStatusMessage(
+                      `🎉 Discovered ${discovered.length} Facebook Page(s) ready to connect!`,
+                    );
                     setTimeout(() => setStatusMessage(null), 2500);
                   } else {
                     triggerSandboxSimulation();
                   }
-                }
+                },
               );
             } else {
               setIsProcessing(false);
-              setStatusMessage("ℹ️ Meta Login was cancelled or closed. Loading Sandbox demo pages...");
+              setStatusMessage(
+                "ℹ️ Meta Login was cancelled or closed. Loading Sandbox demo pages...",
+              );
               setTimeout(() => {
                 triggerSandboxSimulation();
               }, 1000);
             }
           },
-          { scope: permissions }
+          { scope: permissions },
         );
       } catch {
         triggerSandboxSimulation();
@@ -284,7 +329,9 @@ export function FacebookPageWizard({
   const triggerSandboxSimulation = () => {
     setIsProcessing(true);
     setIsSandboxMode(true);
-    setStatusMessage("⚡ Instant Sandbox Demo: Discovered 4 Bangladeshi Merchant Pages 🌾");
+    setStatusMessage(
+      "⚡ Instant Sandbox Demo: Discovered 4 Bangladeshi Merchant Pages 🌾",
+    );
 
     setTimeout(() => {
       setPages(DEFAULT_SANDBOX_PAGES);
@@ -299,26 +346,36 @@ export function FacebookPageWizard({
     setSelectedPageId(page.id);
     setIsProcessing(true);
 
-    setStatusMessage(`🔐 Step 1/3: Exchanging permanent Page Access Token for "${page.name}"...`);
+    setStatusMessage(
+      `🔐 Step 1/3: Exchanging permanent Page Access Token for "${page.name}"...`,
+    );
 
     try {
       await new Promise((r) => setTimeout(r, 600));
-      setStatusMessage(`🌐 Step 2/3: Subscribing Webhooks (messages, feed, mentions) to AriseSell...`);
+      setStatusMessage(
+        `🌐 Step 2/3: Subscribing Webhooks (messages, feed, mentions) to AriseSell...`,
+      );
 
       // Attempt backend persistence
-      await fetch("http://localhost:8000/api/v1/integrations/facebook/connect-page", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          page_id: page.id,
-          page_name: page.name,
-          page_access_token: page.accessToken || `EAAG_PAGE_PERMANENT_${page.id}`,
-          category: page.category,
-          followers: page.followers,
-        }),
-      }).catch(() => {});
+      await fetch(
+        "http://localhost:8000/api/v1/integrations/facebook/connect-page",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            page_id: page.id,
+            page_name: page.name,
+            page_access_token:
+              page.accessToken || `EAAG_PAGE_PERMANENT_${page.id}`,
+            category: page.category,
+            followers: page.followers,
+          }),
+        },
+      ).catch(() => {});
 
-      setStatusMessage(`🤖 Step 3/3: Activating Google Gemini 3.5 Flash NLU & 64-District Courier Calculator...`);
+      setStatusMessage(
+        `🤖 Step 3/3: Activating Google Gemini 3.5 Flash NLU & 64-District Courier Calculator...`,
+      );
       await new Promise((r) => setTimeout(r, 600));
 
       // Mark page as connected
@@ -326,10 +383,12 @@ export function FacebookPageWizard({
         prev.map((p) => ({
           ...p,
           connected: p.id === page.id ? true : p.connected,
-        }))
+        })),
       );
 
-      setStatusMessage(`🎉 Success! "${page.name}" Connected. Meta Cloud AI Live 🟢`);
+      setStatusMessage(
+        `🎉 Success! "${page.name}" Connected. Meta Cloud AI Live 🟢`,
+      );
 
       setTimeout(() => {
         setIsProcessing(false);
@@ -361,23 +420,33 @@ export function FacebookPageWizard({
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    setStatusMessage("🔐 Step 1/3: Validating Page Access Token with Meta Graph API v22.0...");
+    setStatusMessage(
+      "🔐 Step 1/3: Validating Page Access Token with Meta Graph API v22.0...",
+    );
 
     try {
       await new Promise((r) => setTimeout(r, 600));
-      setStatusMessage("🌐 Step 2/3: Subscribing Webhooks to AriseSell Ingestion Engine...");
+      setStatusMessage(
+        "🌐 Step 2/3: Subscribing Webhooks to AriseSell Ingestion Engine...",
+      );
 
-      await fetch("http://localhost:8000/api/v1/integrations/facebook/connect-page", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          page_id: manualPageId,
-          page_name: manualPageName,
-          page_access_token: manualPageToken || `EAAG_PAGE_MANUAL_${manualPageId}`,
-        }),
-      }).catch(() => {});
+      await fetch(
+        "http://localhost:8000/api/v1/integrations/facebook/connect-page",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            page_id: manualPageId,
+            page_name: manualPageName,
+            page_access_token:
+              manualPageToken || `EAAG_PAGE_MANUAL_${manualPageId}`,
+          }),
+        },
+      ).catch(() => {});
 
-      setStatusMessage(`🤖 Step 3/3: Activating Gemini 3.5 Flash AI Sales Bot for ${manualPageName}...`);
+      setStatusMessage(
+        `🤖 Step 3/3: Activating Gemini 3.5 Flash AI Sales Bot for ${manualPageName}...`,
+      );
       await new Promise((r) => setTimeout(r, 600));
 
       setStatusMessage("🎉 Success! Facebook Page Connected & Active 🟢");
@@ -409,7 +478,7 @@ export function FacebookPageWizard({
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.id.includes(searchQuery)
+      p.id.includes(searchQuery),
   );
 
   return (
@@ -427,7 +496,9 @@ export function FacebookPageWizard({
             <span className="text-slate-400">⇄</span>
             <span className="font-bold text-slate-800 flex items-center gap-1">
               <span>AriseSell</span>
-              <span className="text-[10px] rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.2 font-mono">v22.0</span>
+              <span className="text-[10px] rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.2 font-mono">
+                v22.0
+              </span>
             </span>
           </div>
 
@@ -505,7 +576,8 @@ export function FacebookPageWizard({
                   </span>
                 </div>
                 <p className="text-[12px] text-slate-600 leading-relaxed">
-                  Authenticate securely to auto-discover all Facebook Pages with zero manual tokens.
+                  Authenticate securely to auto-discover all Facebook Pages with
+                  zero manual tokens.
                 </p>
               </div>
 
@@ -516,7 +588,10 @@ export function FacebookPageWizard({
                   disabled={isProcessing}
                   className="w-full sm:w-auto rounded-xl bg-[#1877f2] hover:bg-[#166fe5] text-white px-4 py-2 text-[12.5px] font-bold shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <svg className="size-4 fill-white shrink-0" viewBox="0 0 24 24">
+                  <svg
+                    className="size-4 fill-white shrink-0"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                   </svg>
                   <span>1-Click FB Login ➔</span>
@@ -534,7 +609,9 @@ export function FacebookPageWizard({
                   placeholder="Filter discovered pages..."
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-1.5 pl-8 text-[12px] font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-400 focus:outline-hidden transition-all"
                 />
-                <span className="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+                <span className="absolute left-2.5 top-2 text-slate-400 text-xs">
+                  🔍
+                </span>
                 {searchQuery && (
                   <button
                     type="button"
@@ -548,11 +625,19 @@ export function FacebookPageWizard({
 
               <div className="flex items-center gap-2 text-[11.5px] text-slate-500 font-medium self-end sm:self-auto">
                 <span className="flex items-center gap-1">
-                  <span className={`size-2 rounded-full ${isSandboxMode ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`} />
-                  <span>{isSandboxMode ? "Sandbox Simulation" : "Subscribed Webhooks Active"}</span>
+                  <span
+                    className={`size-2 rounded-full ${isSandboxMode ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`}
+                  />
+                  <span>
+                    {isSandboxMode
+                      ? "Sandbox Simulation"
+                      : "Subscribed Webhooks Active"}
+                  </span>
                 </span>
                 <span>·</span>
-                <span className="text-slate-700 font-bold">{pages.length} Pages Available</span>
+                <span className="text-slate-700 font-bold">
+                  {pages.length} Pages Available
+                </span>
               </div>
             </div>
 
@@ -569,8 +654,8 @@ export function FacebookPageWizard({
                       isConnected
                         ? "border-emerald-200 bg-emerald-50/20 shadow-xs"
                         : page.id === selectedPageId
-                        ? "border-blue-500 bg-blue-50/20 shadow-xs"
-                        : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
+                          ? "border-blue-500 bg-blue-50/20 shadow-xs"
+                          : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
                     }`}
                   >
                     <div className="space-y-2.5">
@@ -600,7 +685,10 @@ export function FacebookPageWizard({
                             <h4 className="text-[13.5px] font-bold text-slate-900 truncate">
                               {page.name}
                             </h4>
-                            <span className="text-blue-500 text-xs shrink-0" title="Verified Business Page">
+                            <span
+                              className="text-blue-500 text-xs shrink-0"
+                              title="Verified Business Page"
+                            >
                               ☑️
                             </span>
                           </div>
@@ -623,7 +711,9 @@ export function FacebookPageWizard({
                       <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-[11px] space-y-1">
                         <div className="flex items-center justify-between text-slate-600 font-medium">
                           <span className="flex items-center gap-1">
-                            <span className="text-emerald-600 font-bold">⚡</span>
+                            <span className="text-emerald-600 font-bold">
+                              ⚡
+                            </span>
                             <span>Webhooks Subscribed:</span>
                           </span>
                           <span className="font-mono text-[10px] text-slate-500">
@@ -632,7 +722,9 @@ export function FacebookPageWizard({
                         </div>
                         <div className="flex items-center justify-between text-slate-600 font-medium">
                           <span className="flex items-center gap-1">
-                            <span className="text-indigo-600 font-bold">🤖</span>
+                            <span className="text-indigo-600 font-bold">
+                              🤖
+                            </span>
                             <span>Sales AI Engine:</span>
                           </span>
                           <span className="font-semibold text-indigo-700">
@@ -655,7 +747,9 @@ export function FacebookPageWizard({
                             isConnected ? "text-emerald-700" : "text-slate-500"
                           }`}
                         >
-                          {isConnected ? "Meta Cloud AI Live 🟢" : "Ready to Link"}
+                          {isConnected
+                            ? "Meta Cloud AI Live 🟢"
+                            : "Ready to Link"}
                         </span>
                       </div>
 
@@ -677,7 +771,9 @@ export function FacebookPageWizard({
                         ) : isConnected ? (
                           <>
                             <span>Connected</span>
-                            <span className="text-emerald-600 font-bold">✓</span>
+                            <span className="text-emerald-600 font-bold">
+                              ✓
+                            </span>
                           </>
                         ) : (
                           <span>Connect Page ➔</span>
@@ -694,7 +790,8 @@ export function FacebookPageWizard({
               <div className="flex items-center gap-2">
                 <span className="text-base">💡</span>
                 <span>
-                  <strong>Developer Sandbox:</strong> Simulated with Bangladeshi regional dialect parsing and 64-district delivery calculation.
+                  <strong>Developer Sandbox:</strong> Simulated with Bangladeshi
+                  regional dialect parsing and 64-district delivery calculation.
                 </span>
               </div>
               <button
@@ -718,13 +815,16 @@ export function FacebookPageWizard({
                 <span>🛠️ Custom Meta Developer App Credentials</span>
               </h3>
               <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                Enter your Page ID and Never-Expiring Page Access Token from the Meta App Dashboard if connecting custom credentials.
+                Enter your Page ID and Never-Expiring Page Access Token from the
+                Meta App Dashboard if connecting custom credentials.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Facebook Page ID</label>
+                <label className="font-bold text-slate-700">
+                  Facebook Page ID
+                </label>
                 <input
                   type="text"
                   value={manualPageId}
@@ -736,7 +836,9 @@ export function FacebookPageWizard({
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Facebook Page Name</label>
+                <label className="font-bold text-slate-700">
+                  Facebook Page Name
+                </label>
                 <input
                   type="text"
                   value={manualPageName}
@@ -759,7 +861,9 @@ export function FacebookPageWizard({
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Meta App Secret</label>
+                <label className="font-bold text-slate-700">
+                  Meta App Secret
+                </label>
                 <input
                   type="password"
                   value={metaAppSecret}
@@ -811,7 +915,9 @@ export function FacebookPageWizard({
                   setMetaAppId("27675542315480128");
                   setMetaAppSecret("b28751575c04f7708e68091605beb6b8");
                   setManualPageToken("EAAG_PERMANENT_NOKSHI_104829104");
-                  setStatusMessage("⚡ Auto-filled production verified Page parameters.");
+                  setStatusMessage(
+                    "⚡ Auto-filled production verified Page parameters.",
+                  );
                   setTimeout(() => setStatusMessage(null), 2000);
                 }}
                 className="text-[12px] font-bold text-slate-600 hover:text-slate-900 underline cursor-pointer"
@@ -824,7 +930,11 @@ export function FacebookPageWizard({
                 disabled={isProcessing}
                 className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 text-[12.5px] font-bold shadow-xs transition-all cursor-pointer flex items-center gap-2"
               >
-                <span>{isProcessing ? "Saving & Subscribing..." : "Save & Activate Page AI ➔"}</span>
+                <span>
+                  {isProcessing
+                    ? "Saving & Subscribing..."
+                    : "Save & Activate Page AI ➔"}
+                </span>
               </button>
             </div>
           </form>

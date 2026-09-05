@@ -11,7 +11,6 @@ import {
   IconLock,
   IconEye,
   IconEyeOff,
-  IconShield,
   IconCheck,
 } from "@/components/ui/icons";
 import { useLang } from "@/lib/i18n";
@@ -25,8 +24,6 @@ export default function SignupForm() {
   const { t } = useLang();
   const { register } = useAuth();
 
-  const [fullName, setFullName] = useState("");
-  const [storeName, setStoreName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -110,12 +107,16 @@ export default function SignupForm() {
 
     setLoading(true);
     try {
+      const emailPrefix = email.trim().split("@")[0] || "Merchant";
+      const autoName =
+        emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+
       const res = await register({
         email: email.trim(),
         password,
         password2: confirmPassword || password,
-        full_name: fullName.trim() || undefined,
-        store_name: storeName.trim() || undefined,
+        full_name: autoName,
+        store_name: `${autoName}'s Store`,
       });
 
       if (res.success) {
@@ -215,38 +216,6 @@ export default function SignupForm() {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Full Name & Store Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[12.5px] font-medium text-text">
-                {t("Your Name", "আপনার নাম")}
-              </label>
-              <div className="relative mt-1">
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Farhana Rahman"
-                  className="h-10 w-full rounded-xl border border-black/9 bg-white/75 px-3 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[12.5px] font-medium text-text">
-                {t("Store Name", "শপের নাম")}
-              </label>
-              <div className="relative mt-1">
-                <input
-                  type="text"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="e.g. Nokshi Crafts"
-                  className="h-10 w-full rounded-xl border border-black/9 bg-white/75 px-3 text-[13.5px] text-text placeholder:text-text-3 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02),0_1px_0_rgba(255,255,255,0.8)] transition-all duration-200 focus:border-signal focus:bg-white focus:outline-none focus:ring-3 focus:ring-signal/15"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Email */}
           <div>
             <label className="block text-[12.5px] font-medium text-text">
