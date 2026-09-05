@@ -136,7 +136,16 @@ async def run_whatsapp_e2e_tests():
         print(f"  Webhook Ingestion: HTTP {wb_res.status_code} ({wb_res.json()})")
         assert wb_res.status_code == 200
 
-        status_res = await client.get("/api/v1/integrations/channels")
+        from app.core.security import create_access_token
+        test_token = create_access_token({
+            "sub": "00000000-0000-0000-0000-000000000001",
+            "biz": "00000000-0000-0000-0000-000000000001",
+            "role": "owner",
+            "email": "merchant@nokshi.com.bd",
+        })
+        auth_headers = {"Authorization": f"Bearer {test_token}"}
+
+        status_res = await client.get("/api/v1/integrations/channels", headers=auth_headers)
         print(f"  WhatsApp Channels List: HTTP {status_res.status_code} (Channels: {len(status_res.json())})")
         assert status_res.status_code == 200
         assert len(status_res.json()) >= 1

@@ -21,6 +21,9 @@ from app.services.whatsapp_cloud import send_whatsapp_text
 router = APIRouter(prefix="/threads", tags=["Threads & Live Inbox"])
 
 
+from app.models.channel import ConnectedChannel
+
+
 class LiveReplyPayload(BaseModel):
     handle: str
     message: str
@@ -28,26 +31,48 @@ class LiveReplyPayload(BaseModel):
 
 
 @router.get("/live")
-async def list_live_threads():
-    """Retrieve all active real-time live threads from WhatsApp and Omnichannel."""
-    return get_live_threads()
+async def list_live_threads(
+    user: User = Depends(get_current_active_user),
+):
+    """Retrieve all active real-time live threads for merchant's business tenant."""
+    return get_live_threads(business_id=str(user.business_id))
 
 
 @router.post("/live/reply")
-async def send_live_reply(payload: LiveReplyPayload):
+async def send_live_reply(
+    payload: LiveReplyPayload,
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Send manual message to WhatsApp customer directly from Web Dashboard."""
     clean_phone = "".join(filter(str.isdigit, str(payload.handle)))
     if clean_phone:
-        # Dispatch to WhatsApp Cloud API
-        await send_whatsapp_text(to_phone=clean_phone, body=payload.message)
+        chan_stmt = select(ConnectedChannel).where(
+            ConnectedChannel.business_id == user.business_id,
+            ConnectedChannel.channel_type == "whatsapp",
+            ConnectedChannel.is_live == True,
+        ).limit(1)
+        chan_res = await db.execute(chan_stmt)
+        channel = chan_res.scalar_one_or_none()
 
-    # Record message in live store
+        custom_token = channel.access_token if channel else None
+        p_id = channel.external_id if channel else None
+
+        await send_whatsapp_text(
+            to_phone=clean_phone,
+            body=payload.message,
+            phone_number_id=p_id,
+            access_token=custom_token,
+        )
+
     msg = record_merchant_reply(
         handle=payload.handle,
         reply_body=payload.message,
         thread_id=payload.thread_id,
+        business_id=str(user.business_id),
     )
     return {"status": "sent", "message": msg}
+
 
 
 

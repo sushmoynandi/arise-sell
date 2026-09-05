@@ -320,6 +320,7 @@ def record_merchant_reply(
     handle: str,
     reply_body: str,
     thread_id: str | None = None,
+    business_id: str | None = None,
 ) -> dict[str, Any]:
     """Record manual merchant message into the Live Inbox thread."""
     global LIVE_THREADS
@@ -345,9 +346,12 @@ def record_merchant_reply(
         existing["messages"].append(msg_human)
         existing["lastAt"] = "Just now"
         existing["status"] = "human"
+        if business_id:
+            existing["business_id"] = str(business_id)
     else:
         new_thread = {
             "id": t_id,
+            "business_id": str(business_id) if business_id else None,
             "customer": f"Customer (+{clean_phone[-4:] if len(clean_phone)>=4 else clean_phone})",
             "handle": f"+{clean_phone}" if clean_phone else handle,
             "channel": "whatsapp",

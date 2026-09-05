@@ -12,20 +12,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import verify_token, is_token_revoked
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_current_user_payload(
-    token: Annotated[str | None, Depends(oauth2_scheme)],
+    token: Annotated[str, Depends(oauth2_scheme)],
 ) -> dict:
-    """Validate JWT token and return decoded payload dictionary (with sandbox fallback)."""
+    """Validate JWT token and return decoded payload dictionary."""
     if not token:
-        return {
-            "sub": "00000000-0000-0000-0000-000000000001",
-            "biz": "00000000-0000-0000-0000-000000000001",
-            "role": "owner",
-            "email": "merchant@nokshi.com.bd",
-        }
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication credentials were not provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if is_token_revoked(token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,6 +47,7 @@ async def get_current_user_payload(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
 
 
 async def get_current_user(
@@ -75,27 +75,21 @@ async def get_current_user(
 
     if not user:
         biz_id = uuid.UUID(payload.get("biz")) if payload.get("biz") else uuid.uuid4()
-        is_super = bool(
-            payload.get("is_superadmin") or
-            payload.get("role") == "superadmin" or
-            str(payload.get("email", "")).lower() in ["admin@arisesell.com", "admin@nextproduct.ai"]
-        )
         user = User(
             id=user_id,
-            email=payload.get("email", "admin@arisesell.com" if is_super else "merchant@nextproduct.ai"),
+            email=payload.get("email", "merchant@nextproduct.ai"),
             hashed_password="",
-            first_name="Admin" if is_super else "Merchant",
-            last_name="Superuser" if is_super else "User",
-            role="superadmin" if is_super else payload.get("role", "owner"),
+            first_name="Merchant",
+            last_name="User",
+            role=payload.get("role", "owner"),
             business_id=biz_id,
             is_active=True,
             is_verified=True,
-            is_superadmin=is_super,
+            is_superadmin=bool(payload.get("is_superadmin") or payload.get("role") == "superadmin"),
         )
-    else:
-        if user.email.strip().lower() in ["admin@arisesell.com", "admin@nextproduct.ai"]:
-            user.is_superadmin = True
     return user
+
+
 
 
 async def get_current_active_user(

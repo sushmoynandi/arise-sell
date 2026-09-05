@@ -39,34 +39,22 @@ async def handle_whatsapp_message_async(payload: dict) -> None:
     2. Resolves merchant tenant business_id from ConnectedChannel by phone_number_id.
     3. Runs live Google Gemini 3.5 Flash reasoning with catalog & delivery RAG context.
     4. Dispatches outbound reply via WhatsApp Cloud API.
+    5. Syncs live interaction to merchant's Live Inbox.
     """
     try:
-        print(f"[Raw Inbound Webhook Payload]: {json.dumps(payload)}")
         entries = payload.get("entry", [])
         for entry in entries:
             changes = entry.get("changes", [])
             for change in changes:
                 value = change.get("value", {})
-                statuses = value.get("statuses", [])
-                for status in statuses:
-                    s_status = status.get("status")
-                    s_recipient = status.get("recipient_id")
                 metadata = value.get("metadata", {})
                 phone_number_id = str(metadata.get("phone_number_id", "")).strip()
-                messages = value.get("messages", [])
-
                 contacts = value.get("contacts", [])
-                contacts_map = {c.get("user_id"): c.get("wa_id") for c in contacts if c.get("wa_id")}
-                default_wa_id = contacts[0].get("wa_id") if contacts else None
-                profile_info = contacts[0].get("profile", {}) if contacts else {}
-                profile_name = profile_info.get("name") or profile_info.get("username")
+                customer_name = contacts[0].get("profile", {}).get("name", "Customer") if contacts else "Customer"
+                messages = value.get("messages", [])
 
                 for msg in messages:
                     from_num = msg.get("from")
-                    if not from_num:
-                        from_user_id = msg.get("from_user_id")
-                        from_num = contacts_map.get(from_user_id) or default_wa_id
-
                     msg_type = msg.get("type", "text")
                     text = ""
                     if msg_type == "text":
@@ -83,14 +71,13 @@ async def handle_whatsapp_message_async(payload: dict) -> None:
                         text = msg.get("text", {}).get("body", "") if isinstance(msg.get("text"), dict) else ""
 
                     if from_num and text:
-                        print(f"\n[WhatsApp Inbound Webhook] Received from {from_num} (Phone ID: {phone_number_id}): '{text}'", flush=True)
+                        print(f"\n[WhatsApp Inbound Webhook] Received from {from_num} (Phone ID: {phone_number_id}): '{text}'")
 
-                        # Resolve tenant business_id and channel credentials safely
                         biz_id = None
                         channel_record = None
 
-                        async def _try_db_lookup():
-                            nonlocal biz_id, channel_record
+                        # 1. Resolve tenant business_id and channel credentials from database
+                        try:
                             async with async_session_factory() as db:
                                 if phone_number_id:
                                     conds = [
@@ -106,20 +93,18 @@ async def handle_whatsapp_message_async(payload: dict) -> None:
                                     if channel_record:
                                         biz_id = channel_record.business_id
 
-                                return await generate_production_ai_response(
-                                    customer_name="Customer",
+                                # 2. Execute live AI reasoning turn with tenant context
+                                ai_turn = await generate_production_ai_response(
+                                    customer_name=customer_name,
                                     customer_msg=text,
                                     channel="whatsapp",
                                     business_id=biz_id,
                                     db=db,
                                 )
-
-                        try:
-                            ai_turn = await asyncio.wait_for(_try_db_lookup(), timeout=1.5)
-                        except Exception:
-                            # Standalone / offline DB fallback
+                        except Exception as db_exc:
+                            # Resilient standalone fallback if DB connection is unavailable
                             ai_turn = await generate_production_ai_response(
-                                customer_name="Customer",
+                                customer_name=customer_name,
                                 customer_msg=text,
                                 channel="whatsapp",
                                 business_id=None,
@@ -127,9 +112,9 @@ async def handle_whatsapp_message_async(payload: dict) -> None:
                             )
 
                         reply_text = ai_turn.get("reply", "")
-                        print(f"[WhatsApp AI Reply (Gemini 3.5 Flash)]: '{reply_text}'", flush=True)
+                        print(f"[WhatsApp AI Reply (Gemini 3.5 Flash)]: '{reply_text}'")
 
-                        # Send outbound WhatsApp message
+                        # 3. Send outbound WhatsApp message
                         custom_token = getattr(channel_record, "access_token", None) if channel_record else None
                         p_id = phone_number_id or (getattr(channel_record, "external_id", None) if channel_record else None)
 
@@ -139,19 +124,22 @@ async def handle_whatsapp_message_async(payload: dict) -> None:
                             phone_number_id=p_id,
                             access_token=custom_token,
                         )
-                        print(f"[WhatsApp Outbound Status]: {resp.get('status', 'sent')}", flush=True)
 
-                        # Record for Live Web Dashboard Inbox
-                        cust_name = profile_name or getattr(channel_record, "name", None) or f"Customer (+{from_num[-4:] if len(from_num)>=4 else from_num})"
-                        record_live_whatsapp_interaction(
-                            from_phone=from_num,
-                            customer_name=cust_name,
-                            customer_text=text,
-                            ai_reply_text=reply_text,
-                            channel="whatsapp",
-                        )
+                        # 4. Sync interaction to merchant's Omnichannel Live Inbox
+                        try:
+                            record_live_whatsapp_interaction(
+                                from_phone=from_num,
+                                customer_name=customer_name,
+                                customer_text=text,
+                                ai_reply_text=reply_text,
+                                channel="whatsapp",
+                                business_id=str(biz_id) if biz_id else None,
+                            )
+                        except Exception as store_exc:
+                            logger.debug("[Live Store Sync Warning]: %s", store_exc)
+
     except Exception as exc:
-        print(f"[WhatsApp Webhook Error]: {exc}", flush=True)
+        print(f"[WhatsApp Webhook Error]: {exc}")
 
 
 @router.get("")
@@ -170,14 +158,13 @@ async def verify_whatsapp_webhook(
     raise HTTPException(status_code=403, detail="Verification token mismatch")
 
 
-
 @router.post("")
 async def receive_whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
     x_hub_signature_256: str | None = Header(None, alias="X-Hub-Signature-256"),
 ):
-    """WhatsApp Inbound Webhook Event Ingestion with Mandatory HMAC Validation & Instant Processing."""
+    """WhatsApp Inbound Webhook Event Ingestion with Mandatory HMAC Validation & Dual-Engine Queuing."""
     body = await request.body()
 
     if settings.is_production:
@@ -189,7 +176,15 @@ async def receive_whatsapp_webhook(
     except Exception:
         raise HTTPException(status_code=400, detail="Malformed JSON webhook payload")
 
-    # Instant in-process async execution ensures AI replies fire immediately in <1ms
-    background_tasks.add_task(handle_whatsapp_message_async, payload)
+    # Dual-Engine Zero-Drop Dispatch: Try Celery first; if broker unavailable, run in background tasks
+    celery_dispatched = False
+    try:
+        process_whatsapp_webhook_event.apply_async(args=[payload], retry=False)
+        celery_dispatched = True
+    except Exception:
+        pass
+
+    if not celery_dispatched:
+        background_tasks.add_task(handle_whatsapp_message_async, payload)
 
     return {"status": "received"}
