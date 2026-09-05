@@ -13,6 +13,73 @@ interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+export interface StoreWorkspace {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  role: string;
+  is_owner: boolean;
+  owner_name: string;
+  plan_covered_by_owner: boolean;
+  is_active: boolean;
+  channels_count: number;
+  permissions: string[];
+  max_stores?: number;
+  maxStores?: number;
+}
+
+export interface BillingPlan {
+  id: string;
+  name: string;
+  nameBn?: string;
+  tagline?: string;
+  priceBDT: number;
+  yearlyPriceBDT?: number;
+  yearlyDiscountPercent?: number;
+  billingPeriod?: string;
+  messageLimit: number;
+  maxStores: number;
+  maxSeats: number;
+  catalogLimit?: number;
+  courierChannels?: number;
+  features: string[];
+  badge?: string | null;
+  popular?: boolean;
+  activeMerchants?: number;
+  status?: string;
+  showOnHome?: boolean;
+}
+
+export interface BillingInvoice {
+  id: string;
+  invoiceNo?: string;
+  merchantName: string;
+  plan: string;
+  amountBDT: number;
+  originalAmountBDT?: number;
+  discountBDT?: number;
+  method: string;
+  txId: string;
+  date: string;
+  status: string;
+  description?: string;
+}
+
+export interface TeamMemberData {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  initials: string;
+  online: boolean;
+  hue: number;
+  platforms: string[];
+  permissions: string[];
+  is_owner: boolean;
+  avatar_url?: string | null;
+}
+
 class ApiClient {
   private getAccessToken(): string | null {
     if (typeof window === "undefined") return null;
@@ -184,7 +251,7 @@ class ApiClient {
         body: JSON.stringify(body),
       }),
     changePassword: (body: {
-      current_password: string;
+      current_password?: string;
       new_password: string;
       confirm_password?: string;
     }) =>
@@ -196,7 +263,12 @@ class ApiClient {
         },
       ),
     deleteAccount: (body: { password?: string; confirm_phrase: string }) =>
-      this.request<{ success: boolean; message: string }>("/auth/account", {
+      this.request<{
+        success: boolean;
+        scheduled_deletion_at?: string;
+        grace_days?: number;
+        message: string;
+      }>("/auth/account", {
         method: "DELETE",
         body: JSON.stringify(body),
       }).finally(() => this.clearTokens()),
@@ -360,24 +432,86 @@ class ApiClient {
   // --- Merchant Settings ---
   public merchants = {
     getProfile: () => this.request<unknown>("/merchants/profile"),
+    quickCreateStore: () =>
+      this.request<unknown>("/merchants/quick-create-store", {
+        method: "POST",
+      }),
+    createStore: (storeData: Record<string, unknown>) =>
+      this.request<unknown>("/merchants/store", {
+        method: "POST",
+        body: JSON.stringify(storeData),
+      }),
     updateSettings: (settings: Record<string, unknown>) =>
       this.request("/merchants/settings", {
         method: "PATCH",
         body: JSON.stringify(settings),
       }),
-    getTeam: () => this.request<unknown[]>("/merchants/team"),
+    getTeam: () => this.request<TeamMemberData[]>("/merchants/team"),
+    inviteTeamMember: (data: {
+      name: string;
+      email: string;
+      role: string;
+      channels: string[];
+      permissions: string[];
+    }) =>
+      this.request<TeamMemberData>("/merchants/team", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateTeamMember: (
+      memberId: string,
+      data: {
+        name?: string;
+        role?: string;
+        channels?: string[];
+        permissions?: string[];
+      },
+    ) =>
+      this.request<TeamMemberData>(`/merchants/team/${memberId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    removeTeamMember: (memberId: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/merchants/team/${memberId}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    getMyStores: () => this.request<StoreWorkspace[]>("/merchants/my-stores"),
+    switchStore: (storeId: string) =>
+      this.request<{
+        success: boolean;
+        active_store_id: string;
+        store_name: string;
+        role: string;
+        plan: string;
+        is_owner: boolean;
+      }>("/merchants/switch-store", {
+        method: "POST",
+        body: JSON.stringify({ store_id: storeId }),
+      }),
     getNotifications: () => this.request<unknown[]>("/merchants/notifications"),
     markNotificationsRead: (ids: string[]) =>
       this.request("/merchants/notifications/mark-read", {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),
+    deleteStore: (body: { confirm_phrase: string; password?: string }) =>
+      this.request<{
+        success: boolean;
+        deleted_store_name: string;
+        message: string;
+      }>("/merchants/store", {
+        method: "DELETE",
+        body: JSON.stringify(body),
+      }),
   };
 
   // --- Billing ---
   public billing = {
-    listPlans: () => this.request<unknown[]>("/billing/plans"),
-    listInvoices: () => this.request<unknown[]>("/billing/invoices"),
+    listPlans: () => this.request<BillingPlan[]>("/billing/plans"),
+    listInvoices: () => this.request<BillingInvoice[]>("/billing/invoices"),
     selectPlan: (data: { plan_id: string; billing_period?: string }) =>
       this.request<{
         success: boolean;
@@ -389,10 +523,65 @@ class ApiClient {
         body: JSON.stringify(data),
       }),
     createTopup: (pack: string, payment_method: string) =>
-      this.request("/billing/topup", {
+      this.request<{
+        success: boolean;
+        plan: string;
+        orders_quota: number;
+        messages_quota: number;
+        added_quota: number;
+        amount_bdt: number;
+        message: string;
+      }>("/billing/topup", {
         method: "POST",
         body: JSON.stringify({ pack, payment_method }),
       }),
+    verifyCode: (code: string) =>
+      this.request<{
+        valid: boolean;
+        error?: string;
+        code?: string;
+        plan_id?: string;
+        plan_name?: string;
+        duration_months?: number;
+        message_limit?: number;
+        max_stores?: number;
+        max_seats?: number;
+        price_bdt?: number;
+        code_expiry?: string | null;
+        features?: string[];
+      }>("/billing/verify-code", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      }),
+    redeemCode: (code: string, payment_method?: string) =>
+      this.request<{
+        success: boolean;
+        plan: string;
+        orders_quota: number;
+        messages_quota: number;
+        max_stores: number;
+        max_seats: number;
+        duration_months: number;
+        price_bdt: number;
+        payment_method?: string;
+        message: string;
+      }>("/billing/redeem-code", {
+        method: "POST",
+        body: JSON.stringify({ code, payment_method }),
+      }),
+    getCustomCodes: () =>
+      this.request<
+        {
+          code: string;
+          plan_name: string;
+          message_limit: number;
+          max_stores: number;
+          max_seats: number;
+          price_bdt: number;
+          features: string[];
+          active: boolean;
+        }[]
+      >("/billing/custom-codes"),
   };
 
   // --- Analytics ---
@@ -481,6 +670,18 @@ class ApiClient {
     deleteFestivalOffer: (id: string) =>
       this.request<{ success: boolean; message: string }>(
         `/admin/plans/festival-offers/${id}`,
+        { method: "DELETE" },
+      ),
+    listCustomCodes: () =>
+      this.request<Record<string, unknown>[]>("/admin/plans/custom-codes"),
+    generateCustomCode: (data: Record<string, unknown>) =>
+      this.request<Record<string, unknown>>("/admin/plans/custom-codes", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    deleteCustomCode: (code: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/admin/plans/custom-codes/${encodeURIComponent(code)}`,
         { method: "DELETE" },
       ),
     listAiKeys: () =>

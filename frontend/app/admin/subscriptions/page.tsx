@@ -28,6 +28,8 @@ const INITIAL_STORED_PLANS: AdminPlan[] = [
     yearlyPriceBDT: 0,
     billingPeriod: "both",
     messageLimit: 100,
+    maxStores: 1,
+    maxSeats: 1,
     catalogLimit: 100,
     courierChannels: 2,
     popular: false,
@@ -44,6 +46,8 @@ const INITIAL_STORED_PLANS: AdminPlan[] = [
     yearlyPriceBDT: 2000,
     billingPeriod: "both",
     messageLimit: 500,
+    maxStores: 1,
+    maxSeats: 2,
     catalogLimit: 300,
     courierChannels: 2,
     badge: "Startup",
@@ -61,6 +65,8 @@ const INITIAL_STORED_PLANS: AdminPlan[] = [
     yearlyPriceBDT: 9999,
     billingPeriod: "both",
     messageLimit: 10000,
+    maxStores: 1,
+    maxSeats: 4,
     catalogLimit: 1000,
     courierChannels: 3,
     badge: "Best sale",
@@ -78,6 +84,8 @@ const INITIAL_STORED_PLANS: AdminPlan[] = [
     yearlyPriceBDT: 20000,
     billingPeriod: "both",
     messageLimit: 10000,
+    maxStores: 2,
+    maxSeats: 8,
     catalogLimit: 10000,
     courierChannels: 1,
     popular: false,
@@ -94,6 +102,8 @@ const INITIAL_STORED_PLANS: AdminPlan[] = [
     yearlyPriceBDT: 100000,
     billingPeriod: "both",
     messageLimit: 10000,
+    maxStores: 10,
+    maxSeats: 30,
     catalogLimit: 10000,
     courierChannels: 4,
     badge: "VIP",
@@ -278,11 +288,9 @@ export default function AdminSubscriptionsPage() {
         yearlySubs =
           plan.yearlySubscribers || Math.max(1, Math.round(planStores * 0.28));
       } else {
-        monthlySubs =
-          plan.monthlySubscribers || Math.round(planStores * 0.8);
+        monthlySubs = plan.monthlySubscribers || Math.round(planStores * 0.8);
         yearlySubs =
-          plan.yearlySubscribers ||
-          Math.max(0, Math.round(planStores * 0.08));
+          plan.yearlySubscribers || Math.max(0, Math.round(planStores * 0.08));
       }
 
       const grossValue = monthlySubs * monthlyRate + yearlySubs * yearlyRate;

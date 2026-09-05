@@ -51,6 +51,10 @@
     0 0 0 1px var(--signal-line), 0 8px 24px -12px rgba(10, 110, 80, 0.35);
 
   --radius: 16px;
+
+  /* Typography backwards-compatibility aliases */
+  --font-bricolage: var(--font-display);
+  --font-inter-tight: var(--font-sans);
 }
 
 @theme inline {
@@ -77,9 +81,11 @@
   --color-iris: var(--iris);
   --color-azure: var(--azure);
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
-  --font-bangla: var(--font-hind), var(--font-inter-tight), sans-serif;
+  --font-display:
+    var(--font-display), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    var(--font-sans), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --font-bangla: var(--font-hind), var(--font-sans), sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
   --radius-card: 16px;
@@ -98,11 +104,12 @@ html {
 body {
   background: var(--canvas);
   color: var(--text);
-  font-family: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  font-family:
+    var(--font-sans), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.55;
-  letter-spacing: -0.01em;
-  font-feature-settings: "cv11", "ss01";
+  letter-spacing: -0.011em;
+  font-feature-settings: "cv11", "ss01", "cv02";
   /* `clip` (not `hidden`) contains decorative bleed without creating a scroll
      container — so `position: sticky` headers keep working. */
   overflow-x: clip;
@@ -115,10 +122,9 @@ h4,
 h5,
 h6 {
   font-family:
-    var(--font-bricolage), var(--font-hind), ui-sans-serif, system-ui,
-    sans-serif;
-  letter-spacing: -0.03em;
-  line-height: 1.12;
+    var(--font-display), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 
 p,
@@ -132,11 +138,14 @@ a {
   font-family: inherit;
 }
 
-/* Bangla mode: Bricolage has no Bengali glyphs, so swap the display face too. */
+/* Bangla mode: Full project typography harmony */
 html.lang-bn body,
 html.lang-bn .font-display,
-html.lang-bn [class*="font-display"] {
-  font-family: var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+html.lang-bn [class*="font-display"],
+html.lang-bn .font-sans,
+html.lang-bn [class*="font-sans"] {
+  font-family:
+    var(--font-hind), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 html.lang-bn h1,
 html.lang-bn h2,
@@ -144,8 +153,8 @@ html.lang-bn h3,
 html.lang-bn h4,
 html.lang-bn h5,
 html.lang-bn h6 {
-  letter-spacing: -0.01em;
-  line-height: 1.22;
+  letter-spacing: normal;
+  line-height: 1.25;
 }
 
 .robot-holo {
@@ -190,11 +199,37 @@ html.lang-bn h6 {
   color: var(--text);
 }
 
-/* Focus: visible, on-brand, never removed */
+/* Focus: visible, on-brand for keyboard navigation on buttons/links */
 :focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Form input elements use their own dedicated container borders/rings; never apply offset outlines */
+input,
+textarea,
+select,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none;
+}
+
+/* Clean browser autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Scrollbars */
