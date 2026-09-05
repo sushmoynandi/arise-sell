@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SignupForm from "@/components/marketing/SignupForm";
-import LanguageToggle from "@/components/marketing/LanguageToggle";
 import { IconShield, IconCheck, IconBolt } from "@/components/ui/icons";
 import { BRAND } from "@/lib/brand";
 
@@ -33,17 +32,26 @@ export default function SignupPage() {
       />
 
       {/* Top minimal header */}
-      <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+      <header className="relative z-10 flex w-full items-center px-6 py-5 sm:px-10 sm:py-6">
         <Link
           href="/"
-          className="group inline-flex items-center rounded-full border border-black/6 bg-white/70 px-3.5 py-1 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all hover:border-black/[0.12] hover:bg-white hover:text-text hover:shadow-sm"
+          className="group inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/80 px-3.5 py-1.5 text-[12.5px] font-medium text-text-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all hover:border-black/15 hover:bg-white hover:text-text hover:shadow-xs"
         >
-          Back to Home
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform group-hover:-translate-x-0.5"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <span>Back to Home</span>
         </Link>
-
-        <div className="flex items-center gap-3">
-          <LanguageToggle size="sm" />
-        </div>
       </header>
 
       {/* Center signup container */}
