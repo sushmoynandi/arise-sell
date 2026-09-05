@@ -64,6 +64,12 @@ export const CONSOLE_NAV = [
         icon: "pipeline",
         hint: "Buyer pipeline & follow-ups",
       },
+      {
+        label: "Team Members",
+        href: "/console/team",
+        icon: "users",
+        hint: "Manage staff, invite & permissions",
+      },
     ],
   },
   {

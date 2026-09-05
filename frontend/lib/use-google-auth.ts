@@ -19,18 +19,19 @@ export function useGoogleAuth({
 }: UseGoogleAuthOptions = {}) {
   const { loading: authLoading, isAuthenticated } = useAuth();
   const [clicked, setClicked] = useState(false);
-  const [hasHashToken, setHasHashToken] = useState(false);
+  const [hasHashToken, setHasHashToken] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return (window.location.hash || "").includes("access_token=");
+  });
 
-  // Check URL on mount for OAuth tokens or OAuth errors
+  // Check URL on mount for OAuth errors
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const hash = window.location.hash || "";
     const search = window.location.search || "";
 
-    if (hash.includes("access_token=")) {
-      setHasHashToken(true);
-    } else if (hash.includes("error=") || search.includes("error=")) {
+    if (hash.includes("error=") || search.includes("error=")) {
       const params = new URLSearchParams(
         hash.startsWith("#") ? hash.substring(1) : search,
       );
@@ -38,20 +39,11 @@ export function useGoogleAuth({
         params.get("error_description") ||
         params.get("error") ||
         "Google Sign-In was cancelled or failed.";
-      setClicked(false);
-      setHasHashToken(false);
       if (onError) onError(errorMsg);
       // Clean error from address bar
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, [onError]);
-
-  // Once parent auth completes or fails, release the loading state
-  useEffect(() => {
-    if (!authLoading && !hasHashToken) {
-      setClicked(false);
-    }
-  }, [authLoading, hasHashToken]);
 
   // Safety fallback: Never keep button spinning for more than 10 seconds if redirect doesn't fire
   useEffect(() => {
@@ -82,9 +74,13 @@ export function useGoogleAuth({
     setHasHashToken(false);
   }, []);
 
+  const googleLoading =
+    Boolean(clicked && (authLoading || hasHashToken)) ||
+    (hasHashToken && !isAuthenticated);
+
   return {
     triggerGoogleLogin,
     resetGoogleLoading,
-    googleLoading: (clicked || hasHashToken) && !isAuthenticated,
+    googleLoading,
   };
 }

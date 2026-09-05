@@ -65,10 +65,7 @@ export default function LoginForm() {
         if (rememberMe) {
           localStorage.setItem("np_remember_7d", "true");
         }
-        const target =
-          res.user?.has_plan || res.user?.is_superadmin
-            ? "/console"
-            : "/choose-plan";
+        const target = res.user?.is_superadmin ? "/admin" : "/console";
         router.replace(target);
         router.refresh();
       } else {

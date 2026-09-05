@@ -8,9 +8,16 @@ import { Wordmark } from "@/components/ui/primitives";
 import LanguageToggle from "@/components/marketing/LanguageToggle";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
-import api from "@/lib/api-client";
+import api, { type CheckPlanSwitchResponse } from "@/lib/api-client";
+import { DowngradeReconcileModal } from "@/components/console/DowngradeReconcileModal";
 import { bdt, cx } from "@/lib/format";
-import { IconCheck, IconClose, IconLogOut, IconShield, IconSpark } from "@/components/ui/icons";
+import {
+  IconCheck,
+  IconClose,
+  IconLogOut,
+  IconShield,
+  IconSpark,
+} from "@/components/ui/icons";
 
 interface BackendPlan {
   id: string;
@@ -53,6 +60,11 @@ export default function ChoosePlanPage() {
   const [isYearly, setIsYearly] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [reconcileModalOpen, setReconcileModalOpen] = useState(false);
+  const [reconcileConflictData, setReconcileConflictData] =
+    useState<CheckPlanSwitchResponse | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<BackendPlan | null>(null);
+  const [isSubmittingReconcile, setIsSubmittingReconcile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redeemModalOpen, setRedeemModalOpen] = useState(false);
   const [redeemCodeInput, setRedeemCodeInput] = useState("");
@@ -74,6 +86,38 @@ export default function ChoosePlanPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("bKash Auto-Debit");
   const [verifyingCode, setVerifyingCode] = useState(false);
+  const [pendingContract, setPendingContract] = useState<{
+    id: string;
+    contract_code: string;
+    plan_name: string;
+    duration_months: number;
+    price_bdt: number;
+    message_limit: number;
+    max_stores: number;
+    max_seats: number;
+    features: string[];
+    valid_until?: string | null;
+    status: string;
+    merchant_name?: string | null;
+  } | null>(null);
+  const [contractPaying, setContractPaying] = useState(false);
+
+  // Auto-detect pending enterprise proposal for this user/store
+  useEffect(() => {
+    api.billing
+      .getEnterpriseContract()
+      .then((res) => {
+        if (
+          res &&
+          res.found &&
+          res.contract &&
+          res.contract.status === "pending"
+        ) {
+          setPendingContract(res.contract);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const isCustomPlan = (p: BackendPlan) => {
     const name = (p.name || "").toLowerCase().trim();
@@ -139,10 +183,44 @@ export default function ChoosePlanPage() {
     setSelectedPlanId(plan.id);
 
     try {
-      const res = await selectPlan(plan.id, isYearly ? "yearly" : "monthly");
+      if (user) {
+        const checkRes = await api.billing.checkPlanSwitch({
+          plan_id: plan.id,
+        });
+
+        if (checkRes.requires_reconciliation) {
+          setPendingPlan(plan);
+          setReconcileConflictData(checkRes);
+          setReconcileModalOpen(true);
+          setLoadingPlanId(null);
+          return;
+        }
+      }
+
+      await executePlanSelection(plan);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Plan activation error";
+      setError(msg);
+      setLoadingPlanId(null);
+    }
+  };
+
+  const executePlanSelection = async (
+    plan: BackendPlan,
+    reconciliation?: {
+      keep_store_ids: string[];
+      keep_team_member_ids: string[];
+    },
+  ) => {
+    setLoadingPlanId(plan.id);
+    try {
+      const res = await selectPlan(
+        plan.id,
+        isYearly ? "yearly" : "monthly",
+        reconciliation,
+      );
       if (res.success) {
-        // Immediate redirection into the merchant console
-        router.push("/console");
+        window.location.href = "/console";
       } else {
         setError(
           res.error ||
@@ -157,7 +235,19 @@ export default function ChoosePlanPage() {
       const msg = err instanceof Error ? err.message : "Plan activation error";
       setError(msg);
       setLoadingPlanId(null);
+    } finally {
+      setIsSubmittingReconcile(false);
+      setReconcileModalOpen(false);
     }
+  };
+
+  const handleConfirmReconciliation = async (recon: {
+    keep_store_ids: string[];
+    keep_team_member_ids: string[];
+  }) => {
+    if (!pendingPlan) return;
+    setIsSubmittingReconcile(true);
+    await executePlanSelection(pendingPlan, recon);
   };
 
   const handleVerifyCode = async () => {
@@ -169,6 +259,28 @@ export default function ChoosePlanPage() {
     setVerifyingCode(true);
     setRedeemError(null);
     try {
+      // First check PostgreSQL enterprise contracts
+      const contractRes = await api.billing
+        .getEnterpriseContract(cleanCode)
+        .catch(() => null);
+      if (contractRes && contractRes.found && contractRes.contract) {
+        const c = contractRes.contract;
+        setVerifiedPlan({
+          valid: true,
+          code: c.contract_code,
+          plan_name: c.plan_name,
+          duration_months: c.duration_months,
+          message_limit: c.message_limit,
+          max_stores: c.max_stores,
+          max_seats: c.max_seats,
+          price_bdt: c.price_bdt,
+          code_expiry: c.valid_until,
+          features: c.features || [],
+        });
+        setRedeemError(null);
+        return;
+      }
+
       const res = await api.billing.verifyCode(cleanCode);
       if (res && res.valid) {
         setVerifiedPlan(res);
@@ -190,7 +302,9 @@ export default function ChoosePlanPage() {
   };
 
   const handleRedeemCode = async () => {
-    const targetCode = (verifiedPlan?.code || redeemCodeInput).trim().toUpperCase();
+    const targetCode = (verifiedPlan?.code || redeemCodeInput)
+      .trim()
+      .toUpperCase();
     if (!targetCode) {
       setRedeemError("Please enter an activation code.");
       return;
@@ -198,12 +312,21 @@ export default function ChoosePlanPage() {
     setRedeemLoading(true);
     setRedeemError(null);
     try {
-      const res = await api.billing.redeemCode(targetCode, selectedPaymentMethod);
-      if (res.success) {
+      let res;
+      try {
+        res = await api.billing.payEnterpriseContract(
+          targetCode,
+          selectedPaymentMethod,
+        );
+      } catch {
+        res = await api.billing.redeemCode(targetCode, selectedPaymentMethod);
+      }
+
+      if (res && res.success) {
         setRedeemModalOpen(false);
         router.push("/console");
       } else {
-        setRedeemError(res.message || "Failed to activate code.");
+        setRedeemError(res?.message || "Failed to activate code.");
       }
     } catch (err: unknown) {
       console.error("Redeem code failed:", err);
@@ -214,6 +337,29 @@ export default function ChoosePlanPage() {
       );
     } finally {
       setRedeemLoading(false);
+    }
+  };
+
+  const handlePayPendingContract = async () => {
+    if (!pendingContract) return;
+    setContractPaying(true);
+    setError(null);
+    try {
+      const res = await api.billing.payEnterpriseContract(
+        pendingContract.contract_code,
+        selectedPaymentMethod,
+      );
+      if (res && res.success) {
+        router.push("/console");
+      } else {
+        setError("Failed to activate proposal. Please contact support.");
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Payment processing failed.",
+      );
+    } finally {
+      setContractPaying(false);
     }
   };
 
@@ -363,6 +509,109 @@ export default function ChoosePlanPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Auto-detected Pending Enterprise Proposal */}
+        {pendingContract && (
+          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border-2 border-signal bg-gradient-to-br from-signal/10 via-[#f0f9f5] to-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-signal animate-ping" />
+                <h3 className="text-base sm:text-lg font-bold font-display text-text">
+                  Personalized Enterprise Proposal Ready:{" "}
+                  {pendingContract.plan_name}
+                </h3>
+                <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold font-mono uppercase tracking-wider">
+                  {pendingContract.duration_months} Months Term
+                </span>
+              </div>
+              <div className="text-xs font-mono text-signal font-bold">
+                Quote Ref: {pendingContract.contract_code}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+              <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                <div className="text-[10px] text-text-3 font-sans font-medium">
+                  Deal Total
+                </div>
+                <div className="font-bold text-text text-sm">
+                  ৳{pendingContract.price_bdt.toLocaleString()} BDT
+                </div>
+                <div className="text-[9.5px] text-text-3 font-sans">
+                  ≈ ৳
+                  {Math.round(
+                    pendingContract.price_bdt / pendingContract.duration_months,
+                  ).toLocaleString()}
+                  /mo
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                <div className="text-[10px] text-text-3 font-sans font-medium">
+                  Stores Limit
+                </div>
+                <div className="font-bold text-text text-sm">
+                  {pendingContract.max_stores} Stores
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                <div className="text-[10px] text-text-3 font-sans font-medium">
+                  Team Seats
+                </div>
+                <div className="font-bold text-text text-sm">
+                  {pendingContract.max_seats} Seats
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                <div className="text-[10px] text-text-3 font-sans font-medium">
+                  AI Messages
+                </div>
+                <div className="font-bold text-signal text-sm">
+                  {pendingContract.message_limit.toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-signal/20">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-3 font-medium">
+                  Pay via:
+                </span>
+                <div className="flex rounded-lg border border-line bg-white p-0.5 text-xs font-semibold">
+                  {[
+                    "bKash Auto-Debit",
+                    "Nagad Instant",
+                    "Card / Net Banking",
+                  ].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setSelectedPaymentMethod(m)}
+                      className={cx(
+                        "px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px]",
+                        selectedPaymentMethod === m
+                          ? "bg-signal text-white shadow-2xs"
+                          : "text-text-3 hover:text-text",
+                      )}
+                    >
+                      {m.split(" ")[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={contractPaying}
+                onClick={handlePayPendingContract}
+                className="gap-2 text-xs font-semibold h-9 px-4 rounded-xl bg-signal text-white hover:bg-signal-hover transition-colors cursor-pointer shadow-xs"
+              >
+                {contractPaying
+                  ? "Processing..."
+                  : `Accept & Pay ৳${pendingContract.price_bdt.toLocaleString()} BDT`}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 4 Backend Plans Grid */}
         <div className="mt-12">
@@ -604,10 +853,22 @@ export default function ChoosePlanPage() {
                           }}
                           className="mt-2 w-full text-center text-xs font-semibold text-signal hover:underline cursor-pointer flex items-center justify-center gap-1"
                         >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
                           </svg>
-                          <span>{t("Have a Code? Redeem Here", "কোড আছে? এখানে রিডিম করুন")}</span>
+                          <span>
+                            {t(
+                              "Have a Code? Redeem Here",
+                              "কোড আছে? এখানে রিডিম করুন",
+                            )}
+                          </span>
                         </button>
                       )}
                     </div>
@@ -648,7 +909,16 @@ export default function ChoosePlanPage() {
               }}
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-signal/40 bg-signal/5 px-4 py-2.5 text-[13px] font-semibold text-signal hover:bg-signal/15 hover:border-signal transition-colors cursor-pointer"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
               </svg>
               <span>{t("Redeem Plan Code", "প্ল্যান কোড রিডিম করুন")}</span>
@@ -731,13 +1001,25 @@ export default function ChoosePlanPage() {
                     <div>
                       <h3 className="text-base font-bold font-display text-text">
                         {verifiedPlan
-                          ? t("Review Plan & Complete Payment", "প্ল্যান পর্যালোচনা ও পেমেন্ট সম্পন্ন করুন")
-                          : t("Redeem Custom Plan Code", "কাস্টম প্ল্যান কোড রিডিম করুন")}
+                          ? t(
+                              "Review Plan & Complete Payment",
+                              "প্ল্যান পর্যালোচনা ও পেমেন্ট সম্পন্ন করুন",
+                            )
+                          : t(
+                              "Redeem Custom Plan Code",
+                              "কাস্টম প্ল্যান কোড রিডিম করুন",
+                            )}
                       </h3>
                       <p className="text-[11.5px] text-text-3">
                         {verifiedPlan
-                          ? t("Verify your enterprise package entitlements and finalize subscription", "আপনার প্যাকেজের সুবিধাসমূহ দেখে সাবস্ক্রিপশন চালু করুন")
-                          : t("Enter the activation license key provided by sales to view and activate your plan", "সেলস থেকে প্রাপ্ত লাইসেন্স কোডটি দিন")}
+                          ? t(
+                              "Verify your enterprise package entitlements and finalize subscription",
+                              "আপনার প্যাকেজের সুবিধাসমূহ দেখে সাবস্ক্রিপশন চালু করুন",
+                            )
+                          : t(
+                              "Enter the activation license key provided by sales to view and activate your plan",
+                              "সেলস থেকে প্রাপ্ত লাইসেন্স কোডটি দিন",
+                            )}
                       </p>
                     </div>
                   </div>
@@ -759,7 +1041,10 @@ export default function ChoosePlanPage() {
                   <div className="space-y-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-text">
-                        {t("Enterprise Activation Code", "এন্টারপ্রাইজ এক্টিভেশন কোড")}
+                        {t(
+                          "Enterprise Activation Code",
+                          "এন্টারপ্রাইজ এক্টিভেশন কোড",
+                        )}
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -771,7 +1056,11 @@ export default function ChoosePlanPage() {
                             setRedeemError(null);
                           }}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && !verifyingCode && redeemCodeInput.trim()) {
+                            if (
+                              e.key === "Enter" &&
+                              !verifyingCode &&
+                              redeemCodeInput.trim()
+                            ) {
                               e.preventDefault();
                               handleVerifyCode();
                             }
@@ -785,17 +1074,26 @@ export default function ChoosePlanPage() {
                           disabled={verifyingCode || !redeemCodeInput.trim()}
                           className="shrink-0 rounded-xl bg-signal px-4 py-2 text-xs font-semibold text-white hover:bg-signal-deep disabled:opacity-60 transition-colors cursor-pointer"
                         >
-                          {verifyingCode ? t("Checking...", "যাচাই হচ্ছে...") : t("Verify Code", "যাচাই করুন")}
+                          {verifyingCode
+                            ? t("Checking...", "যাচাই হচ্ছে...")
+                            : t("Verify Code", "যাচাই করুন")}
                         </button>
                       </div>
                       <p className="text-[11px] text-text-3">
-                        {t("Enter the code given by sales to view your contract plan details and proceed to payment.", "সেলস থেকে পাওয়া কোডটি প্রবেশ করালে আপনার প্ল্যানের বিস্তারিত ও পেমেন্ট অপশন দেখাবে।")}
+                        {t(
+                          "Enter the code given by sales to view your contract plan details and proceed to payment.",
+                          "সেলস থেকে পাওয়া কোডটি প্রবেশ করালে আপনার প্ল্যানের বিস্তারিত ও পেমেন্ট অপশন দেখাবে।",
+                        )}
                       </p>
                     </div>
 
                     {redeemError && (
                       <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 flex items-center gap-2">
-                        <IconShield width={15} height={15} className="shrink-0 text-red-500" />
+                        <IconShield
+                          width={15}
+                          height={15}
+                          className="shrink-0 text-red-500"
+                        />
                         <span>{redeemError}</span>
                       </div>
                     )}
@@ -817,7 +1115,9 @@ export default function ChoosePlanPage() {
                         disabled={verifyingCode || !redeemCodeInput.trim()}
                         className="rounded-xl bg-signal px-4 py-2 text-xs font-semibold text-white hover:bg-signal-deep disabled:opacity-60 transition-colors cursor-pointer"
                       >
-                        {verifyingCode ? t("Verifying...", "যাচাই হচ্ছে...") : t("Next: View Plan", "পরবর্তী: প্ল্যান দেখুন")}
+                        {verifyingCode
+                          ? t("Verifying...", "যাচাই হচ্ছে...")
+                          : t("Next: View Plan", "পরবর্তী: প্ল্যান দেখুন")}
                       </button>
                     </div>
                   </div>
@@ -834,7 +1134,11 @@ export default function ChoosePlanPage() {
                               {verifiedPlan.plan_name}
                             </h4>
                             <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold font-mono uppercase tracking-wider">
-                              {verifiedPlan.duration_months || 1} Month{(verifiedPlan.duration_months || 1) > 1 ? "s" : ""} Access
+                              {verifiedPlan.duration_months || 1} Month
+                              {(verifiedPlan.duration_months || 1) > 1
+                                ? "s"
+                                : ""}{" "}
+                              Access
                             </span>
                           </div>
                           <div className="font-mono text-xs text-signal font-semibold mt-1">
@@ -870,23 +1174,38 @@ export default function ChoosePlanPage() {
                       {/* Resource Entitlements */}
                       <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
                         <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
-                          <div className="text-[10px] text-text-3 font-sans font-medium">Stores Limit</div>
-                          <div className="font-bold text-text text-xs">{verifiedPlan.max_stores || 1} Stores</div>
+                          <div className="text-[10px] text-text-3 font-sans font-medium">
+                            Stores Limit
+                          </div>
+                          <div className="font-bold text-text text-xs">
+                            {verifiedPlan.max_stores || 1} Stores
+                          </div>
                         </div>
                         <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
-                          <div className="text-[10px] text-text-3 font-sans font-medium">Team Seats</div>
-                          <div className="font-bold text-text text-xs">{verifiedPlan.max_seats || 1} Seats</div>
+                          <div className="text-[10px] text-text-3 font-sans font-medium">
+                            Team Seats
+                          </div>
+                          <div className="font-bold text-text text-xs">
+                            {verifiedPlan.max_seats || 1} Seats
+                          </div>
                         </div>
                         <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
-                          <div className="text-[10px] text-text-3 font-sans font-medium">AI Messages</div>
-                          <div className="font-bold text-signal text-xs">{(verifiedPlan.message_limit || 50000).toLocaleString()}</div>
+                          <div className="text-[10px] text-text-3 font-sans font-medium">
+                            AI Messages
+                          </div>
+                          <div className="font-bold text-signal text-xs">
+                            {(
+                              verifiedPlan.message_limit || 50000
+                            ).toLocaleString()}
+                          </div>
                         </div>
                       </div>
 
                       {/* Expiry date notice */}
                       {verifiedPlan.code_expiry && (
                         <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200">
-                          ⚠️ This activation code must be redeemed by <strong>{verifiedPlan.code_expiry}</strong>.
+                          ⚠️ This activation code must be redeemed by{" "}
+                          <strong>{verifiedPlan.code_expiry}</strong>.
                         </div>
                       )}
                     </div>
@@ -895,15 +1214,36 @@ export default function ChoosePlanPage() {
                     <div className="space-y-2">
                       <label className="block text-xs font-bold text-text">
                         {(verifiedPlan.price_bdt || 0) > 0
-                          ? t("Select Payment Method", "পেমেন্ট মাধ্যম নির্বাচন করুন")
+                          ? t(
+                              "Select Payment Method",
+                              "পেমেন্ট মাধ্যম নির্বাচন করুন",
+                            )
                           : t("Activation Verification", "ভেরিফিকেশন")}
                       </label>
                       {(verifiedPlan.price_bdt || 0) > 0 ? (
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { id: "bKash Auto-Debit", label: "bKash", tag: "Popular", color: "border-pink-500/40 text-pink-700 bg-pink-500/5" },
-                            { id: "Nagad Instant", label: "Nagad", tag: "Instant", color: "border-orange-500/40 text-orange-700 bg-orange-500/5" },
-                            { id: "Card / Net Banking", label: "Card / Bank", tag: "Online", color: "border-blue-500/40 text-blue-700 bg-blue-500/5" },
+                            {
+                              id: "bKash Auto-Debit",
+                              label: "bKash",
+                              tag: "Popular",
+                              color:
+                                "border-pink-500/40 text-pink-700 bg-pink-500/5",
+                            },
+                            {
+                              id: "Nagad Instant",
+                              label: "Nagad",
+                              tag: "Instant",
+                              color:
+                                "border-orange-500/40 text-orange-700 bg-orange-500/5",
+                            },
+                            {
+                              id: "Card / Net Banking",
+                              label: "Card / Bank",
+                              tag: "Online",
+                              color:
+                                "border-blue-500/40 text-blue-700 bg-blue-500/5",
+                            },
                           ].map((m) => {
                             const isSelected = selectedPaymentMethod === m.id;
                             return (
@@ -915,12 +1255,19 @@ export default function ChoosePlanPage() {
                                   "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                                   isSelected
                                     ? "border-signal bg-signal/10 ring-1.5 ring-signal shadow-xs"
-                                    : "border-line bg-surface-1 hover:border-signal/40"
+                                    : "border-line bg-surface-1 hover:border-signal/40",
                                 )}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-xs text-text">{m.label}</span>
-                                  <span className={cx("text-[9px] font-mono px-1 py-0.5 rounded", m.color)}>
+                                  <span className="font-bold text-xs text-text">
+                                    {m.label}
+                                  </span>
+                                  <span
+                                    className={cx(
+                                      "text-[9px] font-mono px-1 py-0.5 rounded",
+                                      m.color,
+                                    )}
+                                  >
                                     {m.tag}
                                   </span>
                                 </div>
@@ -933,15 +1280,28 @@ export default function ChoosePlanPage() {
                         </div>
                       ) : (
                         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-xs text-emerald-800 flex items-center gap-2">
-                          <IconCheck width={14} height={14} className="text-emerald-600" />
-                          <span>{t("Complimentary code approved by sales. No payment needed.", "ফ্রি কোড অনুমোদিত। কোনো পেমেন্ট প্রয়োজন নেই।")}</span>
+                          <IconCheck
+                            width={14}
+                            height={14}
+                            className="text-emerald-600"
+                          />
+                          <span>
+                            {t(
+                              "Complimentary code approved by sales. No payment needed.",
+                              "ফ্রি কোড অনুমোদিত। কোনো পেমেন্ট প্রয়োজন নেই।",
+                            )}
+                          </span>
                         </div>
                       )}
                     </div>
 
                     {redeemError && (
                       <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-600 flex items-center gap-2">
-                        <IconShield width={14} height={14} className="shrink-0 text-red-500" />
+                        <IconShield
+                          width={14}
+                          height={14}
+                          className="shrink-0 text-red-500"
+                        />
                         <span>{redeemError}</span>
                       </div>
                     )}
@@ -978,14 +1338,20 @@ export default function ChoosePlanPage() {
                           className="inline-flex items-center gap-1.5 rounded-xl bg-signal px-4 py-2 text-xs font-bold text-white hover:bg-signal-deep disabled:opacity-60 transition-all cursor-pointer shadow-xs"
                         >
                           {redeemLoading ? (
-                            t("Processing Payment & Activating...", "পেমেন্ট ও সক্রিয়করণ হচ্ছে...")
+                            t(
+                              "Processing Payment & Activating...",
+                              "পেমেন্ট ও সক্রিয়করণ হচ্ছে...",
+                            )
                           ) : (
                             <>
                               <IconCheck width={15} height={15} />
                               <span>
                                 {(verifiedPlan.price_bdt || 0) > 0
                                   ? `${t("Pay", "পে করুন")} ৳${(verifiedPlan.price_bdt || 0).toLocaleString("en-US")} & ${t("Activate", "অ্যাক্টিভ করুন")}`
-                                  : t("Confirm & Activate Plan Free", "ফ্রিতে প্ল্যান চালু করুন")}
+                                  : t(
+                                      "Confirm & Activate Plan Free",
+                                      "ফ্রিতে প্ল্যান চালু করুন",
+                                    )}
                               </span>
                             </>
                           )}
@@ -998,6 +1364,20 @@ export default function ChoosePlanPage() {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Downgrade & Capacity Conflict Reconciliation Modal */}
+        <DowngradeReconcileModal
+          isOpen={reconcileModalOpen}
+          onClose={() => {
+            setReconcileModalOpen(false);
+            setPendingPlan(null);
+            setReconcileConflictData(null);
+          }}
+          conflictData={reconcileConflictData}
+          billingCycle={isYearly ? "yearly" : "monthly"}
+          onConfirm={handleConfirmReconciliation}
+          isSubmitting={isSubmittingReconcile}
+        />
       </main>
     </div>
   );

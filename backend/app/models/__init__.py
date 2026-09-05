@@ -11,7 +11,7 @@ from app.models.campaign import Campaign, CommentRule
 from app.models.automation import AutomationRule, Playbook, CapiEvent
 from app.models.knowledge import KnowledgeEntry, EmbeddingChunk
 from app.models.ai_config import AIPersona, Guardrail, EvalSuite
-from app.models.billing import SubscriptionPlan, Invoice
+from app.models.billing import SubscriptionPlan, Invoice, EnterpriseContract
 from app.models.admin import (
     AIProviderKey,
     CourierGateway,
@@ -48,6 +48,7 @@ __all__ = [
     "EvalSuite",
     "SubscriptionPlan",
     "Invoice",
+    "EnterpriseContract",
     "AIProviderKey",
     "CourierGateway",
     "MetaAppConfig",

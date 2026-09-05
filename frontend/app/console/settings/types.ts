@@ -1,7 +1,7 @@
-/* ─── 10 Clean Tabs (Store -> Channels -> Logistics -> Operations) ─── */
+/* ─── 10 Clean Tabs (Account -> Store -> Channels -> Logistics -> Operations) ─── */
 export const TABS = [
-  { id: "business", label: "General" },
   { id: "account", label: "Account" },
+  { id: "business", label: "General" },
   { id: "branding", label: "Branding" },
   { id: "invoice", label: "Invoice" },
   { id: "website-orders", label: "Website Orders" },

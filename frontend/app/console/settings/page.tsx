@@ -117,7 +117,7 @@ function SettingsInner() {
     if (rawTab === "team") return "account";
     if (rawTab === "preferences") return "business";
     if (TABS.some((t) => t.id === rawTab)) return rawTab as TabId;
-    return visibleTabs[0]?.id || "business";
+    return visibleTabs[0]?.id || "account";
   }, [rawTab, visibleTabs]);
 
   useEffect(() => {

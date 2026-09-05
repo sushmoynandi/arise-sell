@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cx } from "@/lib/format";
 import { CHANNEL_ICON } from "./icons";
 import type { Channel } from "@/data/types";
@@ -363,6 +365,7 @@ export function Avatar({
   size?: number;
   className?: string;
 }) {
+  const [imgError, setImgError] = useState(false);
   const ini =
     name
       .split(" ")
@@ -372,7 +375,7 @@ export function Avatar({
       .join("")
       .toUpperCase() || "U";
 
-  if (src) {
+  if (src && !imgError) {
     return (
       <span
         className={cx(
@@ -385,6 +388,8 @@ export function Avatar({
         <img
           src={src}
           alt={name}
+          referrerPolicy="no-referrer"
+          onError={() => setImgError(true)}
           className="size-full object-cover rounded-full"
         />
       </span>
