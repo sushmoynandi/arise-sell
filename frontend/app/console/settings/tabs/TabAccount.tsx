@@ -1025,22 +1025,22 @@ export function TabAccount({
             data
               .filter((m) => (m.role || "").toLowerCase() !== "superadmin")
               .map((m) => ({
-              id: m.id,
-              name: m.name || "Teammate",
-              email: m.email || "",
-              role: m.role || "Member",
-              online: m.online ?? true,
-              channels:
-                m.platforms && m.platforms.length > 0
-                  ? m.platforms
-                  : ["Messenger", "WhatsApp"],
-              permissions:
-                m.permissions && m.permissions.length > 0
-                  ? m.permissions
-                  : ["chat", "orders"],
-              is_owner: m.is_owner ?? m.role.toLowerCase() === "owner",
-              avatar_url: m.avatar_url || (m.is_owner ? avatarUrl : null),
-            })),
+                id: m.id,
+                name: m.name || "Teammate",
+                email: m.email || "",
+                role: m.role || "Member",
+                online: m.online ?? true,
+                channels:
+                  m.platforms && m.platforms.length > 0
+                    ? m.platforms
+                    : ["Messenger", "WhatsApp"],
+                permissions:
+                  m.permissions && m.permissions.length > 0
+                    ? m.permissions
+                    : ["chat", "orders"],
+                is_owner: m.is_owner ?? m.role.toLowerCase() === "owner",
+                avatar_url: m.avatar_url || (m.is_owner ? avatarUrl : null),
+              })),
           );
         }
       })

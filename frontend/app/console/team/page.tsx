@@ -259,22 +259,23 @@ export default function TeamMembersPage() {
           teamRes
             .filter((m) => (m.role || "").toLowerCase() !== "superadmin")
             .map((m) => ({
-            id: m.id,
-            name: m.name || "Teammate",
-            email: m.email || "",
-            role: m.role || "Member",
-            online: m.online ?? true,
-            channels:
-              m.platforms && m.platforms.length > 0
-                ? m.platforms
-                : ["Messenger", "WhatsApp"],
-            permissions:
-              m.permissions && m.permissions.length > 0
-                ? m.permissions
-                : ["/console/inbox", "/console/orders"],
-            is_owner: m.is_owner ?? m.role.toLowerCase() === "owner",
-            avatar_url: m.avatar_url || (m.is_owner ? user?.avatar_url : null),
-          })),
+              id: m.id,
+              name: m.name || "Teammate",
+              email: m.email || "",
+              role: m.role || "Member",
+              online: m.online ?? true,
+              channels:
+                m.platforms && m.platforms.length > 0
+                  ? m.platforms
+                  : ["Messenger", "WhatsApp"],
+              permissions:
+                m.permissions && m.permissions.length > 0
+                  ? m.permissions
+                  : ["/console/inbox", "/console/orders"],
+              is_owner: m.is_owner ?? m.role.toLowerCase() === "owner",
+              avatar_url:
+                m.avatar_url || (m.is_owner ? user?.avatar_url : null),
+            })),
         );
       } else if (user) {
         const ownerName =

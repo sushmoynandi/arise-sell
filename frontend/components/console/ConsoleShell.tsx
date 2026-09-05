@@ -756,18 +756,20 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
         .then((res: unknown) => {
           if (Array.isArray(res)) {
             setTeamMembers(
-              (res as Array<{
-                id?: string;
-                name: string;
-                email?: string;
-                role: string;
-                initials?: string;
-                online?: boolean;
-                hue?: number;
-                platforms?: string[];
-                avatar_url?: string | null;
-                is_owner?: boolean;
-              }>).filter((m) => (m.role || "").toLowerCase() !== "superadmin"),
+              (
+                res as Array<{
+                  id?: string;
+                  name: string;
+                  email?: string;
+                  role: string;
+                  initials?: string;
+                  online?: boolean;
+                  hue?: number;
+                  platforms?: string[];
+                  avatar_url?: string | null;
+                  is_owner?: boolean;
+                }>
+              ).filter((m) => (m.role || "").toLowerCase() !== "superadmin"),
             );
           }
         })
