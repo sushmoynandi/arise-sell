@@ -7,6 +7,7 @@ import { IconCheck, IconTag } from "@/components/ui/icons";
 import { Reveal, Stagger, StaggerItem, SPRING } from "@/components/motion";
 import { useLang } from "@/lib/i18n";
 import { cx } from "@/lib/format";
+import { API_BASE } from "@/lib/api-client";
 
 interface BackendPlan {
   id: string;
@@ -40,8 +41,7 @@ export default function PricingPreview() {
     let mounted = true;
     async function loadPlans() {
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const apiUrl = API_BASE || "/api/v1";
         const res = await fetch(`${apiUrl}/plans`, {
           cache: "no-store",
         });

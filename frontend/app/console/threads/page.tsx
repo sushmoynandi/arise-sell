@@ -21,6 +21,7 @@ import {
 import { SPRING, SPRING_SOFT } from "@/components/motion";
 import { THREADS } from "@/data/threads";
 import { bdt, cx } from "@/lib/format";
+import { API_BASE } from "@/lib/api-client";
 
 const FILTERS = ["All", "AI handling", "Needs a human", "Resolved"] as const;
 
@@ -53,7 +54,7 @@ export default function ThreadsPage() {
   useEffect(() => {
     const fetchLive = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/threads/live");
+        const res = await fetch(`${API_BASE}/threads/live`);
         if (res.ok) {
           const live = await res.json();
           if (Array.isArray(live) && live.length > 0) {
@@ -124,7 +125,7 @@ export default function ThreadsPage() {
     );
 
     try {
-      await fetch("http://localhost:8000/api/v1/threads/live/reply", {
+      await fetch(`${API_BASE}/threads/live/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

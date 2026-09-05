@@ -55,7 +55,8 @@ from app.api.webhooks.payments import router as payment_webhook_router
 
 
 from sqlalchemy import text
-from app.core.database import async_session_factory
+from app.core.database import async_session_factory, engine, Base
+import app.models
 
 
 @asynccontextmanager
@@ -63,19 +64,35 @@ async def lifespan(app: FastAPI):
     """Application startup & shutdown events."""
     print("🚀 AriseSell FastAPI Backend Starting...")
     try:
-        async with async_session_factory() as session:
-            await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS settings_data JSON DEFAULT '{}'::json;"))
-            await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP WITH TIME ZONE;"))
-            await session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMP WITH TIME ZONE;"))
-            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(32) DEFAULT 'local';"))
-            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS has_password BOOLEAN DEFAULT TRUE;"))
-            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP WITH TIME ZONE;"))
-            await session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMP WITH TIME ZONE;"))
-            await session.execute(text("ALTER TABLE connected_channels ADD COLUMN IF NOT EXISTS access_token TEXT;"))
-            await session.execute(text("ALTER TABLE connected_channels ALTER COLUMN config DROP NOT NULL;"))
-            await session.execute(text("ALTER TABLE users ALTER COLUMN business_id DROP NOT NULL;"))
-            await session.commit()
-            print("✅ Auto-migration: businesses, channels & users store-isolation columns ensured.")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS festival_offers (
+                    id VARCHAR(128) PRIMARY KEY,
+                    festival_name VARCHAR(255) NOT NULL,
+                    festival_name_bn VARCHAR(255),
+                    coupon_code VARCHAR(64) NOT NULL,
+                    discount_percent INTEGER DEFAULT 20,
+                    bonus_messages INTEGER DEFAULT 0,
+                    validity VARCHAR(128) DEFAULT 'Limited Time Offer',
+                    active BOOLEAN DEFAULT TRUE,
+                    applicable_plan VARCHAR(100) DEFAULT 'all',
+                    applicable_plan_name VARCHAR(100) DEFAULT 'All Plans',
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+            """))
+            await conn.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS settings_data JSON DEFAULT '{}'::json;"))
+            await conn.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP WITH TIME ZONE;"))
+            await conn.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMP WITH TIME ZONE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(32) DEFAULT 'local';"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS has_password BOOLEAN DEFAULT TRUE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP WITH TIME ZONE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMP WITH TIME ZONE;"))
+            await conn.execute(text("ALTER TABLE connected_channels ADD COLUMN IF NOT EXISTS access_token TEXT;"))
+            await conn.execute(text("ALTER TABLE connected_channels ALTER COLUMN config DROP NOT NULL;"))
+            await conn.execute(text("ALTER TABLE users ALTER COLUMN business_id DROP NOT NULL;"))
+            print("✅ Auto-migration & Schema sync: All tables and isolation columns verified.")
     except Exception as e:
         print(f"⚠️ Auto-migration note: {e}")
     yield
@@ -90,13 +107,22 @@ app = FastAPI(
 )
 
 # CORS Configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if settings.cors_origins_list == ["*"]:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"^https?://.*$",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # OWASP Security Headers
 app.add_middleware(SecurityHeadersMiddleware)

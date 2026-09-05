@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api-client";
 
 interface FacebookAuthResponse {
   accessToken: string;
@@ -237,7 +238,7 @@ export function FacebookPageWizard({
               try {
                 // Call backend oauth-exchange or fallback to Graph API
                 const res = await fetch(
-                  "http://localhost:8000/api/v1/integrations/facebook/oauth-exchange",
+                  `${API_BASE}/integrations/facebook/oauth-exchange`,
                   {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -357,21 +358,18 @@ export function FacebookPageWizard({
       );
 
       // Attempt backend persistence
-      await fetch(
-        "http://localhost:8000/api/v1/integrations/facebook/connect-page",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            page_id: page.id,
-            page_name: page.name,
-            page_access_token:
-              page.accessToken || `EAAG_PAGE_PERMANENT_${page.id}`,
-            category: page.category,
-            followers: page.followers,
-          }),
-        },
-      ).catch(() => {});
+      await fetch(`${API_BASE}/integrations/facebook/connect-page`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          page_id: page.id,
+          page_name: page.name,
+          page_access_token:
+            page.accessToken || `EAAG_PAGE_PERMANENT_${page.id}`,
+          category: page.category,
+          followers: page.followers,
+        }),
+      }).catch(() => {});
 
       setStatusMessage(
         `🤖 Step 3/3: Activating Google Gemini 3.5 Flash NLU & 64-District Courier Calculator...`,
@@ -430,19 +428,16 @@ export function FacebookPageWizard({
         "🌐 Step 2/3: Subscribing Webhooks to AriseSell Ingestion Engine...",
       );
 
-      await fetch(
-        "http://localhost:8000/api/v1/integrations/facebook/connect-page",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            page_id: manualPageId,
-            page_name: manualPageName,
-            page_access_token:
-              manualPageToken || `EAAG_PAGE_MANUAL_${manualPageId}`,
-          }),
-        },
-      ).catch(() => {});
+      await fetch(`${API_BASE}/integrations/facebook/connect-page`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          page_id: manualPageId,
+          page_name: manualPageName,
+          page_access_token:
+            manualPageToken || `EAAG_PAGE_MANUAL_${manualPageId}`,
+        }),
+      }).catch(() => {});
 
       setStatusMessage(
         `🤖 Step 3/3: Activating Gemini 3.5 Flash AI Sales Bot for ${manualPageName}...`,

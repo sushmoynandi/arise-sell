@@ -2,17 +2,27 @@
 from __future__ import annotations
 
 import json
+import os
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_PATHS = [
+    _BACKEND_DIR / ".env",
+    _BACKEND_DIR.parent / ".env",
+    Path.cwd() / ".env",
+    Path.cwd() / "backend" / ".env",
+]
 
 
 class Settings(BaseSettings):
     """Central configuration — all values come from .env or environment."""
 
     # ── Database ──
-    DATABASE_URL: str = "postgresql+asyncpg://arisesell:arisesell@localhost:5432/arisesell"
-    DATABASE_URL_SYNC: str = "postgresql://arisesell:arisesell@localhost:5432/arisesell"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/arisesell"
+    DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@localhost:5432/arisesell"
 
     # ── Redis ──
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -77,17 +87,26 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS_ORIGINS JSON string into a list."""
+        if not self.CORS_ORIGINS or self.CORS_ORIGINS == "*":
+            return ["*"]
         try:
-            return json.loads(self.CORS_ORIGINS)
+            val = json.loads(self.CORS_ORIGINS)
+            if isinstance(val, list):
+                return val
+            if isinstance(val, str):
+                return [val]
         except (json.JSONDecodeError, TypeError):
-            return ["http://localhost:3000", "http://127.0.0.1:3000"]
+            pass
+        if "," in self.CORS_ORIGINS:
+            return [x.strip() for x in self.CORS_ORIGINS.split(",") if x.strip()]
+        return ["*"]
 
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_ENV_PATHS,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",

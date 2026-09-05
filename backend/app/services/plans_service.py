@@ -304,10 +304,6 @@ async def get_stored_festival_offers() -> list[dict[str, Any]]:
     conn = await _get_pg_conn()
     if conn:
         try:
-            await conn.execute("""
-                ALTER TABLE festival_offers ADD COLUMN IF NOT EXISTS applicable_plan VARCHAR(100) DEFAULT 'all';
-                ALTER TABLE festival_offers ADD COLUMN IF NOT EXISTS applicable_plan_name VARCHAR(100) DEFAULT 'All Plans';
-            """)
             rows = await conn.fetch("""
                 SELECT id, festival_name, festival_name_bn, coupon_code, discount_percent,
                        bonus_messages, validity, active, applicable_plan, applicable_plan_name
@@ -363,8 +359,6 @@ async def create_stored_festival_offer(data: dict[str, Any]) -> dict[str, Any]:
     if conn:
         try:
             await conn.execute("""
-                ALTER TABLE festival_offers ADD COLUMN IF NOT EXISTS applicable_plan VARCHAR(100) DEFAULT 'all';
-                ALTER TABLE festival_offers ADD COLUMN IF NOT EXISTS applicable_plan_name VARCHAR(100) DEFAULT 'All Plans';
                 INSERT INTO festival_offers (
                     id, festival_name, festival_name_bn, coupon_code, discount_percent,
                     bonus_messages, validity, active, applicable_plan, applicable_plan_name, created_at, updated_at

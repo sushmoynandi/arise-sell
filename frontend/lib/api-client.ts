@@ -6,8 +6,29 @@
 
 import { setCookie, deleteCookie } from "./cookies";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const getApiBase = (): string => {
+  if (
+    typeof process !== "undefined" &&
+    process.env.NEXT_PUBLIC_API_URL &&
+    !process.env.NEXT_PUBLIC_API_URL.includes("://web:")
+  ) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
+  }
+
+  // In the browser, always use relative path '/api/v1' to automatically use the active domain/IP
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+
+  // SSR within Docker or Node
+  return (
+    (typeof process !== "undefined" &&
+      (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL)) ||
+    "http://web:8000/api/v1"
+  );
+};
+
+export const API_BASE = getApiBase();
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;

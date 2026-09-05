@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import QRCode from "qrcode";
 import { cx } from "@/lib/format";
-import api from "@/lib/api-client";
+import api, { API_BASE } from "@/lib/api-client";
 import { MetaEmbeddedWizard } from "@/components/integrations/MetaEmbeddedWizard";
 import { FacebookPageWizard } from "@/components/integrations/FacebookPageWizard";
 
@@ -203,7 +203,7 @@ export default function IntegrationsPage() {
     try {
       await new Promise((r) => setTimeout(r, 900));
       await fetch(
-        "http://localhost:8000/api/v1/integrations/whatsapp/qr-pair",
+        `${API_BASE}/integrations/whatsapp/qr-pair`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -245,7 +245,7 @@ export default function IntegrationsPage() {
   ) => {
     try {
       await fetch(
-        "http://localhost:8000/api/v1/integrations/whatsapp/embedded-signup",
+        `${API_BASE}/integrations/whatsapp/embedded-signup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -403,7 +403,7 @@ export default function IntegrationsPage() {
       );
 
       const res = await fetch(
-        "http://localhost:8000/api/v1/integrations/whatsapp/custom-meta-app",
+        `${API_BASE}/integrations/whatsapp/custom-meta-app`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

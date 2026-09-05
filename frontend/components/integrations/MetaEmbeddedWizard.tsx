@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { API_BASE } from "@/lib/api-client";
 
 interface MetaEmbeddedWizardProps {
   isOpen: boolean;
@@ -122,7 +123,7 @@ export function MetaEmbeddedWizard({
       setStatusMessage("🌐 Step 2/3: Subscribing Webhooks to AriseSell Ingestion Engine...");
 
       await fetch(
-        "http://localhost:8000/api/v1/integrations/whatsapp/custom-meta-app",
+        `${API_BASE}/integrations/whatsapp/custom-meta-app`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -764,7 +765,7 @@ export function MetaEmbeddedWizard({
                             setOtpSent(true);
                             try {
                               const res = await fetch(
-                                "http://localhost:8000/api/v1/integrations/whatsapp/send-otp",
+                                `${API_BASE}/integrations/whatsapp/send-otp`,
                                 {
                                   method: "POST",
                                   headers: {

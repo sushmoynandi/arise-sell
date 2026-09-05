@@ -31,11 +31,17 @@ from app.models.admin import (
 )
 
 
+from sqlalchemy import text
+
 async def seed_database():
     """Seed comprehensive initial dataset into PostgreSQL."""
     print("🌱 Starting AriseSell Database Seeding...")
 
     async with engine.begin() as conn:
+        try:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        except Exception as e:
+            print(f"⚠️ Notice on pgvector extension: {e}")
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session_factory() as db:
@@ -61,37 +67,44 @@ async def seed_database():
         db.add(biz)
         await db.flush()
 
-        # 2. Users / Team
-        owner = User(
-            id=uuid.uuid4(),
-            business_id=biz.id,
-            email="farhana@nokshi.co",
-            hashed_password=hash_password("DemoPass123!"),
-            first_name="Farhana",
-            last_name="Rahman",
-            role="owner",
-            is_active=True,
-            is_verified=True,
-            is_superadmin=True,
-            platforms=["facebook", "instagram", "whatsapp"],
-            hue=82,
-        )
-        db.add(owner)
+        # 2. Users / Superadmin & Team
+        from sqlalchemy import select
+        async def upsert_user(email: str, password_raw: str, first_name: str, last_name: str, role: str, is_superadmin: bool = False, biz_id = None):
+            res = await db.execute(select(User).where(User.email == email.strip().lower()))
+            existing = res.scalar_one_or_none()
+            if existing:
+                existing.hashed_password = hash_password(password_raw)
+                existing.is_superadmin = is_superadmin
+                existing.is_active = True
+                existing.is_verified = True
+                if biz_id and not existing.business_id:
+                    existing.business_id = biz_id
+                print(f"🔄 Updated existing user: {email}")
+            else:
+                new_u = User(
+                    id=uuid.uuid4(),
+                    business_id=biz_id,
+                    email=email.strip().lower(),
+                    hashed_password=hash_password(password_raw),
+                    first_name=first_name,
+                    last_name=last_name,
+                    role=role,
+                    is_active=True,
+                    is_verified=True,
+                    is_superadmin=is_superadmin,
+                    platforms=["facebook", "instagram", "whatsapp"],
+                    hue=82,
+                )
+                db.add(new_u)
+                print(f"✅ Created new user: {email}")
 
-        ops = User(
-            id=uuid.uuid4(),
-            business_id=biz.id,
-            email="imran@nokshi.co",
-            hashed_password=hash_password("DemoPass123!"),
-            first_name="Imran",
-            last_name="Kabir",
-            role="admin",
-            is_active=True,
-            is_verified=True,
-            platforms=["whatsapp", "messenger"],
-            hue=200,
-        )
-        db.add(ops)
+        # Super Admin
+        await upsert_user("admin@arisesell.com", "MasterAdmin@2026!", "Super", "Admin", "superadmin", is_superadmin=True, biz_id=biz.id)
+        # Merchants
+        await upsert_user("farhana@nokshi.co", "DemoPass123!", "Farhana", "Rahman", "owner", is_superadmin=False, biz_id=biz.id)
+        await upsert_user("merchant@nokshi.com.bd", "DemoPass123!", "Nokshi", "Merchant", "owner", is_superadmin=False, biz_id=biz.id)
+        # Ops Staff
+        await upsert_user("imran@nokshi.co", "DemoPass123!", "Imran", "Kabir", "admin", is_superadmin=False, biz_id=biz.id)
 
         # 3. Channels
         db.add(ConnectedChannel(

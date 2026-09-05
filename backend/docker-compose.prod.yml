@@ -59,6 +59,8 @@ services:
       dockerfile: Dockerfile
     container_name: arisesell-backend
     restart: always
+    ports:
+      - "8000:8000"
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-arisesell_db}
@@ -70,12 +72,13 @@ services:
       - PATHAO_CLIENT_ID=${PATHAO_CLIENT_ID}
       - BKASH_APP_KEY=${BKASH_APP_KEY}
       - SSLCOMMERZ_STORE_ID=${SSLCOMMERZ_STORE_ID}
+      - CORS_ORIGINS=*
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
   celery_worker:
     build:
@@ -113,7 +116,8 @@ services:
     container_name: arisesell-frontend
     restart: always
     environment:
-      - NEXT_PUBLIC_API_URL=http://web:8000/api/v1
+      - NEXT_PUBLIC_API_URL=/api/v1
+      - INTERNAL_API_URL=http://web:8000/api/v1
     depends_on:
       - web
 
