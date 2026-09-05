@@ -23,10 +23,42 @@ export interface StoreWorkspace {
   owner_name: string;
   plan_covered_by_owner: boolean;
   is_active: boolean;
+  is_frozen?: boolean;
   channels_count: number;
   permissions: string[];
   max_stores?: number;
   maxStores?: number;
+}
+
+export interface StoreConflictItem {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  is_frozen: boolean;
+}
+
+export interface TeammateConflictItem {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export interface CheckPlanSwitchResponse {
+  can_switch_directly: boolean;
+  requires_reconciliation: boolean;
+  current_plan: string;
+  target_plan: string;
+  target_max_stores: number;
+  target_max_seats: number;
+  target_teammates_allowed: number;
+  stores_conflict: boolean;
+  seats_conflict: boolean;
+  owned_stores: StoreConflictItem[];
+  active_stores_count: number;
+  team_members: TeammateConflictItem[];
+  current_teammates_count: number;
 }
 
 export interface BillingPlan {
@@ -62,8 +94,49 @@ export interface BillingInvoice {
   method: string;
   txId: string;
   date: string;
-  status: string;
   description?: string;
+  status?: string;
+}
+
+export interface EnterpriseContractData {
+  id: string;
+  contract_code: string;
+  business_id?: string | null;
+  merchant_name?: string | null;
+  merchant_email?: string | null;
+  plan_name: string;
+  duration_months: number;
+  price_bdt: number;
+  message_limit: number;
+  max_stores: number;
+  max_seats: number;
+  features: string[];
+  valid_until?: string | null;
+  activated_at?: string | null;
+  expires_at?: string | null;
+  status: "pending" | "active" | "expired" | "cancelled";
+  payment_method?: string | null;
+  invoice_no?: string | null;
+  notes?: string | null;
+  created_at?: string | null;
+}
+
+export interface EnterpriseContractCreate {
+  contract_code?: string;
+  business_id?: string;
+  merchant_email?: string;
+  merchant_name?: string;
+  plan_name?: string;
+  duration_months?: number;
+  price_bdt?: number;
+  message_limit?: number;
+  max_stores?: number;
+  max_seats?: number;
+  features?: string[];
+  valid_until?: string | null;
+  payment_method?: string;
+  auto_activate?: boolean;
+  notes?: string;
 }
 
 export interface TeamMemberData {
@@ -104,6 +177,7 @@ class ApiClient {
     deleteCookie("np_refresh_token");
     deleteCookie("np_role");
     deleteCookie("np_is_superadmin");
+    deleteCookie("np_has_plan");
   }
 
   public async request<T = unknown>(
@@ -506,18 +580,45 @@ class ApiClient {
         method: "DELETE",
         body: JSON.stringify(body),
       }),
+    toggleStoreFreeze: (storeId: string, swapWithStoreId?: string) =>
+      this.request<{
+        success: boolean;
+        store_id: string;
+        name: string;
+        is_frozen: boolean;
+        message: string;
+      }>(`/merchants/stores/${storeId}/toggle-freeze`, {
+        method: "POST",
+        body: JSON.stringify(
+          swapWithStoreId ? { swap_with_store_id: swapWithStoreId } : {},
+        ),
+      }),
   };
 
   // --- Billing ---
   public billing = {
     listPlans: () => this.request<BillingPlan[]>("/billing/plans"),
     listInvoices: () => this.request<BillingInvoice[]>("/billing/invoices"),
-    selectPlan: (data: { plan_id: string; billing_period?: string }) =>
+    checkPlanSwitch: (data: { plan_id: string }) =>
+      this.request<CheckPlanSwitchResponse>("/billing/check-plan-switch", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    selectPlan: (data: {
+      plan_id: string;
+      billing_period?: string;
+      reconciliation?: {
+        keep_store_ids?: string[];
+        keep_team_member_ids?: string[];
+      };
+    }) =>
       this.request<{
         success: boolean;
         plan: string;
         orders_quota: number;
         message: string;
+        active_stores?: string[];
+        frozen_stores?: string[];
       }>("/billing/select-plan", {
         method: "POST",
         body: JSON.stringify(data),
@@ -569,19 +670,41 @@ class ApiClient {
         method: "POST",
         body: JSON.stringify({ code, payment_method }),
       }),
-    getCustomCodes: () =>
-      this.request<
-        {
-          code: string;
+    getEnterpriseContract: (code?: string) =>
+      this.request<{
+        found: boolean;
+        contract: {
+          id: string;
+          contract_code: string;
           plan_name: string;
+          duration_months: number;
+          price_bdt: number;
           message_limit: number;
           max_stores: number;
           max_seats: number;
-          price_bdt: number;
           features: string[];
-          active: boolean;
-        }[]
-      >("/billing/custom-codes"),
+          valid_until?: string | null;
+          status: string;
+          merchant_name?: string | null;
+        } | null;
+      }>(
+        `/billing/enterprise-contract${code ? `?code=${encodeURIComponent(code)}` : ""}`,
+      ),
+    payEnterpriseContract: (contract_code: string, payment_method?: string) =>
+      this.request<{
+        success: boolean;
+        plan: string;
+        contract_code: string;
+        duration_months: number;
+        orders_quota: number;
+        max_stores: number;
+        max_seats: number;
+        expires_at?: string | null;
+        message: string;
+      }>("/billing/enterprise-contract/pay", {
+        method: "POST",
+        body: JSON.stringify({ contract_code, payment_method }),
+      }),
   };
 
   // --- Analytics ---
@@ -672,16 +795,35 @@ class ApiClient {
         `/admin/plans/festival-offers/${id}`,
         { method: "DELETE" },
       ),
-    listCustomCodes: () =>
-      this.request<Record<string, unknown>[]>("/admin/plans/custom-codes"),
-    generateCustomCode: (data: Record<string, unknown>) =>
-      this.request<Record<string, unknown>>("/admin/plans/custom-codes", {
+    listContracts: (status?: string) =>
+      this.request<EnterpriseContractData[]>(
+        `/admin/plans/contracts${status ? `?status=${encodeURIComponent(status)}` : ""}`,
+      ),
+    createContract: (data: EnterpriseContractCreate) =>
+      this.request<EnterpriseContractData>("/admin/plans/contracts", {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    deleteCustomCode: (code: string) =>
+    activateContract: (id: string, payment_method?: string) =>
+      this.request<{
+        success: boolean;
+        message: string;
+        contract: EnterpriseContractData;
+      }>(`/admin/plans/contracts/${encodeURIComponent(id)}/activate`, {
+        method: "POST",
+        body: JSON.stringify({ payment_method }),
+      }),
+    updateContract: (id: string, data: Partial<EnterpriseContractData>) =>
+      this.request<EnterpriseContractData>(
+        `/admin/plans/contracts/${encodeURIComponent(id)}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        },
+      ),
+    deleteContract: (id: string) =>
       this.request<{ success: boolean; message: string }>(
-        `/admin/plans/custom-codes/${encodeURIComponent(code)}`,
+        `/admin/plans/contracts/${encodeURIComponent(id)}`,
         { method: "DELETE" },
       ),
     listAiKeys: () =>

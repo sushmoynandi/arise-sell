@@ -4,9 +4,10 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { IconClose, IconTag, IconTrash, IconWarn } from "@/components/ui/icons";
 import { Button } from "@/components/ui/primitives";
-import { FestivalOffer } from "../types";
+import { AdminPlan, FestivalOffer } from "../types";
 
 interface FestivalModalsProps {
+  plans?: AdminPlan[];
   editingOffer: FestivalOffer | null;
   onCloseEdit: () => void;
   onSaveEdit: (updated: FestivalOffer) => Promise<void>;
@@ -23,10 +24,13 @@ interface FestivalModalsProps {
     discountPercent: number;
     bonusMessages: number;
     validity: string;
+    applicablePlan: string;
+    applicablePlanName: string;
   }) => Promise<void>;
 }
 
 export function FestivalModals({
+  plans = [],
   editingOffer,
   onCloseEdit,
   onSaveEdit,
@@ -43,6 +47,7 @@ export function FestivalModals({
   const [festDiscount, setFestDiscount] = useState("");
   const [festBonus, setFestBonus] = useState("");
   const [festValidity, setFestValidity] = useState("");
+  const [applicablePlan, setApplicablePlan] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit Local State
@@ -60,18 +65,27 @@ export function FestivalModals({
 
     try {
       setIsSubmitting(true);
+      const selectedPlan = plans.find((p) => p.id === applicablePlan);
+      const planName =
+        applicablePlan === "all"
+          ? "All Plans"
+          : selectedPlan?.name || applicablePlan;
+
       await onCreateOffer({
         festivalName: festName,
         couponCode: festCode.toUpperCase().replace(/\s+/g, ""),
         discountPercent: Number(festDiscount) || 10,
         bonusMessages: Number(festBonus) || 0,
         validity: festValidity || "Limited Time Offer",
+        applicablePlan,
+        applicablePlanName: planName,
       });
       setFestName("");
       setFestCode("");
       setFestDiscount("");
       setFestBonus("");
       setFestValidity("");
+      setApplicablePlan("all");
       onCloseAdd();
     } finally {
       setIsSubmitting(false);
@@ -84,9 +98,18 @@ export function FestivalModals({
 
     try {
       setIsSubmitting(true);
+      const currentPlan = editState.applicablePlan || "all";
+      const selectedPlan = plans.find((p) => p.id === currentPlan);
+      const planName =
+        currentPlan === "all"
+          ? "All Plans"
+          : selectedPlan?.name || editState.applicablePlanName || currentPlan;
+
       await onSaveEdit({
         ...editState,
         couponCode: editState.couponCode.toUpperCase().replace(/\s+/g, ""),
+        applicablePlan: currentPlan,
+        applicablePlanName: planName,
       });
       onCloseEdit();
     } finally {
@@ -133,8 +156,46 @@ export function FestivalModals({
                   onChange={(e) =>
                     setEditState({ ...editState, festivalName: e.target.value })
                   }
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Applicable Plan
+                </label>
+                <select
+                  value={editState.applicablePlan || "all"}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const selectedPlan = plans.find((p) => p.id === val);
+                    const planName =
+                      val === "all" ? "All Plans" : selectedPlan?.name || val;
+                    setEditState({
+                      ...editState,
+                      applicablePlan: val,
+                      applicablePlanName: planName,
+                    });
+                  }}
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors cursor-pointer"
+                >
+                  <option value="all">
+                    All Plans (সকল প্ল্যানের জন্য প্রযোজ্য)
+                  </option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} (
+                      {p.priceBDT === 0
+                        ? "Free"
+                        : `৳${p.priceBDT.toLocaleString()}/mo`}
+                      )
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11.5px] text-text-3 mt-1">
+                  Choose whether this offer applies across all subscription
+                  tiers or only a specific plan.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
@@ -168,7 +229,7 @@ export function FestivalModals({
                         discountPercent: Number(e.target.value),
                       })
                     }
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                   />
                 </div>
               </div>
@@ -186,7 +247,7 @@ export function FestivalModals({
                       bonusMessages: Number(e.target.value),
                     })
                   }
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                 />
               </div>
 
@@ -200,7 +261,7 @@ export function FestivalModals({
                   onChange={(e) =>
                     setEditState({ ...editState, validity: e.target.value })
                   }
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                 />
               </div>
 
@@ -317,8 +378,36 @@ export function FestivalModals({
                   value={festName}
                   onChange={(e) => setFestName(e.target.value)}
                   placeholder="e.g. Eid Shopping Blitz"
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Applicable Plan
+                </label>
+                <select
+                  value={applicablePlan}
+                  onChange={(e) => setApplicablePlan(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors cursor-pointer"
+                >
+                  <option value="all">
+                    All Plans (সকল প্ল্যানের জন্য প্রযোজ্য)
+                  </option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} (
+                      {p.priceBDT === 0
+                        ? "Free"
+                        : `৳${p.priceBDT.toLocaleString()}/mo`}
+                      )
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11.5px] text-text-3 mt-1">
+                  Choose whether this festival coupon applies to all plans or a
+                  specific tier.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
@@ -346,7 +435,7 @@ export function FestivalModals({
                     value={festDiscount}
                     onChange={(e) => setFestDiscount(e.target.value)}
                     placeholder="e.g. 20"
-                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                   />
                 </div>
               </div>
@@ -360,7 +449,7 @@ export function FestivalModals({
                   value={festBonus}
                   onChange={(e) => setFestBonus(e.target.value)}
                   placeholder="e.g. 500"
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                 />
               </div>
 
@@ -373,7 +462,7 @@ export function FestivalModals({
                   value={festValidity}
                   onChange={(e) => setFestValidity(e.target.value)}
                   placeholder="e.g. Valid till Eid Night"
-                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none transition-colors"
                 />
               </div>
 

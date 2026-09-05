@@ -120,10 +120,17 @@ class GoogleAuthRequest(BaseModel):
     access_token: str | None = None
 
 
+class PlanReconciliationPayload(BaseModel):
+    """Payload to resolve capacity conflicts when downgrading a plan."""
+    keep_store_ids: list[str] = Field(default_factory=list, description="IDs of stores to keep active; unselected will be frozen")
+    keep_team_member_ids: list[str] = Field(default_factory=list, description="IDs of team members to retain; unselected will be removed")
+
+
 class SelectPlanRequest(BaseModel):
-    """Payload to select or upgrade subscription plan."""
+    """Payload to select or upgrade/downgrade subscription plan."""
     plan_id: str = Field(..., description="Plan identifier: free, basic, growth, pro, scale")
     billing_period: str = Field("monthly", description="Billing frequency: monthly or yearly")
+    reconciliation: PlanReconciliationPayload | None = Field(None, description="Optional reconciliation for downgrades")
 
 
 class SelectPlanResponse(BaseModel):
@@ -132,6 +139,44 @@ class SelectPlanResponse(BaseModel):
     plan: str
     orders_quota: int
     message: str
+    active_stores: list[str] = Field(default_factory=list)
+    frozen_stores: list[str] = Field(default_factory=list)
+
+
+class CheckPlanSwitchRequest(BaseModel):
+    """Payload to check whether switching to a plan requires capacity reconciliation."""
+    plan_id: str
+
+
+class StoreConflictItem(BaseModel):
+    id: str
+    name: str
+    slug: str
+    is_active: bool
+    is_frozen: bool
+
+
+class TeammateConflictItem(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+
+
+class CheckPlanSwitchResponse(BaseModel):
+    can_switch_directly: bool
+    requires_reconciliation: bool
+    current_plan: str
+    target_plan: str
+    target_max_stores: int
+    target_max_seats: int
+    target_teammates_allowed: int
+    stores_conflict: bool
+    seats_conflict: bool
+    owned_stores: list[StoreConflictItem]
+    active_stores_count: int
+    team_members: list[TeammateConflictItem]
+    current_teammates_count: int
 
 
 class DeleteAccountRequest(BaseModel):

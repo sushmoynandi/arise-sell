@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import api from "@/lib/api-client";
+import api, { EnterpriseContractData } from "@/lib/api-client";
 import { cx } from "@/lib/format";
 import { IconPlus, IconTag } from "@/components/ui/icons";
 import { Button } from "@/components/ui/primitives";
@@ -11,11 +11,15 @@ import { FestivalTable } from "./components/festival-table";
 import { FestivalModals } from "./components/festival-modals";
 import { PlanCard } from "./components/plan-card";
 import { PlanModals } from "./components/plan-modals";
+import { ContractsTable } from "./components/contracts-table";
 
 export default function AdminPlansPage() {
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [festivalOffers, setFestivalOffers] = useState<FestivalOffer[]>([]);
+  const [contracts, setContracts] = useState<EnterpriseContractData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingContracts, setLoadingContracts] = useState(true);
+  const [provisionModalOpen, setProvisionModalOpen] = useState(false);
 
   // Billing view toggle on the cards: "monthly" vs "yearly"
   const [billingView, setBillingView] = useState<"monthly" | "yearly">(
@@ -42,7 +46,21 @@ export default function AdminPlansPage() {
     setTimeout(() => setSuccessMsg(null), 3500);
   };
 
-  // Fetch real plans & festival offers from backend on mount
+  const fetchContracts = async () => {
+    try {
+      setLoadingContracts((prev) => (contracts.length === 0 ? true : false));
+      const res = await api.admin.listContracts();
+      if (Array.isArray(res)) {
+        setContracts(res);
+      }
+    } catch (err) {
+      console.error("Failed to load contracts from backend:", err);
+    } finally {
+      setLoadingContracts(false);
+    }
+  };
+
+  // Fetch real plans, festival offers & contracts from backend on mount
   const fetchBackendData = async () => {
     try {
       setLoading(true);
@@ -63,6 +81,7 @@ export default function AdminPlansPage() {
     } finally {
       setLoading(false);
     }
+    fetchContracts();
   };
 
   useEffect(() => {
@@ -95,6 +114,8 @@ export default function AdminPlansPage() {
     discountPercent: number;
     bonusMessages: number;
     validity: string;
+    applicablePlan: string;
+    applicablePlanName: string;
   }) => {
     const payload = {
       id: `fest-${Date.now()}`,
@@ -105,6 +126,8 @@ export default function AdminPlansPage() {
       bonusMessages: newOfferData.bonusMessages,
       validity: newOfferData.validity,
       active: true,
+      applicablePlan: newOfferData.applicablePlan || "all",
+      applicablePlanName: newOfferData.applicablePlanName || "All Plans",
     };
 
     try {
@@ -246,6 +269,31 @@ export default function AdminPlansPage() {
     }
   };
 
+  // ─── Enterprise Contract Handlers ────────────────────────────
+
+  const handleActivateContract = async (id: string) => {
+    try {
+      const res = await api.admin.activateContract(
+        id,
+        "Paid Offline (Super Admin)",
+      );
+      showNotification(res.message || "Contract activated and store upgraded!");
+      fetchContracts();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to activate contract");
+    }
+  };
+
+  const handleDeleteContract = async (id: string) => {
+    try {
+      await api.admin.deleteContract(id);
+      showNotification("Enterprise contract deleted successfully.");
+      setContracts((prev) => prev.filter((c) => c.id !== id));
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete contract");
+    }
+  };
+
   const activePlansCount = plans.filter((p) => p.status === "active").length;
   const homePlansCount = plans.filter(
     (p) => p.showOnHome && p.status === "active",
@@ -377,8 +425,19 @@ export default function AdminPlansPage() {
         )}
       </div>
 
+      {/* ─── 4. Enterprise & Custom Contracts Table ─── */}
+      <ContractsTable
+        contracts={contracts}
+        loading={loadingContracts}
+        onRefresh={fetchContracts}
+        onOpenCreate={() => setProvisionModalOpen(true)}
+        onActivate={handleActivateContract}
+        onDelete={handleDeleteContract}
+      />
+
       {/* ─── Modals ─── */}
       <FestivalModals
+        plans={plans}
         editingOffer={editingFestivalOffer}
         onCloseEdit={() => setEditingFestivalOffer(null)}
         onSaveEdit={handleSaveEditFestivalOffer}
@@ -400,6 +459,13 @@ export default function AdminPlansPage() {
         createModalOpen={createModalOpen}
         onCloseCreate={() => setCreateModalOpen(false)}
         onCreatePlan={handleCreatePlan}
+        provisionModalOpen={provisionModalOpen}
+        onCloseProvision={() => setProvisionModalOpen(false)}
+        onContractCreated={() => {
+          fetchContracts();
+          showNotification("Custom plan created successfully!");
+        }}
+        allPlans={plans}
       />
     </div>
   );

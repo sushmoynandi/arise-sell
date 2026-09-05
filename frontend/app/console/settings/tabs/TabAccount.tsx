@@ -87,12 +87,19 @@ export function resolvePlanTier(planName?: string | null): PlanTierInfo {
   if (
     normalized.includes("grow") ||
     normalized.includes("basic") ||
-    normalized.includes("starter")
+    normalized.includes("starter") ||
+    normalized.includes("go")
   ) {
     return PLAN_TIERS.grow;
   }
   if (normalized.includes("pro")) return PLAN_TIERS.pro;
-  if (normalized.includes("custom") || normalized.includes("enterprise")) {
+  if (
+    normalized.includes("custom") ||
+    normalized.includes("enterprise") ||
+    normalized.includes("enter") ||
+    normalized.includes("scale") ||
+    normalized.includes("vip")
+  ) {
     return PLAN_TIERS.custom;
   }
   if (
@@ -102,7 +109,7 @@ export function resolvePlanTier(planName?: string | null): PlanTierInfo {
   ) {
     return PLAN_TIERS.business;
   }
-  return PLAN_TIERS.pro;
+  return PLAN_TIERS.custom;
 }
 
 export interface LeftbarModuleItem {
@@ -128,6 +135,11 @@ export const LEFTBAR_PERMISSIONS_GROUPS: LeftbarModuleGroup[] = [
         id: "/console/pipeline",
         label: "Leads & Pipeline",
         iconKey: "pipeline",
+      },
+      {
+        id: "/console/team",
+        label: "Team Members",
+        iconKey: "users",
       },
     ],
   },
@@ -955,26 +967,54 @@ export function TabAccount({
   };
 
   // Store Teammates state inside Account
-  const [members, setMembers] = useState<TeammateMember[]>([
-    {
-      id: "m1",
-      name: "Farhana Rahman",
-      email: "farhana@nokshi.co",
-      role: "Owner",
-      online: true,
-      channels: ["Messenger", "WhatsApp", "Instagram"],
-      permissions: [
-        "all",
-        "chat",
-        "orders",
-        "courier",
-        "catalog",
-        "invoices",
-        "settings",
-      ],
-      is_owner: true,
-    },
-  ]);
+  const [members, setMembers] = useState<TeammateMember[]>(() => {
+    const ownerName = user
+      ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email
+      : "Store Owner";
+    return [
+      {
+        id: user ? String(user.id) : "owner",
+        name: ownerName,
+        email: user?.email || "",
+        role: "Owner",
+        online: true,
+        channels: ["Messenger", "WhatsApp", "Instagram"],
+        permissions: [
+          "all",
+          "chat",
+          "orders",
+          "courier",
+          "catalog",
+          "invoices",
+          "settings",
+        ],
+        is_owner: true,
+        avatar_url: user?.avatar_url || null,
+      },
+    ];
+  });
+
+  useEffect(() => {
+    if (user?.email) {
+      setMembers((prev) => {
+        if (prev.length === 1 && prev[0].is_owner && !prev[0].email) {
+          const ownerName =
+            `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+            user.email;
+          return [
+            {
+              ...prev[0],
+              id: String(user.id),
+              name: ownerName,
+              email: user.email,
+              avatar_url: user.avatar_url || avatarUrl || null,
+            },
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [user, avatarUrl]);
 
   useEffect(() => {
     api.merchants
@@ -1008,10 +1048,31 @@ export function TabAccount({
   const currentPlan = resolvePlanTier(
     propPlanName || user?.plan || settings?.plan,
   );
-  const maxMembers = currentPlan.maxMembers;
+  const maxMembers = Math.max(
+    currentPlan.maxMembers,
+    settings?.maxSeats && settings.maxSeats > 0 ? settings.maxSeats : 0,
+  );
   const occupiedSeats = members.length;
   const availableSeats = Math.max(0, maxMembers - occupiedSeats);
   const isSeatLimitReached = occupiedSeats >= maxMembers;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash === "#team-members" || hash === "#team") {
+        setTimeout(() => {
+          const el = document.getElementById("team-members");
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 150);
+      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("invite") === "true") {
+        setAddMemberModalOpen(true);
+      }
+    }
+  }, []);
 
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
@@ -1334,6 +1395,7 @@ export function TabAccount({
                       <img
                         src={avatarUrl}
                         alt={fullName}
+                        referrerPolicy="no-referrer"
                         className="size-full object-cover rounded-full pointer-events-none select-none"
                       />
                     ) : (
@@ -2182,7 +2244,7 @@ export function TabAccount({
       </Panel>
 
       {/* Store Teammates & Permissions */}
-      <div className="space-y-4">
+      <div id="team-members" className="space-y-4 scroll-mt-6">
         <AnimatePresence>
           {teamToastMessage && (
             <motion.div
@@ -2205,7 +2267,8 @@ export function TabAccount({
                   Team Members &amp; Access
                 </h3>
                 <Badge tone={currentPlan.badgeTone} dot>
-                  {currentPlan.name} Plan · {occupiedSeats}/{maxMembers} Seats
+                  {settings?.plan || currentPlan.name} Plan · {occupiedSeats}/
+                  {maxMembers} Seats
                 </Badge>
                 {isSeatLimitReached && (
                   <span className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
@@ -2218,28 +2281,36 @@ export function TabAccount({
                 sessions, and book couriers.
               </p>
             </div>
-            {isStoreOwner &&
-              (isSeatLimitReached ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  type="button"
-                  onClick={() => setAddMemberModalOpen(true)}
-                  className="font-semibold shadow-2xs border-amber-300 text-amber-700 hover:bg-amber-50"
-                >
-                  + Add Member (Limit Reached)
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="signal"
-                  type="button"
-                  onClick={() => setAddMemberModalOpen(true)}
-                  className="font-semibold shadow-2xs"
-                >
-                  + Add Team Member
-                </Button>
-              ))}
+            <div className="flex items-center gap-2">
+              <a
+                href="/console/team"
+                className="h-8 rounded-lg border border-line bg-white hover:border-line-hover hover:bg-surface-2 px-3 text-xs font-semibold text-text transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+              >
+                Open Dedicated Page ↗
+              </a>
+              {isStoreOwner &&
+                (isSeatLimitReached ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    onClick={() => setAddMemberModalOpen(true)}
+                    className="font-semibold shadow-2xs border-amber-300 text-amber-700 hover:bg-amber-50"
+                  >
+                    + Add Member (Limit Reached)
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="signal"
+                    type="button"
+                    onClick={() => setAddMemberModalOpen(true)}
+                    className="font-semibold shadow-2xs"
+                  >
+                    + Add Team Member
+                  </Button>
+                ))}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -2268,6 +2339,7 @@ export function TabAccount({
                             <img
                               src={m.avatar_url || avatarUrl!}
                               alt={m.name}
+                              referrerPolicy="no-referrer"
                               className="size-9 rounded-full object-cover border border-line shadow-2xs"
                             />
                           ) : (
@@ -2507,7 +2579,7 @@ export function TabAccount({
                       </strong>
                       -এর স্টোর সুইচারে ক্লিক করে{" "}
                       <span className="font-semibold text-text">
-                        "নতুন নিজস্ব স্টোর তৈরি করুন"
+                        &quot;নতুন নিজস্ব স্টোর তৈরি করুন&quot;
                       </span>{" "}
                       সিলেক্ট করুন অথবা পাশের ১-ক্লিক বাটনে চাপ দিন।
                     </>
@@ -2521,7 +2593,7 @@ export function TabAccount({
                       </strong>{" "}
                       anytime and select{" "}
                       <span className="font-semibold text-text">
-                        "Create a New Store"
+                        &quot;Create a New Store&quot;
                       </span>
                       , or use the 1-click button on the right.
                     </>
@@ -2565,7 +2637,7 @@ export function TabAccount({
                       </strong>
                       -এর স্টোর সুইচার থেকে{" "}
                       <span className="font-semibold text-text">
-                        "নতুন নিজস্ব স্টোর তৈরি করুন"
+                        &quot;নতুন নিজস্ব স্টোর তৈরি করুন&quot;
                       </span>{" "}
                       সিলেক্ট করুন।
                     </>
@@ -2584,7 +2656,7 @@ export function TabAccount({
                       </strong>{" "}
                       and select{" "}
                       <span className="font-semibold text-text">
-                        "Create a New Store"
+                        &quot;Create a New Store&quot;
                       </span>
                       .
                     </>

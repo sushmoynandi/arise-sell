@@ -5,10 +5,10 @@ export const TENANT = {
   nameBn: "নকশী অ্যান্ড কোং",
   kind: "Handloom, home & lifestyle · Dhaka",
   since: "2021",
-  plan: "Karkhana",
-  ordersUsed: 1043,
-  ordersQuota: 1500,
-  pages: 3,
+  plan: "Free",
+  ordersUsed: 0,
+  ordersQuota: 100,
+  pages: 1,
   logoHue: 82,
 } as const;
 
@@ -48,11 +48,41 @@ export const TEAM = [
 ] as const;
 
 export const CHANNELS = [
-  { id: "whatsapp", label: "WhatsApp", detail: "Cloud API · +880 1710-XXXX", live: true, share: 46 },
-  { id: "messenger", label: "Messenger", detail: "3 pages connected", live: true, share: 28 },
-  { id: "instagram", label: "Instagram", detail: "DMs + comments", live: true, share: 17 },
-  { id: "web", label: "Web widget", detail: "nokshi.com.bd", live: true, share: 9 },
-  { id: "telegram", label: "Telegram", detail: "Not connected", live: false, share: 0 },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    detail: "Cloud API · +880 1710-XXXX",
+    live: true,
+    share: 46,
+  },
+  {
+    id: "messenger",
+    label: "Messenger",
+    detail: "3 pages connected",
+    live: true,
+    share: 28,
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    detail: "DMs + comments",
+    live: true,
+    share: 17,
+  },
+  {
+    id: "web",
+    label: "Web widget",
+    detail: "nokshi.com.bd",
+    live: true,
+    share: 9,
+  },
+  {
+    id: "telegram",
+    label: "Telegram",
+    detail: "Not connected",
+    live: false,
+    share: 0,
+  },
 ] as const;
 
 /** Merchants shown as social proof on the marketing site. */

@@ -426,4 +426,5 @@ export const NAV_ICON = {
   plug: IconPlug,
   bot: IconBot,
   zap: IconZap,
+  users: IconUsers,
 } as const;

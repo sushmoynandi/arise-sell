@@ -57,15 +57,15 @@ async def _resolve_user_plan(user: User, db: AsyncSession) -> tuple[str | None, 
         if getattr(user, "is_superadmin", False):
             return "enterprise", True
         if not getattr(user, "business_id", None):
-            return "growth", True
+            return getattr(user, "plan", None) or "Free", True
         stmt = select(Business).where(Business.id == user.business_id)
         res = await db.execute(stmt)
         biz = res.scalar_one_or_none()
         if biz and biz.plan and biz.plan.lower() not in ("none", "pending", ""):
             return biz.plan, True
-        return "growth", True
+        return getattr(user, "plan", None) or "Free", True
     except Exception:
-        return "growth", True
+        return "Free", True
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -105,12 +105,12 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
     store_name = (req.store_name or f"{first_name}'s Store").strip()
     store_slug = f"store-{uuid.uuid4().hex[:6]}"
 
-    # Create business tenant with plan="pending" (requires choosing plan before console)
+    # Create business tenant with plan="Free"
     biz = Business(
         name=store_name,
         slug=store_slug,
-        plan="pending",
-        orders_quota=0,
+        plan="Free",
+        orders_quota=100,
     )
     db.add(biz)
     await db.flush()
@@ -125,6 +125,9 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         is_active=True,
         is_verified=True,
         last_login=datetime.now(timezone.utc),
+        plan="Free",
+        ai_quota=100,
+        ai_used=0,
     )
     db.add(user)
     await db.flush()
@@ -133,6 +136,7 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         "owner_id": str(user.id),
         "owner_email": clean_email,
         "owner_name": f"{first_name} {last_name}".strip() or "Store Owner",
+        "plan": "Free",
     }
 
     await db.commit()
@@ -152,8 +156,8 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
             is_verified=user.is_verified,
             role=user.role,
             is_superadmin=user.is_superadmin,
-            plan=None,
-            has_plan=False,
+            plan="Free",
+            has_plan=True,
         ),
     )
 
@@ -271,7 +275,7 @@ async def get_me(
     try:
         plan_name, has_plan = await _resolve_user_plan(user, db)
     except Exception:
-        plan_name, has_plan = "growth", True
+        plan_name, has_plan = "Free", True
 
     clean_email = str(getattr(user, "email", "")).strip().lower()
     is_super = bool(
@@ -335,7 +339,7 @@ async def update_profile(
         getattr(db_user, "role", "") == "superadmin" or
         clean_email in ["admin@arisesell.com", "admin@nextproduct.ai"]
     )
-    plan_name, has_plan = "growth", True
+    plan_name, has_plan = "Free", True
     try:
         plan_name, has_plan = await _resolve_user_plan(db_user, db)
     except Exception:
@@ -553,10 +557,10 @@ async def google_auth(
                 user.avatar_url = profile.avatar_url
             await db.commit()
         else:
-            # Provision store & merchant user account with plan="pending"
+            # Provision store & merchant user account with Free tier
             store_name = f"{profile.first_name}'s Store"
             store_slug = f"store-{uuid.uuid4().hex[:6]}"
-            biz = Business(name=store_name, slug=store_slug, plan="growth", orders_quota=1000)
+            biz = Business(name=store_name, slug=store_slug, plan="Free", orders_quota=100)
             db.add(biz)
             await db.flush()
 
@@ -574,6 +578,9 @@ async def google_auth(
                 last_login=datetime.now(timezone.utc),
                 auth_provider="google",
                 has_password=False,
+                plan="Free",
+                ai_quota=100,
+                ai_used=0,
             )
             db.add(user)
             await db.flush()
@@ -582,6 +589,7 @@ async def google_auth(
                 "owner_id": str(user.id),
                 "owner_email": profile.email.lower(),
                 "owner_name": f"{profile.first_name} {profile.last_name}".strip() or "Store Owner",
+                "plan": "Free",
             }
 
             await db.commit()
@@ -604,6 +612,9 @@ async def google_auth(
             last_login=datetime.now(timezone.utc),
             auth_provider="google",
             has_password=False,
+            plan="Free",
+            ai_quota=100,
+            ai_used=0,
         )
 
     # 4. Generate JWT Pair
@@ -615,7 +626,7 @@ async def google_auth(
     try:
         plan_name, has_plan = await _resolve_user_plan(user, db)
     except Exception:
-        plan_name, has_plan = "growth", True
+        plan_name, has_plan = "Free", True
 
     return TokenResponse(
         access=access,

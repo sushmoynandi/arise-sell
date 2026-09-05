@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Integer, JSON, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,6 +37,7 @@ class SubscriptionPlan(Base, TimestampMixin):
     popular: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     active_merchants: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="active", nullable=False)
+    show_on_home: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
 class Invoice(Base, TimestampMixin, TenantMixin):
@@ -57,3 +58,33 @@ class Invoice(Base, TimestampMixin, TenantMixin):
     tx_id: Mapped[str] = mapped_column(String(128), nullable=False)
     invoice_date: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="paid", nullable=False)
+
+
+class EnterpriseContract(Base, TimestampMixin):
+    """B2B Enterprise Custom Plan Contract & Proposal."""
+    __tablename__ = "enterprise_contracts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    contract_code: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    business_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="SET NULL"), index=True, nullable=True
+    )
+    merchant_email: Mapped[str | None] = mapped_column(String(255), index=True, nullable=True)
+    merchant_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    plan_name: Mapped[str] = mapped_column(String(128), default="Custom Enterprise", nullable=False)
+    duration_months: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    price_bdt: Mapped[float] = mapped_column(Numeric(10, 2), default=0.0, nullable=False)
+    message_limit: Mapped[int] = mapped_column(Integer, default=50000, nullable=False)
+    max_stores: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    max_seats: Mapped[int] = mapped_column(Integer, default=20, nullable=False)
+    features: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    valid_until: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True, nullable=False)  # pending, active, expired, cancelled
+    payment_method: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    invoice_no: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
