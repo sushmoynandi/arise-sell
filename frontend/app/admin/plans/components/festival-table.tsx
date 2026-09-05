@@ -37,7 +37,7 @@ export function FestivalTable({
 
   return (
     <div className="rounded-2xl border border-line bg-white shadow-2xs overflow-hidden">
-      <div className="p-4 border-b border-line bg-surface-2/20 flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-line bg-surface-2/20 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <IconTag width={16} height={16} className="text-signal" />
           <div>
@@ -55,7 +55,7 @@ export function FestivalTable({
           variant="outline"
           size="sm"
           onClick={onAddClick}
-          className="gap-1.5 font-semibold text-[12.5px] h-8.5 px-3 border-line text-text hover:border-signal hover:text-signal cursor-pointer"
+          className="gap-1.5 font-semibold text-xs h-8.5 px-3 border-line text-text hover:border-signal hover:text-signal cursor-pointer"
         >
           <IconPlus width={13} height={13} />
           <span>Add Festival Coupon</span>
@@ -64,21 +64,22 @@ export function FestivalTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-[13px]">
-          <thead className="border-b border-line bg-surface-2/40 text-[11px] font-bold uppercase tracking-wider text-text-3 font-mono">
+          <thead className="border-b border-line bg-surface-2/40 text-[11px] font-bold uppercase tracking-wider text-text-3">
             <tr>
-              <th className="py-3 px-4.5">Campaign &amp; Coupon</th>
-              <th className="py-3 px-4">Discount</th>
-              <th className="py-3 px-4">Bonus Messages</th>
-              <th className="py-3 px-4">Validity</th>
-              <th className="py-3 px-4">Live Status</th>
-              <th className="py-3 px-4.5 text-right">Actions</th>
+              <th className="py-3.5 pl-5 pr-4">Campaign &amp; Coupon</th>
+              <th className="py-3.5 px-4">Applicable Plan</th>
+              <th className="py-3.5 px-4">Discount</th>
+              <th className="py-3.5 px-4">Bonus Messages</th>
+              <th className="py-3.5 px-4">Validity</th>
+              <th className="py-3.5 px-4">Live Status</th>
+              <th className="py-3.5 pl-4 pr-5 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line/60">
             {festivalOffers.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="py-8 text-center text-text-3 text-[13px]"
                 >
                   No festival campaigns currently configured. Click &quot;Add
@@ -88,6 +89,8 @@ export function FestivalTable({
             ) : (
               festivalOffers.map((offer) => {
                 const isCopied = copiedCode === offer.couponCode;
+                const isAllPlans =
+                  !offer.applicablePlan || offer.applicablePlan === "all";
                 return (
                   <tr
                     key={offer.id}
@@ -122,6 +125,22 @@ export function FestivalTable({
                           </div>
                         </div>
                       </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {isAllPlans ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                          <span className="size-1.5 rounded-full bg-emerald-500" />
+                          All Plans
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-signal/10 text-signal border border-signal/20">
+                          <span className="size-1.5 rounded-full bg-signal" />
+                          {offer.applicablePlanName ||
+                            offer.applicablePlan}{" "}
+                          Only
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">

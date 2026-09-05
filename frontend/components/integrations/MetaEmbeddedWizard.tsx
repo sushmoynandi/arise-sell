@@ -22,20 +22,27 @@ export function MetaEmbeddedWizard({
 }: MetaEmbeddedWizardProps) {
   // Mode: "wizard" (4-step Meta Dialog) vs "custom_app" (Developer App Form)
   const [activeTab, setActiveTab] = useState<"wizard" | "custom_app">("wizard");
-  
+
   // Wizard Step: 1 (Intro) -> 2 (Assets) -> 3 (Business Info) -> 4 (Phone & OTP)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Step 2 Form State (Business Assets)
-  const [selectedPortfolio, setSelectedPortfolio] = useState("AriseSell Business Portfolio");
-  const [selectedWaba, setSelectedWaba] = useState("AriseSell Official WABA (1582068046655602)");
+  const [selectedPortfolio, setSelectedPortfolio] = useState(
+    "AriseSell Business Portfolio",
+  );
+  const [selectedWaba, setSelectedWaba] = useState(
+    "AriseSell Official WABA (1582068046655602)",
+  );
 
   // Step 3 Form State (Business Information)
   const [businessName, setBusinessName] = useState("AriseSell Store");
   const [businessEmail, setBusinessEmail] = useState("admin@arisesell.com");
-  const [businessCategory, setBusinessCategory] = useState("Clothing & Apparel");
+  const [businessCategory, setBusinessCategory] =
+    useState("Clothing & Apparel");
   const [businessCountry, setBusinessCountry] = useState("Bangladesh 🇧🇩");
-  const [businessWebsite, setBusinessWebsite] = useState("https://arisesell.com");
+  const [businessWebsite, setBusinessWebsite] = useState(
+    "https://arisesell.com",
+  );
   const [timeZone, setTimeZone] = useState("(GMT+06:00) Asia/Dhaka");
 
   // Step 4 Form State (Phone & Verification)
@@ -48,7 +55,9 @@ export function MetaEmbeddedWizard({
 
   // Custom Meta Developer App State
   const [metaAppId, setMetaAppId] = useState("27675542315480128");
-  const [metaAppSecret, setMetaAppSecret] = useState("b28751575c04f7708e68091605beb6b8");
+  const [metaAppSecret, setMetaAppSecret] = useState(
+    "b28751575c04f7708e68091605beb6b8",
+  );
   const [metaWabaId, setMetaWabaId] = useState("1582068046655602");
   const [metaPhoneId, setMetaPhoneId] = useState("1347464985106645");
   const [metaAccessToken, setMetaAccessToken] = useState("");
@@ -88,41 +97,54 @@ export function MetaEmbeddedWizard({
         featureType: "whatsapp_embedded_signup",
         featureName: "whatsapp_embedded_signup",
         sessionInfoVersion: "3",
-      })
+      }),
     );
     const popupUrl = `https://www.facebook.com/v22.0/dialog/oauth?app_id=${appId}&client_id=${appId}&display=popup&response_type=code&override_default_response_type=true&extras=${extras}&redirect_uri=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46`;
 
     if (typeof window !== "undefined") {
-      window.open(popupUrl, "Meta WhatsApp Onboarding", "width=600,height=720,scrollbars=yes,resizable=yes");
+      window.open(
+        popupUrl,
+        "Meta WhatsApp Onboarding",
+        "width=600,height=720,scrollbars=yes,resizable=yes",
+      );
     }
   };
 
   // Final Submission Handler
   const handleFinalConnect = async () => {
     setIsProcessing(true);
-    setStatusMessage("🔐 Step 1/3: Validating Business Assets with Meta Graph API v22.0...");
+    setStatusMessage(
+      "🔐 Step 1/3: Validating Business Assets with Meta Graph API v22.0...",
+    );
 
     try {
       await new Promise((r) => setTimeout(r, 600));
-      setStatusMessage("🌐 Step 2/3: Subscribing Webhooks to NextProduct Ingestion Engine...");
+      setStatusMessage(
+        "🌐 Step 2/3: Subscribing Webhooks to NextProduct Ingestion Engine...",
+      );
 
-      await fetch("http://localhost:8000/api/v1/integrations/whatsapp/custom-meta-app", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          app_id: metaAppId,
-          app_secret: metaAppSecret,
-          access_token: metaAccessToken,
-          waba_id: metaWabaId,
-          phone_number_id: metaPhoneId,
-          phone_number: fullPhone,
-          business_name: businessName,
-          display_name: displayName,
-          category: businessCategory,
-        }),
-      });
+      await fetch(
+        "http://localhost:8000/api/v1/integrations/whatsapp/custom-meta-app",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            app_id: metaAppId,
+            app_secret: metaAppSecret,
+            access_token: metaAccessToken,
+            waba_id: metaWabaId,
+            phone_number_id: metaPhoneId,
+            phone_number: fullPhone,
+            business_name: businessName,
+            display_name: displayName,
+            category: businessCategory,
+          }),
+        },
+      );
 
-      setStatusMessage(`📱 Step 3/3: Registering Verified Business (${displayName}) & Activating Gemini AI...`);
+      setStatusMessage(
+        `📱 Step 3/3: Registering Verified Business (${displayName}) & Activating Gemini AI...`,
+      );
       await new Promise((r) => setTimeout(r, 600));
 
       setStatusMessage("🎉 Success! WhatsApp Cloud API Connected & Live 🟢");
@@ -156,7 +178,6 @@ export function MetaEmbeddedWizard({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs grid place-items-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl border border-slate-300 max-w-xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-slate-900">
-        
         {/* Meta Chrome Header (1:1 with Facebook Login for Business) */}
         <div className="bg-[#f0f2f5] border-b border-slate-200 px-4 py-2.5 flex items-center justify-between text-xs select-none">
           <div className="flex items-center gap-2">
@@ -227,7 +248,6 @@ export function MetaEmbeddedWizard({
         {/* TAB 1: 4-STEP META EMBEDDED SIGNUP WIZARD */}
         {activeTab === "wizard" && (
           <div className="flex min-h-[420px]">
-            
             {/* Left Circular Stepper (Matching Meta UI exactly for Step 2, 3, 4) */}
             {step > 1 && (
               <div className="w-14 bg-slate-50/70 border-r border-slate-200 flex flex-col items-center py-6 gap-6 shrink-0">
@@ -241,13 +261,15 @@ export function MetaEmbeddedWizard({
                           isActive
                             ? "border-2 border-blue-600 bg-white text-blue-600 shadow-xs ring-2 ring-blue-500/20"
                             : isDone
-                            ? "bg-blue-600 text-white"
-                            : "border-2 border-slate-300 bg-white text-slate-400"
+                              ? "bg-blue-600 text-white"
+                              : "border-2 border-slate-300 bg-white text-slate-400"
                         }`}
                       >
                         {isDone ? "✓" : i + 1}
                       </div>
-                      {i < 2 && <div className="w-0.5 h-6 bg-slate-200 -my-3" />}
+                      {i < 2 && (
+                        <div className="w-0.5 h-6 bg-slate-200 -my-3" />
+                      )}
                     </React.Fragment>
                   );
                 })}
@@ -256,7 +278,6 @@ export function MetaEmbeddedWizard({
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col justify-between p-6">
-              
               {/* STEP 1: INTRO SCREEN (Matching User Screenshot 1) */}
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in duration-150">
@@ -276,31 +297,52 @@ export function MetaEmbeddedWizard({
                   </div>
 
                   <p className="text-[12.5px] text-slate-600 leading-relaxed">
-                    This onboarding process will walk you through registering and connecting your business account to your partner.
+                    This onboarding process will walk you through registering
+                    and connecting your business account to your partner.
                   </p>
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2">
                     <div className="flex items-start gap-2.5">
                       <span className="text-blue-600 text-base">💬</span>
                       <div>
-                        <h5 className="text-[13px] font-bold text-slate-900">Communicate with customers at scale</h5>
+                        <h5 className="text-[13px] font-bold text-slate-900">
+                          Communicate with customers at scale
+                        </h5>
                         <p className="mt-0.5 text-[11.5px] text-slate-600 leading-snug">
-                          Cloud API allows you to securely send and receive messages, and manage conversations automatically.
+                          Cloud API allows you to securely send and receive
+                          messages, and manage conversations automatically.
                         </p>
                       </div>
                     </div>
                     <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-1 pl-6">
                       <li>Handle large volumes of messages with ease</li>
-                      <li>Reduce costs associated with traditional SMS or voice calls</li>
+                      <li>
+                        Reduce costs associated with traditional SMS or voice
+                        calls
+                      </li>
                     </ul>
                   </div>
 
                   <div className="text-[10.5px] text-slate-500 leading-relaxed space-y-0.5 pt-1">
                     <p>
-                      By continuing, you agree to the <span className="text-blue-600 underline cursor-pointer">WhatsApp Business Platform Cloud API Terms</span> and the <span className="text-blue-600 underline cursor-pointer">Meta Terms for WhatsApp Business</span>.
+                      By continuing, you agree to the{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        WhatsApp Business Platform Cloud API Terms
+                      </span>{" "}
+                      and the{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        Meta Terms for WhatsApp Business
+                      </span>
+                      .
                     </p>
                     <p>
-                      <span className="text-blue-600 underline cursor-pointer">AriseSell AI's Privacy Policy</span> and <span className="text-blue-600 underline cursor-pointer">Terms</span>
+                      <span className="text-blue-600 underline cursor-pointer">
+                        AriseSell AI&apos;s Privacy Policy
+                      </span>{" "}
+                      and{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        Terms
+                      </span>
                     </p>
                     <p className="font-mono text-[9px] text-slate-400">
                       Session ID: 01a06927-925d-77b8-aaef-75dfda7828d7
@@ -354,16 +396,24 @@ export function MetaEmbeddedWizard({
                     <div className="space-y-1 text-left">
                       <label className="text-[12px] font-bold text-slate-800 flex items-center gap-1">
                         <span>Business portfolio</span>
-                        <span className="text-slate-400 cursor-help text-[11px]">ⓘ</span>
+                        <span className="text-slate-400 cursor-help text-[11px]">
+                          ⓘ
+                        </span>
                       </label>
                       <select
                         value={selectedPortfolio}
                         onChange={(e) => setSelectedPortfolio(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-[12.5px] text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
                       >
-                        <option value="AriseSell Business Portfolio">AriseSell Business Portfolio</option>
-                        <option value="Demo E-commerce Portfolio">Demo E-commerce Portfolio</option>
-                        <option value="Create a business portfolio">Create a business portfolio</option>
+                        <option value="AriseSell Business Portfolio">
+                          AriseSell Business Portfolio
+                        </option>
+                        <option value="Demo E-commerce Portfolio">
+                          Demo E-commerce Portfolio
+                        </option>
+                        <option value="Create a business portfolio">
+                          Create a business portfolio
+                        </option>
                       </select>
                     </div>
 
@@ -371,7 +421,9 @@ export function MetaEmbeddedWizard({
                     <div className="space-y-1 text-left">
                       <label className="text-[12px] font-bold text-slate-800 flex items-center gap-1">
                         <span>WhatsApp Business account</span>
-                        <span className="text-slate-400 cursor-help text-[11px]">ⓘ</span>
+                        <span className="text-slate-400 cursor-help text-[11px]">
+                          ⓘ
+                        </span>
                       </label>
                       <select
                         value={selectedWaba}
@@ -393,10 +445,29 @@ export function MetaEmbeddedWizard({
 
                   <div className="text-[10.5px] text-slate-500 leading-relaxed space-y-0.5 pt-2">
                     <p>
-                      By creating a new WhatsApp Business account and Business portfolio, you agree to the <span className="text-blue-600 underline cursor-pointer">Meta Terms for WhatsApp Business</span>, the <span className="text-blue-600 underline cursor-pointer">Meta Commercial Terms</span>, and the <span className="text-blue-600 underline cursor-pointer">Meta Terms of Service</span>.
+                      By creating a new WhatsApp Business account and Business
+                      portfolio, you agree to the{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        Meta Terms for WhatsApp Business
+                      </span>
+                      , the{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        Meta Commercial Terms
+                      </span>
+                      , and the{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        Meta Terms of Service
+                      </span>
+                      .
                     </p>
                     <p>
-                      <span className="text-blue-600 underline cursor-pointer">AriseSell AI's Privacy Policy</span> and <span className="text-blue-600 underline cursor-pointer">Terms</span>
+                      <span className="text-blue-600 underline cursor-pointer">
+                        AriseSell AI&apos;s Privacy Policy
+                      </span>{" "}
+                      and{" "}
+                      <span className="text-blue-600 underline cursor-pointer">
+                        Terms
+                      </span>
                     </p>
                     <p className="font-mono text-[9px] text-slate-400">
                       Session ID: 01a0692b-f4e8-740e-9942-14e535589b31
@@ -439,7 +510,11 @@ export function MetaEmbeddedWizard({
                     <div className="space-y-1">
                       <label className="text-[11.5px] font-bold text-slate-800 flex items-center justify-between">
                         <span>Legal Business Name</span>
-                        {businessName && <span className="text-emerald-600 font-bold text-xs">✔</span>}
+                        {businessName && (
+                          <span className="text-emerald-600 font-bold text-xs">
+                            ✔
+                          </span>
+                        )}
                       </label>
                       <input
                         type="text"
@@ -454,7 +529,11 @@ export function MetaEmbeddedWizard({
                     <div className="space-y-1">
                       <label className="text-[11.5px] font-bold text-slate-800 flex items-center justify-between">
                         <span>Business Email</span>
-                        {businessEmail.includes("@") && <span className="text-emerald-600 font-bold text-xs">✔</span>}
+                        {businessEmail.includes("@") && (
+                          <span className="text-emerald-600 font-bold text-xs">
+                            ✔
+                          </span>
+                        )}
                       </label>
                       <input
                         type="email"
@@ -469,16 +548,26 @@ export function MetaEmbeddedWizard({
 
                   <div className="grid grid-cols-2 gap-2.5 text-left">
                     <div className="space-y-1">
-                      <label className="text-[11.5px] font-bold text-slate-800">Business Category</label>
+                      <label className="text-[11.5px] font-bold text-slate-800">
+                        Business Category
+                      </label>
                       <select
                         value={businessCategory}
                         onChange={(e) => setBusinessCategory(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-[12px] text-slate-900 outline-none focus:border-blue-600"
                       >
-                        <option value="Clothing & Apparel">Clothing & Apparel</option>
-                        <option value="Retail & E-commerce">Retail & E-commerce</option>
-                        <option value="Electronics & Gadgets">Electronics & Gadgets</option>
-                        <option value="Beauty, Spa and Salon">Beauty, Spa and Salon</option>
+                        <option value="Clothing & Apparel">
+                          Clothing & Apparel
+                        </option>
+                        <option value="Retail & E-commerce">
+                          Retail & E-commerce
+                        </option>
+                        <option value="Electronics & Gadgets">
+                          Electronics & Gadgets
+                        </option>
+                        <option value="Beauty, Spa and Salon">
+                          Beauty, Spa and Salon
+                        </option>
                         <option value="Food & Grocery">Food & Grocery</option>
                         <option value="Education">Education</option>
                         <option value="Other / General">Other / General</option>
@@ -486,17 +575,25 @@ export function MetaEmbeddedWizard({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11.5px] font-bold text-slate-800">Country / Region</label>
+                      <label className="text-[11.5px] font-bold text-slate-800">
+                        Country / Region
+                      </label>
                       <select
                         value={businessCountry}
                         onChange={(e) => setBusinessCountry(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-[12px] text-slate-900 outline-none focus:border-blue-600"
                       >
                         <option value="Bangladesh 🇧🇩">Bangladesh 🇧🇩</option>
-                        <option value="United States 🇺🇸">United States 🇺🇸</option>
-                        <option value="United Kingdom 🇬🇧">United Kingdom 🇬🇧</option>
+                        <option value="United States 🇺🇸">
+                          United States 🇺🇸
+                        </option>
+                        <option value="United Kingdom 🇬🇧">
+                          United Kingdom 🇬🇧
+                        </option>
                         <option value="India 🇮🇳">India 🇮🇳</option>
-                        <option value="United Arab Emirates 🇦🇪">United Arab Emirates 🇦🇪</option>
+                        <option value="United Arab Emirates 🇦🇪">
+                          United Arab Emirates 🇦🇪
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -504,8 +601,12 @@ export function MetaEmbeddedWizard({
                   <div className="grid grid-cols-2 gap-2.5 text-left">
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11.5px] font-bold text-slate-800">Website URL</label>
-                        <span className="text-[9.5px] text-slate-400 font-mono">{businessWebsite.length}/512</span>
+                        <label className="text-[11.5px] font-bold text-slate-800">
+                          Website URL
+                        </label>
+                        <span className="text-[9.5px] text-slate-400 font-mono">
+                          {businessWebsite.length}/512
+                        </span>
                       </div>
                       <input
                         type="url"
@@ -517,16 +618,24 @@ export function MetaEmbeddedWizard({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11.5px] font-bold text-slate-800">Time Zone</label>
+                      <label className="text-[11.5px] font-bold text-slate-800">
+                        Time Zone
+                      </label>
                       <select
                         value={timeZone}
                         onChange={(e) => setTimeZone(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-[12px] text-slate-900 outline-none focus:border-blue-600"
                       >
-                        <option value="(GMT+06:00) Asia/Dhaka">(GMT+06:00) Asia/Dhaka</option>
+                        <option value="(GMT+06:00) Asia/Dhaka">
+                          (GMT+06:00) Asia/Dhaka
+                        </option>
                         <option value="(GMT+00:00) UTC">(GMT+00:00) UTC</option>
-                        <option value="(GMT-05:00) Eastern Time (US)">(GMT-05:00) Eastern Time (US)</option>
-                        <option value="(GMT+04:00) Dubai">(GMT+04:00) Dubai</option>
+                        <option value="(GMT-05:00) Eastern Time (US)">
+                          (GMT-05:00) Eastern Time (US)
+                        </option>
+                        <option value="(GMT+04:00) Dubai">
+                          (GMT+04:00) Dubai
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -559,13 +668,16 @@ export function MetaEmbeddedWizard({
                       Add a phone number for WhatsApp
                     </h3>
                     <p className="mt-1 text-[12px] text-slate-500">
-                      This phone number will be displayed on your WhatsApp Business profile.
+                      This phone number will be displayed on your WhatsApp
+                      Business profile.
                     </p>
                   </div>
 
                   <div className="space-y-3 text-left pt-1">
                     <div className="space-y-1">
-                      <label className="text-[11.5px] font-bold text-slate-800">WhatsApp Display Name</label>
+                      <label className="text-[11.5px] font-bold text-slate-800">
+                        WhatsApp Display Name
+                      </label>
                       <input
                         type="text"
                         value={displayName}
@@ -577,7 +689,9 @@ export function MetaEmbeddedWizard({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11.5px] font-bold text-slate-800">Business Phone Number</label>
+                      <label className="text-[11.5px] font-bold text-slate-800">
+                        Business Phone Number
+                      </label>
                       <div className="flex gap-2">
                         <select
                           value={countryCode}
@@ -603,7 +717,9 @@ export function MetaEmbeddedWizard({
 
                     {/* Verification Method Radio */}
                     <div className="space-y-1 pt-1">
-                      <label className="text-[11.5px] font-bold text-slate-800">Verification Method</label>
+                      <label className="text-[11.5px] font-bold text-slate-800">
+                        Verification Method
+                      </label>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <label
                           className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition-all ${
@@ -641,28 +757,43 @@ export function MetaEmbeddedWizard({
                     {/* OTP Entry */}
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11.5px] font-bold text-slate-800">6-Digit Security Code</label>
+                        <label className="text-[11.5px] font-bold text-slate-800">
+                          6-Digit Security Code
+                        </label>
                         <button
                           type="button"
                           onClick={async () => {
                             setOtpSent(true);
                             try {
-                              const res = await fetch("http://localhost:8000/api/v1/integrations/whatsapp/send-otp", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ phone_number: fullPhone }),
-                              });
+                              const res = await fetch(
+                                "http://localhost:8000/api/v1/integrations/whatsapp/send-otp",
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    phone_number: fullPhone,
+                                  }),
+                                },
+                              );
                               const data = await res.json();
                               if (data.otp_preview) {
                                 setOtpCode(data.otp_preview);
-                                setStatusMessage(`📩 Verification Code: ${data.otp_preview}`);
+                                setStatusMessage(
+                                  `📩 Verification Code: ${data.otp_preview}`,
+                                );
                               } else {
                                 setOtpCode("123456");
-                                setStatusMessage("📩 Instant Verification Code: 123456");
+                                setStatusMessage(
+                                  "📩 Instant Verification Code: 123456",
+                                );
                               }
                             } catch {
                               setOtpCode("123456");
-                              setStatusMessage("📩 Instant Verification Code: 123456 (Ready to Confirm)");
+                              setStatusMessage(
+                                "📩 Instant Verification Code: 123456 (Ready to Confirm)",
+                              );
                             }
                             setTimeout(() => setStatusMessage(null), 3000);
                           }}
@@ -683,7 +814,11 @@ export function MetaEmbeddedWizard({
                       <div className="text-[11px] text-slate-500 bg-blue-50/60 p-2 rounded-xl border border-blue-100 flex items-start gap-1.5">
                         <span className="text-blue-600 font-bold">ℹ️</span>
                         <span>
-                          <strong>Testing Code:</strong> Use the pre-filled code <b className="text-blue-700">123456</b> and click <strong>Confirm & Launch AI Bot</strong> to activate instantly. (Real carrier SMS/Voice is dispatched when connected to Meta Live App).
+                          <strong>Testing Code:</strong> Use the pre-filled code{" "}
+                          <b className="text-blue-700">123456</b> and click{" "}
+                          <strong>Confirm & Launch AI Bot</strong> to activate
+                          instantly. (Real carrier SMS/Voice is dispatched when
+                          connected to Meta Live App).
                         </span>
                       </div>
                     </div>
@@ -705,13 +840,16 @@ export function MetaEmbeddedWizard({
                       disabled={isProcessing}
                       className="rounded-xl bg-[#1877f2] hover:bg-[#166fe5] text-white px-6 py-2 text-[12.5px] font-bold shadow-xs transition-all cursor-pointer flex items-center gap-2"
                     >
-                      <span>{isProcessing ? "Connecting..." : "⚡ Confirm & Launch AI Bot"}</span>
+                      <span>
+                        {isProcessing
+                          ? "Connecting..."
+                          : "⚡ Confirm & Launch AI Bot"}
+                      </span>
                       {!isProcessing && <span>➔</span>}
                     </button>
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         )}
@@ -727,8 +865,12 @@ export function MetaEmbeddedWizard({
           >
             <div className="flex items-center justify-between pb-1 border-b border-slate-100">
               <div>
-                <h4 className="text-[13.5px] font-bold text-slate-900">Custom Meta Developer App Setup</h4>
-                <p className="text-[11px] text-slate-500">Connect via developers.facebook.com app</p>
+                <h4 className="text-[13.5px] font-bold text-slate-900">
+                  Custom Meta Developer App Setup
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  Connect via developers.facebook.com app
+                </p>
               </div>
               <button
                 type="button"
@@ -741,7 +883,9 @@ export function MetaEmbeddedWizard({
 
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700">Meta App ID</label>
+                <label className="text-[11px] font-bold text-slate-700">
+                  Meta App ID
+                </label>
                 <input
                   type="text"
                   value={metaAppId}
@@ -752,7 +896,9 @@ export function MetaEmbeddedWizard({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700">Meta App Secret</label>
+                <label className="text-[11px] font-bold text-slate-700">
+                  Meta App Secret
+                </label>
                 <input
                   type="password"
                   value={metaAppSecret}
@@ -766,7 +912,9 @@ export function MetaEmbeddedWizard({
 
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700">WABA ID</label>
+                <label className="text-[11px] font-bold text-slate-700">
+                  WABA ID
+                </label>
                 <input
                   type="text"
                   value={metaWabaId}
@@ -777,7 +925,9 @@ export function MetaEmbeddedWizard({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700">Phone Number ID</label>
+                <label className="text-[11px] font-bold text-slate-700">
+                  Phone Number ID
+                </label>
                 <input
                   type="text"
                   value={metaPhoneId}
@@ -790,7 +940,9 @@ export function MetaEmbeddedWizard({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700">Permanent System User Token (Optional)</label>
+              <label className="text-[11px] font-bold text-slate-700">
+                Permanent System User Token (Optional)
+              </label>
               <textarea
                 rows={2}
                 value={metaAccessToken}
@@ -814,13 +966,16 @@ export function MetaEmbeddedWizard({
                 disabled={isProcessing}
                 className="rounded-xl bg-[#1877f2] hover:bg-[#166fe5] text-white px-5 py-2 text-[12.5px] font-bold shadow-xs transition-all cursor-pointer flex items-center gap-2"
               >
-                <span>{isProcessing ? "Validating..." : "⚡ Test Handshake & Connect"}</span>
+                <span>
+                  {isProcessing
+                    ? "Validating..."
+                    : "⚡ Test Handshake & Connect"}
+                </span>
                 {!isProcessing && <span>➔</span>}
               </button>
             </div>
           </form>
         )}
-
       </div>
     </div>
   );

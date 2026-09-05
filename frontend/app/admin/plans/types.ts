@@ -7,6 +7,8 @@ export type FestivalOffer = {
   bonusMessages: number;
   validity: string;
   active: boolean;
+  applicablePlan?: string;
+  applicablePlanName?: string;
 };
 
 export type PlanBillingPeriod = "both" | "monthly" | "yearly";

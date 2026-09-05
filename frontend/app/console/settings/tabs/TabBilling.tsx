@@ -16,7 +16,9 @@ import {
   BillingInvoice,
   StoreWorkspace,
   TeamMemberData,
+  CheckPlanSwitchResponse,
 } from "@/lib/api-client";
+import { DowngradeReconcileModal } from "@/components/console/DowngradeReconcileModal";
 import { cx } from "@/lib/format";
 import { generateInvoicePdfBlob } from "@/lib/invoice-pdf";
 import { QuotaBar } from "../components";
@@ -38,6 +40,12 @@ export function TabBilling() {
   );
   const [topupLoading, setTopupLoading] = useState<string | null>(null);
   const [switchingPlanId, setSwitchingPlanId] = useState<string | null>(null);
+  const [reconcileModalOpen, setReconcileModalOpen] = useState(false);
+  const [reconcileConflictData, setReconcileConflictData] =
+    useState<CheckPlanSwitchResponse | null>(null);
+  const [pendingTargetPlan, setPendingTargetPlan] =
+    useState<BillingPlan | null>(null);
+  const [isSubmittingReconcile, setIsSubmittingReconcile] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<BillingInvoice | null>(
     null,
   );
@@ -61,11 +69,27 @@ export function TabBilling() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("bKash Auto-Debit");
   const [verifyingCode, setVerifyingCode] = useState(false);
+  const [pendingContract, setPendingContract] = useState<{
+    id: string;
+    contract_code: string;
+    plan_name: string;
+    duration_months: number;
+    price_bdt: number;
+    message_limit: number;
+    max_stores: number;
+    max_seats: number;
+    features: string[];
+    valid_until?: string | null;
+    status: string;
+    merchant_name?: string | null;
+  } | null>(null);
+  const [contractPaying, setContractPaying] = useState(false);
+
+  // Toast Notification State
   const [toast, setToast] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
-
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 5000);
@@ -100,6 +124,23 @@ export function TabBilling() {
       if (teamData.status === "fulfilled" && Array.isArray(teamData.value)) {
         setTeamMembers(teamData.value);
       }
+
+      // Check for pending enterprise contract proposal assigned to this store/email
+      api.billing
+        .getEnterpriseContract()
+        .then((cRes) => {
+          if (
+            cRes &&
+            cRes.found &&
+            cRes.contract &&
+            cRes.contract.status === "pending"
+          ) {
+            setPendingContract(cRes.contract);
+          } else {
+            setPendingContract(null);
+          }
+        })
+        .catch(() => setPendingContract(null));
     } catch (err) {
       console.error("Failed to load billing data:", err);
     } finally {
@@ -112,26 +153,49 @@ export function TabBilling() {
   }, [fetchData]);
 
   // Derived Dynamic Quotas & Plan Data
-  const planName = (settings.plan || "Business").trim();
+  const planName = (settings.plan || "Free").trim();
+  const normalizedPlanName =
+    planName.toLowerCase() === "growth" ? "Grow" : planName;
   const matchedCurrentPlan = plans.find(
-    (p) => p.name.toLowerCase() === planName.toLowerCase(),
+    (p) =>
+      p.name.toLowerCase() === normalizedPlanName.toLowerCase() ||
+      p.id.toLowerCase() === normalizedPlanName.toLowerCase() ||
+      (normalizedPlanName.toLowerCase().includes("free") &&
+        p.id.toLowerCase().includes("free")) ||
+      (normalizedPlanName.toLowerCase().includes("grow") &&
+        p.id.toLowerCase().includes("grow")) ||
+      (normalizedPlanName.toLowerCase().includes("pro") &&
+        p.id.toLowerCase().includes("pro")) ||
+      (normalizedPlanName.toLowerCase().includes("business") &&
+        p.id.toLowerCase().includes("business")),
   );
+
+  const isFreePlan = normalizedPlanName.toLowerCase().includes("free");
+  const isEnterprise =
+    normalizedPlanName.toLowerCase().includes("enter") ||
+    normalizedPlanName.toLowerCase().includes("custom") ||
+    normalizedPlanName.toLowerCase().includes("scale") ||
+    normalizedPlanName.toLowerCase().includes("vip");
 
   const planPriceBDT =
     settings.planPriceBDT ??
     matchedCurrentPlan?.priceBDT ??
-    (planName.toLowerCase().includes("business")
-      ? 2499
-      : planName.toLowerCase().includes("pro")
-        ? 999
-        : 349);
+    (isEnterprise
+      ? 15000
+      : normalizedPlanName.toLowerCase().includes("business")
+        ? 2499
+        : normalizedPlanName.toLowerCase().includes("pro")
+          ? 999
+          : isFreePlan
+            ? 0
+            : 349);
 
   const ordersUsed = settings.messagesUsed ?? settings.ordersUsed ?? 0;
   const ordersQuota =
     settings.messagesQuota ??
     settings.ordersQuota ??
     matchedCurrentPlan?.messageLimit ??
-    10000;
+    (isEnterprise ? 50000 : isFreePlan ? 100 : 500);
   const remainingQuota = Math.max(0, ordersQuota - ordersUsed);
   const remainingPercent =
     ordersQuota > 0 ? Math.round((remainingQuota / ordersQuota) * 100) : 0;
@@ -139,11 +203,17 @@ export function TabBilling() {
   const maxStores =
     settings.maxStores ??
     matchedCurrentPlan?.maxStores ??
-    (planName.toLowerCase().includes("business") ? 2 : 1);
+    (isEnterprise ? 5 : planName.toLowerCase().includes("business") ? 2 : 1);
   const maxSeats =
     settings.maxSeats ??
     matchedCurrentPlan?.maxSeats ??
-    (planName.toLowerCase().includes("business") ? 8 : 4);
+    (isEnterprise
+      ? 20
+      : planName.toLowerCase().includes("business")
+        ? 8
+        : isFreePlan
+          ? 1
+          : 4);
 
   const ownedStores = stores.filter((s) => s.is_owner);
   const storesUsed =
@@ -153,10 +223,23 @@ export function TabBilling() {
       ? teamMembers.length
       : (settings.currentSeatsCount ?? 1);
 
+  const signalsUsed = (settings.signalsCount as number) ?? 0;
+  const signalsLimit = (settings.signalsLimit as number) ?? 10000;
+
   const nextInvoiceDate =
-    (settings.nextBillingDate as string) || "10 Oct, 2026";
+    (settings.nextBillingDate as string) ||
+    (isFreePlan ? "Lifetime Free" : "Active Subscription");
   const paymentMethod =
-    (settings.paymentMethod as string) || "bKash Auto-Debit";
+    (settings.paymentMethod as string) ||
+    (isFreePlan ? "Free Tier (No Card Required)" : "bKash Auto-Debit");
+
+  const planTagline =
+    matchedCurrentPlan?.tagline ||
+    (isEnterprise
+      ? "Full Conversational Commerce ERP with multi-store support and Steadfast/Pathao auto-booking."
+      : isFreePlan
+        ? "Solo entrepreneurs testing the platform; limited conversation & order quota."
+        : "Automate customer conversations, order lifecycle, and courier logistics.");
 
   // Handle 1-Click Quota Top-Up
   const handleTopup = async (packName: string) => {
@@ -185,14 +268,49 @@ export function TabBilling() {
     }
   };
 
-  // Handle Plan Upgrade / Switching
+  // Handle Plan Upgrade / Switching with Capacity Pre-Check
   const handleSwitchPlan = async (targetPlan: BillingPlan) => {
     if (targetPlan.name.toLowerCase() === planName.toLowerCase()) return;
+    setSwitchingPlanId(targetPlan.id);
+    try {
+      // 1. Pre-check for downgrade capacity conflicts (e.g. store or seat limit reduction)
+      const checkRes = await api.billing.checkPlanSwitch({
+        plan_id: targetPlan.id,
+      });
+
+      if (checkRes.requires_reconciliation) {
+        setPendingTargetPlan(targetPlan);
+        setReconcileConflictData(checkRes);
+        setReconcileModalOpen(true);
+        setSwitchingPlanId(null);
+        return;
+      }
+
+      // 2. No conflict: Switch directly
+      await executePlanSwitch(targetPlan);
+    } catch (err: unknown) {
+      console.error("Switch plan pre-check failed:", err);
+      showToast(
+        err instanceof Error ? err.message : "Failed to switch plan",
+        "error",
+      );
+      setSwitchingPlanId(null);
+    }
+  };
+
+  const executePlanSwitch = async (
+    targetPlan: BillingPlan,
+    reconciliation?: {
+      keep_store_ids: string[];
+      keep_team_member_ids: string[];
+    },
+  ) => {
     setSwitchingPlanId(targetPlan.id);
     try {
       const res = await api.billing.selectPlan({
         plan_id: targetPlan.id,
         billing_period: billingCycle,
+        reconciliation,
       });
       if (res.success) {
         showToast(
@@ -202,6 +320,24 @@ export function TabBilling() {
         await refreshSettings();
         const updatedInvoices = await api.billing.listInvoices();
         if (Array.isArray(updatedInvoices)) setInvoices(updatedInvoices);
+
+        // Refresh stores list
+        const updatedStores = await api.merchants.getMyStores();
+        if (Array.isArray(updatedStores)) setStores(updatedStores);
+
+        setReconcileModalOpen(false);
+        setPendingTargetPlan(null);
+        setReconcileConflictData(null);
+
+        if (
+          reconciliation &&
+          reconciliation.keep_store_ids &&
+          reconciliation.keep_store_ids.length > 0
+        ) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
+        }
       } else {
         showToast("Failed to switch plan. Please try again.", "error");
       }
@@ -213,7 +349,17 @@ export function TabBilling() {
       );
     } finally {
       setSwitchingPlanId(null);
+      setIsSubmittingReconcile(false);
     }
+  };
+
+  const handleConfirmReconciliation = async (recon: {
+    keep_store_ids: string[];
+    keep_team_member_ids: string[];
+  }) => {
+    if (!pendingTargetPlan) return;
+    setIsSubmittingReconcile(true);
+    await executePlanSwitch(pendingTargetPlan, recon);
   };
 
   // Helper to identify Custom / Enterprise plans that require custom consultation
@@ -259,6 +405,28 @@ export function TabBilling() {
     setVerifyingCode(true);
     setRedeemError(null);
     try {
+      // First check PostgreSQL enterprise contracts
+      const contractRes = await api.billing
+        .getEnterpriseContract(cleanCode)
+        .catch(() => null);
+      if (contractRes && contractRes.found && contractRes.contract) {
+        const c = contractRes.contract;
+        setVerifiedPlan({
+          valid: true,
+          code: c.contract_code,
+          plan_name: c.plan_name,
+          duration_months: c.duration_months,
+          message_limit: c.message_limit,
+          max_stores: c.max_stores,
+          max_seats: c.max_seats,
+          price_bdt: c.price_bdt,
+          code_expiry: c.valid_until,
+          features: c.features || [],
+        });
+        setRedeemError(null);
+        return;
+      }
+
       const res = await api.billing.verifyCode(cleanCode);
       if (res && res.valid) {
         setVerifiedPlan(res);
@@ -281,7 +449,9 @@ export function TabBilling() {
 
   // Handle Enterprise Activation & Payment
   const handleRedeemCode = async () => {
-    const targetCode = (verifiedPlan?.code || redeemCodeInput).trim().toUpperCase();
+    const targetCode = (verifiedPlan?.code || redeemCodeInput)
+      .trim()
+      .toUpperCase();
     if (!targetCode) {
       setRedeemError("Please enter an activation code.");
       return;
@@ -289,8 +459,17 @@ export function TabBilling() {
     setRedeemLoading(true);
     setRedeemError(null);
     try {
-      const res = await api.billing.redeemCode(targetCode, selectedPaymentMethod);
-      if (res.success) {
+      let res;
+      try {
+        res = await api.billing.payEnterpriseContract(
+          targetCode,
+          selectedPaymentMethod,
+        );
+      } catch {
+        res = await api.billing.redeemCode(targetCode, selectedPaymentMethod);
+      }
+
+      if (res && res.success) {
         showToast(
           res.message || `Successfully activated ${res.plan} Plan!`,
           "success",
@@ -298,10 +477,11 @@ export function TabBilling() {
         setRedeemModalOpen(false);
         setRedeemCodeInput("");
         setVerifiedPlan(null);
+        setPendingContract(null);
         await refreshSettings();
         await fetchData();
       } else {
-        setRedeemError(res.message || "Failed to activate code.");
+        setRedeemError(res?.message || "Failed to activate code.");
       }
     } catch (err: unknown) {
       console.error("Redeem code failed:", err);
@@ -312,6 +492,36 @@ export function TabBilling() {
       );
     } finally {
       setRedeemLoading(false);
+    }
+  };
+
+  // Handle 1-click accept & pay for auto-detected pending contract
+  const handlePayPendingContract = async () => {
+    if (!pendingContract) return;
+    setContractPaying(true);
+    try {
+      const res = await api.billing.payEnterpriseContract(
+        pendingContract.contract_code,
+        selectedPaymentMethod,
+      );
+      if (res && res.success) {
+        showToast(res.message, "success");
+        setPendingContract(null);
+        await refreshSettings();
+        await fetchData();
+      } else {
+        showToast(
+          "Failed to activate proposal. Please contact support.",
+          "error",
+        );
+      }
+    } catch (err: unknown) {
+      showToast(
+        err instanceof Error ? err.message : "Payment processing failed.",
+        "error",
+      );
+    } finally {
+      setContractPaying(false);
     }
   };
 
@@ -328,8 +538,8 @@ export function TabBilling() {
         method: inv.method,
         txId: inv.txId,
         date: inv.date,
-        status: ["paid", "pending", "refunded"].includes(inv.status)
-          ? (inv.status as "paid" | "pending" | "refunded")
+        status: ["paid", "pending", "refunded"].includes(inv.status || "")
+          ? ((inv.status || "paid") as "paid" | "pending" | "refunded")
           : "paid",
       });
       const url = URL.createObjectURL(blob);
@@ -385,7 +595,7 @@ export function TabBilling() {
               </span>
             </div>
             <h3 className="text-2xl font-bold font-display text-text capitalize">
-              {planName} Plan
+              {normalizedPlanName} Plan
             </h3>
             <div className="flex items-baseline gap-1.5">
               <span className="font-display text-3xl font-bold text-text">
@@ -394,8 +604,7 @@ export function TabBilling() {
               <span className="text-xs text-text-3 font-mono">/ month</span>
             </div>
             <p className="text-[11.5px] text-text-3 leading-relaxed">
-              Full Conversational Commerce ERP with multi-store support and
-              Steadfast/Pathao auto-booking.
+              {planTagline}
             </p>
           </div>
 
@@ -460,8 +669,8 @@ export function TabBilling() {
             />
             <QuotaBar
               label="Meta CAPI & Courier Signals"
-              used={Math.min(ordersUsed * 3, 10000)}
-              total={10000}
+              used={signalsUsed}
+              total={signalsLimit}
             />
           </div>
         </div>
@@ -781,7 +990,112 @@ export function TabBilling() {
               </div>
 
               {/* Enterprise Custom Plan & Voucher Redemption Banner (Below Plans Grid) */}
-              <div className="border-t border-line p-5 bg-surface-2/20">
+              <div className="border-t border-line p-5 bg-surface-2/20 space-y-4">
+                {/* Auto-detected Pending Enterprise Proposal */}
+                {pendingContract && (
+                  <div className="rounded-2xl border-2 border-signal bg-gradient-to-br from-signal/10 via-[#f0f9f5] to-white p-5 shadow-sm space-y-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-signal animate-ping" />
+                        <h4 className="text-base font-bold font-display text-text">
+                          Personalized Enterprise Proposal Ready:{" "}
+                          {pendingContract.plan_name}
+                        </h4>
+                        <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold font-mono uppercase tracking-wider">
+                          {pendingContract.duration_months} Months Term
+                        </span>
+                      </div>
+                      <div className="text-xs font-mono text-signal font-bold">
+                        Quote Ref: {pendingContract.contract_code}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+                      <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          Deal Total
+                        </div>
+                        <div className="font-bold text-text text-sm">
+                          ৳{pendingContract.price_bdt.toLocaleString()} BDT
+                        </div>
+                        <div className="text-[9.5px] text-text-3 font-sans">
+                          ≈ ৳
+                          {Math.round(
+                            pendingContract.price_bdt /
+                              pendingContract.duration_months,
+                          ).toLocaleString()}
+                          /mo
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          Stores Limit
+                        </div>
+                        <div className="font-bold text-text text-sm">
+                          {pendingContract.max_stores} Stores
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          Team Seats
+                        </div>
+                        <div className="font-bold text-text text-sm">
+                          {pendingContract.max_seats} Seats
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-white/90 border border-signal/20 p-2.5 text-center">
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          AI Messages
+                        </div>
+                        <div className="font-bold text-signal text-sm">
+                          {pendingContract.message_limit.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-signal/20">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-3 font-medium">
+                          Pay via:
+                        </span>
+                        <div className="flex rounded-lg border border-line bg-white p-0.5 text-xs font-semibold">
+                          {[
+                            "bKash Auto-Debit",
+                            "Nagad Instant",
+                            "Card / Net Banking",
+                          ].map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setSelectedPaymentMethod(m)}
+                              className={cx(
+                                "px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px]",
+                                selectedPaymentMethod === m
+                                  ? "bg-signal text-white shadow-2xs"
+                                  : "text-text-3 hover:text-text",
+                              )}
+                            >
+                              {m.split(" ")[0]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="signal"
+                        size="sm"
+                        disabled={contractPaying}
+                        onClick={handlePayPendingContract}
+                        className="gap-2 text-xs font-semibold h-9 px-4 cursor-pointer shadow-xs"
+                      >
+                        {contractPaying
+                          ? "Processing..."
+                          : `Accept & Pay ৳${pendingContract.price_bdt.toLocaleString()} BDT`}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {isUserOnCustom ? (
                   <div className="rounded-2xl border border-signal/30 bg-[#edf7f3]/60 p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1 min-w-0">
@@ -1167,7 +1481,9 @@ export function TabBilling() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold font-display text-text">
-                      {verifiedPlan ? "Review Plan & Complete Payment" : "Redeem Custom Plan Code"}
+                      {verifiedPlan
+                        ? "Review Plan & Complete Payment"
+                        : "Redeem Custom Plan Code"}
                     </h3>
                     <p className="text-[11.5px] text-text-3">
                       {verifiedPlan
@@ -1206,7 +1522,11 @@ export function TabBilling() {
                           setRedeemError(null);
                         }}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" && !verifyingCode && redeemCodeInput.trim()) {
+                          if (
+                            e.key === "Enter" &&
+                            !verifyingCode &&
+                            redeemCodeInput.trim()
+                          ) {
                             e.preventDefault();
                             handleVerifyCode();
                           }
@@ -1225,13 +1545,18 @@ export function TabBilling() {
                       </Button>
                     </div>
                     <p className="text-[11px] text-text-3">
-                      Enter the code given by sales to view your contract plan details and proceed to payment.
+                      Enter the code given by sales to view your contract plan
+                      details and proceed to payment.
                     </p>
                   </div>
 
                   {redeemError && (
                     <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 flex items-center gap-2">
-                      <IconShield width={15} height={15} className="shrink-0 text-red-500" />
+                      <IconShield
+                        width={15}
+                        height={15}
+                        className="shrink-0 text-red-500"
+                      />
                       <span>{redeemError}</span>
                     </div>
                   )}
@@ -1271,7 +1596,11 @@ export function TabBilling() {
                             {verifiedPlan.plan_name}
                           </h4>
                           <span className="rounded-md bg-signal text-white px-2 py-0.5 text-[10px] font-bold font-mono uppercase tracking-wider">
-                            {verifiedPlan.duration_months || 1} Month{(verifiedPlan.duration_months || 1) > 1 ? "s" : ""} Access
+                            {verifiedPlan.duration_months || 1} Month
+                            {(verifiedPlan.duration_months || 1) > 1
+                              ? "s"
+                              : ""}{" "}
+                            Access
                           </span>
                         </div>
                         <div className="font-mono text-xs text-signal font-semibold mt-1">
@@ -1307,23 +1636,38 @@ export function TabBilling() {
                     {/* Resource Entitlements */}
                     <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
                       <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
-                        <div className="text-[10px] text-text-3 font-sans font-medium">Stores Limit</div>
-                        <div className="font-bold text-text text-xs">{verifiedPlan.max_stores || 1} Stores</div>
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          Stores Limit
+                        </div>
+                        <div className="font-bold text-text text-xs">
+                          {verifiedPlan.max_stores || 1} Stores
+                        </div>
                       </div>
                       <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
-                        <div className="text-[10px] text-text-3 font-sans font-medium">Team Seats</div>
-                        <div className="font-bold text-text text-xs">{verifiedPlan.max_seats || 1} Seats</div>
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          Team Seats
+                        </div>
+                        <div className="font-bold text-text text-xs">
+                          {verifiedPlan.max_seats || 1} Seats
+                        </div>
                       </div>
                       <div className="rounded-xl bg-white/90 border border-signal/20 p-2 text-center">
-                        <div className="text-[10px] text-text-3 font-sans font-medium">AI Messages</div>
-                        <div className="font-bold text-signal text-xs">{(verifiedPlan.message_limit || 50000).toLocaleString()}</div>
+                        <div className="text-[10px] text-text-3 font-sans font-medium">
+                          AI Messages
+                        </div>
+                        <div className="font-bold text-signal text-xs">
+                          {(
+                            verifiedPlan.message_limit || 50000
+                          ).toLocaleString()}
+                        </div>
                       </div>
                     </div>
 
                     {/* Expiry date notice */}
                     {verifiedPlan.code_expiry && (
                       <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200">
-                        ⚠️ This activation code must be redeemed by <strong>{verifiedPlan.code_expiry}</strong>.
+                        ⚠️ This activation code must be redeemed by{" "}
+                        <strong>{verifiedPlan.code_expiry}</strong>.
                       </div>
                     )}
                   </div>
@@ -1331,14 +1675,34 @@ export function TabBilling() {
                   {/* Step 3: Payment Method Selection */}
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-text">
-                      {(verifiedPlan.price_bdt || 0) > 0 ? "Select Payment Method" : "Activation Verification"}
+                      {(verifiedPlan.price_bdt || 0) > 0
+                        ? "Select Payment Method"
+                        : "Activation Verification"}
                     </label>
                     {(verifiedPlan.price_bdt || 0) > 0 ? (
                       <div className="grid grid-cols-3 gap-2">
                         {[
-                          { id: "bKash Auto-Debit", label: "bKash", tag: "Popular", color: "border-pink-500/40 text-pink-700 bg-pink-500/5" },
-                          { id: "Nagad Instant", label: "Nagad", tag: "Instant", color: "border-orange-500/40 text-orange-700 bg-orange-500/5" },
-                          { id: "Card / Net Banking", label: "Card / Bank", tag: "Online", color: "border-blue-500/40 text-blue-700 bg-blue-500/5" },
+                          {
+                            id: "bKash Auto-Debit",
+                            label: "bKash",
+                            tag: "Popular",
+                            color:
+                              "border-pink-500/40 text-pink-700 bg-pink-500/5",
+                          },
+                          {
+                            id: "Nagad Instant",
+                            label: "Nagad",
+                            tag: "Instant",
+                            color:
+                              "border-orange-500/40 text-orange-700 bg-orange-500/5",
+                          },
+                          {
+                            id: "Card / Net Banking",
+                            label: "Card / Bank",
+                            tag: "Online",
+                            color:
+                              "border-blue-500/40 text-blue-700 bg-blue-500/5",
+                          },
                         ].map((m) => {
                           const isSelected = selectedPaymentMethod === m.id;
                           return (
@@ -1350,12 +1714,19 @@ export function TabBilling() {
                                 "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                                 isSelected
                                   ? "border-signal bg-signal/10 ring-1.5 ring-signal shadow-xs"
-                                  : "border-line bg-surface-1 hover:border-signal/40"
+                                  : "border-line bg-surface-1 hover:border-signal/40",
                               )}
                             >
                               <div className="flex items-center justify-between">
-                                <span className="font-bold text-xs text-text">{m.label}</span>
-                                <span className={cx("text-[9px] font-mono px-1 py-0.5 rounded", m.color)}>
+                                <span className="font-bold text-xs text-text">
+                                  {m.label}
+                                </span>
+                                <span
+                                  className={cx(
+                                    "text-[9px] font-mono px-1 py-0.5 rounded",
+                                    m.color,
+                                  )}
+                                >
                                   {m.tag}
                                 </span>
                               </div>
@@ -1368,15 +1739,26 @@ export function TabBilling() {
                       </div>
                     ) : (
                       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-xs text-emerald-800 flex items-center gap-2">
-                        <IconCheck width={14} height={14} className="text-emerald-600" />
-                        <span>Complimentary code approved by sales. No payment needed.</span>
+                        <IconCheck
+                          width={14}
+                          height={14}
+                          className="text-emerald-600"
+                        />
+                        <span>
+                          Complimentary code approved by sales. No payment
+                          needed.
+                        </span>
                       </div>
                     )}
                   </div>
 
                   {redeemError && (
                     <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-600 flex items-center gap-2">
-                      <IconShield width={14} height={14} className="shrink-0 text-red-500" />
+                      <IconShield
+                        width={14}
+                        height={14}
+                        className="shrink-0 text-red-500"
+                      />
                       <span>{redeemError}</span>
                     </div>
                   )}
@@ -1434,6 +1816,20 @@ export function TabBilling() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Downgrade & Capacity Conflict Reconciliation Modal */}
+      <DowngradeReconcileModal
+        isOpen={reconcileModalOpen}
+        onClose={() => {
+          setReconcileModalOpen(false);
+          setPendingTargetPlan(null);
+          setReconcileConflictData(null);
+        }}
+        conflictData={reconcileConflictData}
+        billingCycle={billingCycle}
+        onConfirm={handleConfirmReconciliation}
+        isSubmitting={isSubmittingReconcile}
+      />
     </div>
   );
 }

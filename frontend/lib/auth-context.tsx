@@ -74,6 +74,10 @@ interface AuthContextType {
   selectPlan: (
     planId: string,
     billingPeriod?: string,
+    reconciliation?: {
+      keep_store_ids?: string[];
+      keep_team_member_ids?: string[];
+    },
   ) => Promise<{ success: boolean; error?: string }>;
   forgotPassword: (email: string) => Promise<{
     success: boolean;
@@ -160,10 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userProfile);
             syncUserCookies(userProfile, 7);
 
-            const hasPlan = Boolean(
-              userProfile.has_plan || userProfile.is_superadmin,
-            );
-            const returnTo = hasPlan ? "/console" : "/choose-plan";
+            const returnTo = userProfile.is_superadmin ? "/admin" : "/console";
             sessionStorage.removeItem("np_google_return_to");
 
             // Guaranteed cookie flush before redirection
@@ -305,11 +306,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const selectPlan = async (planId: string, billingPeriod = "monthly") => {
+  const selectPlan = async (
+    planId: string,
+    billingPeriod = "monthly",
+    reconciliation?: {
+      keep_store_ids?: string[];
+      keep_team_member_ids?: string[];
+    },
+  ) => {
     try {
       const res = await api.billing.selectPlan({
         plan_id: planId,
         billing_period: billingPeriod,
+        reconciliation,
       });
       if (res.success) {
         if (user) {

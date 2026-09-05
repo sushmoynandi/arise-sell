@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api-client";
-import { IconCheck, IconClose, IconTrash, IconWarn } from "@/components/ui/icons";
+import {
+  IconCheck,
+  IconClose,
+  IconTrash,
+  IconWarn,
+} from "@/components/ui/icons";
 import { Button } from "@/components/ui/primitives";
 import { cx } from "@/lib/format";
 import { AdminPlan, PlanBillingPeriod } from "../types";
@@ -20,6 +25,11 @@ interface PlanModalsProps {
   createModalOpen: boolean;
   onCloseCreate: () => void;
   onCreatePlan: (newPlan: Omit<AdminPlan, "id">) => Promise<void>;
+
+  provisionModalOpen?: boolean;
+  onCloseProvision?: () => void;
+  onContractCreated?: () => void;
+  allPlans?: AdminPlan[];
 }
 
 export function PlanModals({
@@ -32,6 +42,10 @@ export function PlanModals({
   createModalOpen,
   onCloseCreate,
   onCreatePlan,
+  provisionModalOpen = false,
+  onCloseProvision,
+  onContractCreated,
+  allPlans = [],
 }: PlanModalsProps) {
   // Bidirectional calculation helpers
   const calcYearlyFromDiscount = (
@@ -62,65 +76,89 @@ export function PlanModals({
     );
   }, [editingPlan]);
 
-  // ─── Code Generator Modal State ──────────────────────────────
+  // ─── Custom Plan & Contract Modal State ──────────────
   const [codeGenOpen, setCodeGenOpen] = useState(false);
-  const [codeGenPlan, setCodeGenPlan] = useState<AdminPlan | null>(null);
-  const [codeGenDuration, setCodeGenDuration] = useState<number>(1);
-  const [codeGenCustomDuration, setCodeGenCustomDuration] = useState<string>("");
-  const [codeGenCustomCode, setCodeGenCustomCode] = useState<string>("");
-  const [codeGenPriceBDT, setCodeGenPriceBDT] = useState<number>(0);
+  const [codeGenCode, setCodeGenCode] = useState<string>("");
+  const [codeGenPlanName, setCodeGenPlanName] =
+    useState<string>("Custom Enterprise");
+  const [codeGenDuration, setCodeGenDuration] = useState<number>(6);
+  const [codeGenIsCustomDuration, setCodeGenIsCustomDuration] =
+    useState<boolean>(false);
+  const [codeGenCustomDuration, setCodeGenCustomDuration] =
+    useState<string>("");
+  const [codeGenPriceBDT, setCodeGenPriceBDT] = useState<number | string>(
+    15000,
+  );
   const [codeGenExpiry, setCodeGenExpiry] = useState<string>("");
-  const [codeGenMaxUses, setCodeGenMaxUses] = useState<number>(1);
+  const [customStores, setCustomStores] = useState<number | string>(3);
+  const [customSeats, setCustomSeats] = useState<number | string>(10);
+  const [customMessages, setCustomMessages] = useState<number | string>(50000);
   const [codeGenLoading, setCodeGenLoading] = useState(false);
   const [codeGenError, setCodeGenError] = useState<string | null>(null);
-  const [codeGenResult, setCodeGenResult] = useState<{
-    code: string;
-    plan_name: string;
-    duration_months: number;
-    price_bdt: number;
-    code_expiry?: string | null;
-  } | null>(null);
-  const [codeGenCopied, setCodeGenCopied] = useState(false);
 
-  const openCodeGenModal = (plan: AdminPlan | null) => {
-    if (!plan) return;
-    setCodeGenPlan(plan);
-    setCodeGenDuration(1);
-    setCodeGenCustomDuration("");
-    setCodeGenPriceBDT(plan.priceBDT || 0);
-    setCodeGenExpiry("");
-    setCodeGenMaxUses(1);
-    setCodeGenError(null);
-    setCodeGenResult(null);
-    setCodeGenCopied(false);
-
-    const cleanPrefix = (plan.name || "CUSTOM")
+  const generateNewCode = (planName: string, duration: number) => {
+    const cleanName = planName
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
-      .slice(0, 10);
-    const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    setCodeGenCustomCode(`${cleanPrefix}-1M-${randSuffix}`);
+      .substring(0, 8);
+    const pfx = cleanName || "CUSTOM";
+    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${pfx}-${duration}M-${rnd}`;
+  };
 
+  const openCodeGenModal = (plan?: AdminPlan | null) => {
+    const initialName = plan?.name || "Custom Enterprise";
+    const initialDuration = 6;
+    const initialStores = plan?.maxStores || 3;
+    const initialSeats = plan?.maxSeats || 10;
+    const initialMessages = plan?.messageLimit || 50000;
+    const initialPrice = plan?.priceBDT
+      ? Math.round(plan.priceBDT * initialDuration)
+      : 15000;
+
+    setCodeGenPlanName(initialName);
+    setCodeGenDuration(initialDuration);
+    setCodeGenIsCustomDuration(false);
+    setCodeGenCustomDuration("");
+    setCodeGenPriceBDT(initialPrice);
+    setCustomStores(initialStores);
+    setCustomSeats(initialSeats);
+    setCustomMessages(initialMessages);
+    setCodeGenExpiry("");
+    setCodeGenError(null);
+    setCodeGenCode(generateNewCode(initialName, initialDuration));
     setCodeGenOpen(true);
   };
 
+  // Sync external provision modal trigger
+  useEffect(() => {
+    if (provisionModalOpen) {
+      const defaultPlan =
+        editingPlan ||
+        allPlans.find(
+          (p) =>
+            p.name.toLowerCase().includes("enterprize") ||
+            p.name.toLowerCase().includes("custom"),
+        ) ||
+        null;
+      openCodeGenModal(defaultPlan);
+    }
+  }, [provisionModalOpen]);
+
   const handleDurationSelect = (months: number) => {
     setCodeGenDuration(months);
+    setCodeGenIsCustomDuration(false);
     setCodeGenCustomDuration("");
-    if (codeGenPlan) {
-      const price =
-        months === 12 && codeGenPlan.yearlyPriceBDT
-          ? codeGenPlan.yearlyPriceBDT
-          : Math.round((codeGenPlan.priceBDT || 0) * months);
-      setCodeGenPriceBDT(price);
+    setCodeGenCode(generateNewCode(codeGenPlanName, months));
+  };
 
-      const cleanPrefix = (codeGenPlan.name || "CUSTOM")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, "")
-        .slice(0, 10);
-      const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-      setCodeGenCustomCode(`${cleanPrefix}-${months}M-${randSuffix}`);
-    }
+  const handleCustomDurationClick = () => {
+    setCodeGenIsCustomDuration(true);
+    const nextVal = codeGenCustomDuration || String(codeGenDuration || 6);
+    setCodeGenCustomDuration(nextVal);
+    const num = parseInt(nextVal, 10) || 1;
+    setCodeGenDuration(num);
+    setCodeGenCode(generateNewCode(codeGenPlanName, num));
   };
 
   const handleCustomDurationChange = (val: string) => {
@@ -128,53 +166,56 @@ export function PlanModals({
     const num = parseInt(val, 10);
     if (!isNaN(num) && num > 0) {
       setCodeGenDuration(num);
-      if (codeGenPlan) {
-        setCodeGenPriceBDT(Math.round((codeGenPlan.priceBDT || 0) * num));
-        const cleanPrefix = (codeGenPlan.name || "CUSTOM")
-          .toUpperCase()
-          .replace(/[^A-Z0-9]/g, "")
-          .slice(0, 10);
-        const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-        setCodeGenCustomCode(`${cleanPrefix}-${num}M-${randSuffix}`);
-      }
+      setCodeGenCode(generateNewCode(codeGenPlanName, num));
     }
   };
 
-  const handleGenerateCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!codeGenPlan) return;
+  const handleRegenerateCode = () => {
+    setCodeGenCode(generateNewCode(codeGenPlanName, codeGenDuration));
+  };
+
+  const handleContractSubmit = async () => {
+    if (!codeGenCode.trim()) {
+      setCodeGenError("Please enter or generate a code.");
+      return;
+    }
+    if (!codeGenPlanName.trim()) {
+      setCodeGenError("Please enter a plan name.");
+      return;
+    }
     setCodeGenLoading(true);
     setCodeGenError(null);
 
     try {
-      const res = await api.admin.generateCustomCode({
-        code: codeGenCustomCode.trim() || undefined,
-        plan_id: codeGenPlan.id,
-        plan_name: codeGenPlan.name,
-        duration_months: codeGenDuration,
-        price_bdt: codeGenPriceBDT,
-        message_limit: codeGenPlan.messageLimit,
-        max_stores: codeGenPlan.maxStores,
-        max_seats: codeGenPlan.maxSeats,
-        code_expiry: codeGenExpiry.trim() || null,
-        max_uses: codeGenMaxUses,
+      const finalDuration = codeGenIsCustomDuration
+        ? Math.max(1, Number(codeGenCustomDuration) || 1)
+        : codeGenDuration;
+
+      const res = await api.admin.createContract({
+        contract_code: codeGenCode.trim().toUpperCase().replace(/\s+/g, "-"),
+        plan_name: codeGenPlanName.trim(),
+        duration_months: finalDuration,
+        price_bdt: Math.max(0, Number(codeGenPriceBDT) || 0),
+        max_stores: Math.max(1, Number(customStores) || 1),
+        max_seats: Math.max(1, Number(customSeats) || 1),
+        message_limit: Math.max(100, Number(customMessages) || 1000),
+        valid_until: codeGenExpiry.trim() || null,
+        notes: `Custom plan created by Super Admin (${finalDuration} months).`,
       });
 
-      if (res && res.code) {
-        setCodeGenResult({
-          code: String(res.code),
-          plan_name: String(res.plan_name || codeGenPlan.name),
-          duration_months: Number(res.duration_months || codeGenDuration),
-          price_bdt: Number(res.price_bdt || codeGenPriceBDT),
-          code_expiry: res.code_expiry ? String(res.code_expiry) : null,
-        });
+      if (res && res.contract_code) {
+        onContractCreated?.();
+        setCodeGenOpen(false);
+        onCloseProvision?.();
       } else {
-        setCodeGenError("Failed to generate code.");
+        setCodeGenError("Failed to save custom plan in database.");
       }
     } catch (err: unknown) {
-      console.error("Code generation failed:", err);
+      console.error("Custom plan creation failed:", err);
       setCodeGenError(
-        err instanceof Error ? err.message : "Failed to generate plan code.",
+        err instanceof Error
+          ? err.message
+          : "Failed to create custom plan in database.",
       );
     } finally {
       setCodeGenLoading(false);
@@ -320,6 +361,12 @@ export function PlanModals({
       setIsSubmitting(true);
       await onSaveEdit({
         ...localEdit,
+        priceBDT: Number(localEdit.priceBDT) || 0,
+        yearlyPriceBDT: Number(localEdit.yearlyPriceBDT) || 0,
+        yearlyDiscountPercent: Number(localEdit.yearlyDiscountPercent) || 0,
+        maxStores: Math.max(1, Number(localEdit.maxStores) || 1),
+        maxSeats: Math.max(1, Number(localEdit.maxSeats) || 1),
+        messageLimit: Math.max(0, Number(localEdit.messageLimit) || 0),
         features: parsedFeatures,
       });
       onCloseEdit();
@@ -570,7 +617,19 @@ export function PlanModals({
                     onChange={(e) =>
                       setLocalEdit({
                         ...localEdit,
-                        messageLimit: Number(e.target.value),
+                        messageLimit:
+                          e.target.value === ""
+                            ? ("" as unknown as number)
+                            : Number(e.target.value),
+                      })
+                    }
+                    onBlur={() =>
+                      setLocalEdit({
+                        ...localEdit,
+                        messageLimit: Math.max(
+                          0,
+                          Number(localEdit.messageLimit) || 0,
+                        ),
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-text focus:border-signal outline-none font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -614,7 +673,19 @@ export function PlanModals({
                     onChange={(e) =>
                       setLocalEdit({
                         ...localEdit,
-                        maxStores: Math.max(1, Number(e.target.value) || 1),
+                        maxStores:
+                          e.target.value === ""
+                            ? ("" as unknown as number)
+                            : Number(e.target.value),
+                      })
+                    }
+                    onBlur={() =>
+                      setLocalEdit({
+                        ...localEdit,
+                        maxStores: Math.max(
+                          1,
+                          Number(localEdit.maxStores) || 1,
+                        ),
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -635,7 +706,16 @@ export function PlanModals({
                     onChange={(e) =>
                       setLocalEdit({
                         ...localEdit,
-                        maxSeats: Math.max(1, Number(e.target.value) || 1),
+                        maxSeats:
+                          e.target.value === ""
+                            ? ("" as unknown as number)
+                            : Number(e.target.value),
+                      })
+                    }
+                    onBlur={() =>
+                      setLocalEdit({
+                        ...localEdit,
+                        maxSeats: Math.max(1, Number(localEdit.maxSeats) || 1),
                       })
                     }
                     className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text focus:border-signal outline-none font-mono text-[13px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -671,56 +751,37 @@ export function PlanModals({
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2.5 border-t border-line">
-                <button
+              <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-line">
+                <Button
                   type="button"
-                  onClick={() => openCodeGenModal(localEdit)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-signal/40 bg-signal/5 px-3 py-1.5 text-xs font-semibold text-signal hover:bg-signal/15 hover:border-signal transition-colors cursor-pointer"
-                  title="Generate activation or voucher code for this plan"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCloseEdit}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                  </svg>
-                  <span>Generate Code</span>
-                </button>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={onCloseEdit}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="signal"
-                    size="sm"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="signal"
+                  size="sm"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ─── 1.1 Generate Activation Code Modal ─── */}
-      {codeGenOpen && codeGenPlan && (
+      {/* ─── 1.1 Custom Plan & Contract Modal ─── */}
+      {codeGenOpen && (
         <div
           onClick={(e) => {
-            if (e.target === e.currentTarget) setCodeGenOpen(false);
+            if (e.target === e.currentTarget) {
+              setCodeGenOpen(false);
+              onCloseProvision?.();
+            }
           }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
         >
@@ -739,21 +800,25 @@ export function PlanModals({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-[15px] font-bold text-text">
-                    Generate Activation Code
+                    Create Custom Plan
                   </h3>
                   <p className="text-[11.5px] text-text-3">
-                    Plan: <strong className="text-text">{codeGenPlan.name}</strong> • ৳{codeGenPlan.priceBDT.toLocaleString("en-US")}/mo
+                    Configure custom quotas, duration, pricing, and redeem code.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setCodeGenOpen(false)}
+                onClick={() => {
+                  setCodeGenOpen(false);
+                  onCloseProvision?.();
+                }}
                 className="text-text-3 hover:text-text text-sm cursor-pointer p-1 rounded-md hover:bg-surface-2 transition-colors"
                 title="Close"
               >
@@ -762,319 +827,309 @@ export function PlanModals({
             </div>
 
             {/* Modal Body */}
-            {codeGenResult ? (
-              /* Success / Result View */
-              <div className="space-y-4 py-1">
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center space-y-2">
-                  <div className="size-10 rounded-full bg-emerald-500/15 text-emerald-600 mx-auto grid place-items-center">
-                    <IconCheck width={20} height={20} />
-                  </div>
-                  <div className="text-[11px] uppercase tracking-wider font-semibold text-emerald-700">
-                    Activation Code Ready
-                  </div>
-                  <div className="font-mono text-2xl font-black text-text tracking-wider select-all bg-white py-2 px-3 rounded-xl border border-emerald-500/20 shadow-xs">
-                    {codeGenResult.code}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(codeGenResult.code);
-                      setCodeGenCopied(true);
-                      setTimeout(() => setCodeGenCopied(false), 2200);
-                    }}
-                    className={cx(
-                      "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
-                      codeGenCopied
-                        ? "bg-emerald-600 text-white"
-                        : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                    )}
-                  >
-                    {codeGenCopied ? (
-                      <>
-                        <IconCheck width={14} height={14} />
-                        <span>Copied to Clipboard!</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                        <span>Copy Code</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Details Breakdown */}
-                <div className="rounded-xl border border-line bg-surface-1 p-3.5 space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-text-3">Plan Tier:</span>
-                    <span className="font-semibold text-text">{codeGenResult.plan_name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-text-3">Contract Duration:</span>
-                    <span className="font-semibold text-signal">
-                      {codeGenResult.duration_months} Month{codeGenResult.duration_months > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-text-3">Agreed Price:</span>
-                    <span className="font-semibold text-text font-mono">
-                      ৳{codeGenResult.price_bdt.toLocaleString("en-US")} BDT
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-text-3">Must Redeem By:</span>
-                    <span className="font-semibold text-text">
-                      {codeGenResult.code_expiry ? (
-                        <span className="text-amber-600 font-mono">
-                          {codeGenResult.code_expiry}
-                        </span>
-                      ) : (
-                        <span className="text-text-3">No Expiry (Permanent Until Redeemed)</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                {/* WhatsApp Share Box */}
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const msg = `🎉 Hello! Here is your custom Arise-Sell subscription activation code:\n\n🔑 Code: ${codeGenResult.code}\n📦 Plan: ${codeGenResult.plan_name}\n⏳ Duration: ${codeGenResult.duration_months} Months Access\n${codeGenResult.code_expiry ? `⚠️ Redeem By: ${codeGenResult.code_expiry}\n` : ""}\nHow to activate:\n1. Log into your Arise-Sell store\n2. Open Settings > Billing\n3. Click "Redeem Plan Code", enter the code and click Redeem.\n\nThank you for choosing Arise-Sell!`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors cursor-pointer"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 1.77.813 2.796.814h.005c3.18 0 5.767-2.586 5.768-5.766 0-1.541-.6-2.99-1.69-4.08-1.089-1.09-2.54-1.69-4.083-1.69z" />
-                      <path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.662 1.438 5.184L2 22l4.981-1.309C8.423 21.53 10.154 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.65 0-3.18-.464-4.492-1.267l-.322-.196-2.964.778.791-2.89-.214-.341C3.957 14.806 3.5 13.447 3.5 12c0-4.687 3.813-8.5 8.5-8.5 2.27 0 4.406.885 6.012 2.49 1.605 1.606 2.488 3.742 2.488 6.01 0 4.687-3.813 8.5-8.5 8.5z" />
-                    </svg>
-                    <span>Share on WhatsApp with Client</span>
-                  </button>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCodeGenResult(null);
-                      openCodeGenModal(codeGenPlan);
-                    }}
-                  >
-                    Generate Another
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="signal"
-                    size="sm"
-                    onClick={() => setCodeGenOpen(false)}
-                  >
-                    Done
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              /* Generator Form */
-              <form onSubmit={handleGenerateCodeSubmit} className="space-y-4 text-[13px]">
-                {/* 1. Duration Presets (1M, 3M, 5M, 6M, 12M, Custom) */}
+            <div className="space-y-4 text-[13px]">
+              {/* 1. Code & Plan Name in Same Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-bold text-text mb-1.5 flex items-center justify-between">
-                    <span>Subscription Duration (Months)</span>
-                    <span className="text-[11px] text-signal font-semibold">
-                      {codeGenDuration} Month{codeGenDuration > 1 ? "s" : ""} Contract
-                    </span>
-                  </label>
-                  <div className="grid grid-cols-6 gap-1.5">
-                    {[1, 3, 5, 6, 12].map((m) => {
-                      const isSelected = codeGenDuration === m && codeGenCustomDuration === "";
-                      return (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => handleDurationSelect(m)}
-                          className={cx(
-                            "py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer",
-                            isSelected
-                              ? "border-signal bg-signal text-white shadow-xs"
-                              : "border-line bg-surface-1 text-text hover:border-signal/50 hover:bg-surface-2"
-                          )}
-                        >
-                          {m === 12 ? "1 Year" : `${m} Mo`}
-                        </button>
-                      );
-                    })}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold text-text text-xs">
+                      Code
+                    </label>
                     <button
                       type="button"
-                      onClick={() => {
-                        const nextVal = codeGenCustomDuration || String(codeGenDuration || 7);
-                        handleCustomDurationChange(nextVal);
-                      }}
-                      className={cx(
-                        "py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer",
-                        codeGenCustomDuration !== ""
-                          ? "border-signal bg-signal text-white shadow-xs"
-                          : "border-line bg-surface-1 text-text hover:border-signal/50 hover:bg-surface-2"
-                      )}
+                      onClick={handleRegenerateCode}
+                      className="inline-flex items-center gap-1 text-[11px] text-signal font-semibold hover:underline cursor-pointer transition-colors"
                     >
-                      Custom
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                      </svg>
+                      <span>Regenerate</span>
                     </button>
                   </div>
-
-                  {codeGenCustomDuration !== "" && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-xs text-text-3 font-medium">Custom Months:</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={120}
-                        value={codeGenCustomDuration}
-                        onChange={(e) => handleCustomDurationChange(e.target.value)}
-                        className="w-24 rounded-lg border border-line bg-white px-2.5 py-1 text-text focus:border-signal outline-none font-mono text-xs"
-                        placeholder="e.g. 5"
-                      />
-                      <span className="text-[11px] text-text-3">months (client access validity)</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Code String */}
-                <div>
-                  <label className="block font-bold text-text mb-1 flex items-center justify-between">
-                    <span>Voucher / Activation Code</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const cleanPrefix = (codeGenPlan.name || "CUSTOM")
-                          .toUpperCase()
-                          .replace(/[^A-Z0-9]/g, "")
-                          .slice(0, 10);
-                        const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-                        setCodeGenCustomCode(`${cleanPrefix}-${codeGenDuration}M-${randSuffix}`);
-                      }}
-                      className="text-[11px] text-signal hover:underline cursor-pointer"
-                    >
-                      Regenerate
-                    </button>
-                  </label>
                   <input
                     type="text"
                     required
-                    value={codeGenCustomCode}
-                    onChange={(e) => setCodeGenCustomCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. ENTERPRIZE-6M-ABCD"
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text font-mono font-bold tracking-wide focus:border-signal outline-none text-[13px]"
+                    value={codeGenCode}
+                    onChange={(e) =>
+                      setCodeGenCode(e.target.value.toUpperCase())
+                    }
+                    placeholder="e.g. CUSTOM-6M-7A8B"
+                    className="w-full rounded-xl border border-line bg-surface-1/40 px-3.5 py-2 text-text font-mono font-bold tracking-wide focus:border-signal focus:bg-white outline-none text-[13px] transition-all"
                   />
-                  <p className="text-[11px] text-text-3 mt-1">
-                    Client enters this code in <strong>Settings &gt; Billing &gt; Redeem Plan Code</strong>.
-                  </p>
                 </div>
 
-                {/* 3. Deal Price & Expiry Date */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block font-bold text-text mb-1">
-                      Agreed Deal Price (৳ BDT)
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold text-text text-xs">
+                      Plan Name
                     </label>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={codeGenPlanName}
+                    onChange={(e) => setCodeGenPlanName(e.target.value)}
+                    placeholder="e.g. Custom Enterprise"
+                    className="w-full rounded-xl border border-line bg-surface-1/40 px-3.5 py-2 text-text font-semibold focus:border-signal focus:bg-white outline-none text-[13px] transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* 2. Contract Duration (Months) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-text text-xs">
+                    Contract Duration (Months)
+                  </label>
+                  <span className="inline-flex items-center gap-1 text-[11.5px] text-signal font-semibold bg-signal/10 px-2 py-0.5 rounded-md border border-signal/20">
+                    {codeGenIsCustomDuration
+                      ? `${Number(codeGenCustomDuration) || 0} Month${(Number(codeGenCustomDuration) || 0) > 1 ? "s" : ""} (Custom)`
+                      : `${codeGenDuration} Month${codeGenDuration > 1 ? "s" : ""} Term`}
+                  </span>
+                </div>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {[1, 3, 5, 6, 12].map((m) => {
+                    const isSelected =
+                      !codeGenIsCustomDuration && codeGenDuration === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => handleDurationSelect(m)}
+                        className={`py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-signal bg-signal text-white shadow-xs"
+                            : "border-line bg-surface-1/50 text-text hover:border-signal/50 hover:bg-surface-2"
+                        }`}
+                      >
+                        {m === 12 ? "1 Year" : `${m} Mo`}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={handleCustomDurationClick}
+                    className={`py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      codeGenIsCustomDuration
+                        ? "border-signal bg-signal text-white shadow-xs"
+                        : "border-line bg-surface-1/50 text-text hover:border-signal/50 hover:bg-surface-2"
+                    }`}
+                  >
+                    Custom
+                  </button>
+                </div>
+
+                {codeGenIsCustomDuration && (
+                  <div className="mt-2.5 flex items-center gap-2 p-2.5 rounded-xl bg-surface-1/80 border border-line">
+                    <span className="text-xs text-text-3 font-medium">
+                      Custom Duration:
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={codeGenCustomDuration}
+                      onChange={(e) =>
+                        handleCustomDurationChange(e.target.value)
+                      }
+                      onBlur={() => {
+                        if (
+                          !codeGenCustomDuration ||
+                          Number(codeGenCustomDuration) < 1
+                        ) {
+                          handleCustomDurationChange("1");
+                        }
+                      }}
+                      className="w-20 rounded-lg border border-line bg-white px-2.5 py-1 text-text font-bold focus:border-signal outline-none font-mono text-xs"
+                      placeholder="e.g. 5"
+                      autoFocus
+                    />
+                    <span className="text-[11.5px] text-text-3">
+                      months access validity
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Agreed Deal Price & Proposal Valid Until */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block font-bold text-text text-xs mb-1.5">
+                    Agreed Deal Price (৳ BDT)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-3 font-semibold text-xs">
+                      ৳
+                    </span>
                     <input
                       type="number"
                       min={0}
+                      step="any"
                       value={codeGenPriceBDT}
-                      onChange={(e) => setCodeGenPriceBDT(Math.max(0, Number(e.target.value) || 0))}
-                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text font-mono focus:border-signal outline-none text-[13px]"
+                      onChange={(e) => setCodeGenPriceBDT(e.target.value)}
+                      onBlur={() =>
+                        setCodeGenPriceBDT(
+                          Math.max(0, Number(codeGenPriceBDT) || 0),
+                        )
+                      }
+                      className="w-full rounded-xl border border-line bg-surface-1/40 pl-7 pr-3.5 py-2 text-text font-mono font-bold focus:border-signal focus:bg-white outline-none text-[13px] transition-all"
                     />
-                    <span className="text-[10.5px] text-text-3 mt-0.5 block">
-                      ≈ ৳{Math.round(codeGenPriceBDT / Math.max(1, codeGenDuration)).toLocaleString("en-US")}/mo
-                    </span>
                   </div>
-
-                  <div>
-                    <label className="block font-bold text-text mb-1">
-                      Redeem Expiry Date (Optional)
-                    </label>
-                    <input
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={codeGenExpiry}
-                      onChange={(e) => setCodeGenExpiry(e.target.value)}
-                      className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text font-mono focus:border-signal outline-none text-[13px]"
-                    />
-                    <span className="text-[10.5px] text-text-3 mt-0.5 block">
-                      Client must redeem before this date
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-text-3 mt-1">
+                    <span>Monthly rate:</span>
+                    <strong className="font-semibold text-text font-mono">
+                      ≈ ৳
+                      {Math.round(
+                        (Number(codeGenPriceBDT) || 0) /
+                          Math.max(
+                            1,
+                            codeGenIsCustomDuration
+                              ? Number(codeGenCustomDuration) || 1
+                              : codeGenDuration,
+                          ),
+                      ).toLocaleString("en-US")}
+                      /mo
+                    </strong>
+                  </span>
                 </div>
 
-                {/* 4. Max Redemptions */}
                 <div>
-                  <label className="block font-bold text-text mb-1 flex items-center justify-between">
-                    <span>Max Allowed Redemptions</span>
-                    <span className="text-[11px] text-text-3 font-normal">
-                      Default: 1 (Single Client)
-                    </span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold text-text text-xs">
+                      Proposal Valid Until (Optional)
+                    </label>
+                    {codeGenExpiry && (
+                      <button
+                        type="button"
+                        onClick={() => setCodeGenExpiry("")}
+                        className="text-[10.5px] text-text-3 hover:text-signal hover:underline cursor-pointer"
+                      >
+                        Clear Date
+                      </button>
+                    )}
+                  </div>
                   <input
-                    type="number"
-                    min={1}
-                    max={1000}
-                    value={codeGenMaxUses}
-                    onChange={(e) => setCodeGenMaxUses(Math.max(1, Number(e.target.value) || 1))}
-                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-text font-mono focus:border-signal outline-none text-[13px]"
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={codeGenExpiry}
+                    onChange={(e) => setCodeGenExpiry(e.target.value)}
+                    className="w-full rounded-xl border border-line bg-surface-1/40 px-3.5 py-2 text-text font-mono focus:border-signal focus:bg-white outline-none text-[13px] transition-all"
                   />
+                  <span className="text-[11px] text-text-3 mt-1 block">
+                    {codeGenExpiry
+                      ? "Client proposal expiration date"
+                      : "No expiration date"}
+                  </span>
                 </div>
+              </div>
 
-                {/* Plan Entitlements Summary */}
-                <div className="rounded-xl border border-line bg-surface-1 p-3 text-xs space-y-1.5">
-                  <div className="font-semibold text-text flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-signal inline-block" />
-                    <span>Resource Entitlements for this Code:</span>
+              {/* 4. Custom Resource Entitlements */}
+              <div className="rounded-2xl border border-line bg-surface-1/50 p-3.5 text-xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-signal" />
+                    <span className="font-bold text-text text-[12.5px]">
+                      Custom Resource Entitlements:
+                    </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px] text-text-2">
-                    <div className="rounded-lg bg-white border border-line p-1.5 text-center">
-                      <div className="text-[10px] text-text-3 font-sans">Stores</div>
-                      <div className="font-bold text-text">{codeGenPlan.maxStores}</div>
-                    </div>
-                    <div className="rounded-lg bg-white border border-line p-1.5 text-center">
-                      <div className="text-[10px] text-text-3 font-sans">Team Seats</div>
-                      <div className="font-bold text-text">{codeGenPlan.maxSeats}</div>
-                    </div>
-                    <div className="rounded-lg bg-white border border-line p-1.5 text-center">
-                      <div className="text-[10px] text-text-3 font-sans">AI Messages</div>
-                      <div className="font-bold text-text">{codeGenPlan.messageLimit.toLocaleString()}</div>
-                    </div>
+                  <span className="text-[11px] text-text-3">
+                    Allocated quotas
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="rounded-xl border border-line bg-white p-2.5 focus-within:border-signal focus-within:ring-1 focus-within:ring-signal/20 transition-all">
+                    <span className="text-[10.5px] text-text-3 font-semibold block mb-1 text-center">
+                      Max Stores
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={customStores}
+                      onChange={(e) => setCustomStores(e.target.value)}
+                      onBlur={() =>
+                        setCustomStores(Math.max(1, Number(customStores) || 1))
+                      }
+                      className="w-full bg-transparent font-bold text-center text-[13px] text-text outline-none font-mono"
+                    />
+                  </div>
+                  <div className="rounded-xl border border-line bg-white p-2.5 focus-within:border-signal focus-within:ring-1 focus-within:ring-signal/20 transition-all">
+                    <span className="text-[10.5px] text-text-3 font-semibold block mb-1 text-center">
+                      Team Seats
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={customSeats}
+                      onChange={(e) => setCustomSeats(e.target.value)}
+                      onBlur={() =>
+                        setCustomSeats(Math.max(1, Number(customSeats) || 1))
+                      }
+                      className="w-full bg-transparent font-bold text-center text-[13px] text-text outline-none font-mono"
+                    />
+                  </div>
+                  <div className="rounded-xl border border-line bg-white p-2.5 focus-within:border-signal focus-within:ring-1 focus-within:ring-signal/20 transition-all">
+                    <span className="text-[10.5px] text-text-3 font-semibold block mb-1 text-center">
+                      AI Messages
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      value={customMessages}
+                      onChange={(e) => setCustomMessages(e.target.value)}
+                      onBlur={() =>
+                        setCustomMessages(
+                          Math.max(0, Number(customMessages) || 0),
+                        )
+                      }
+                      className="w-full bg-transparent font-bold text-center text-[13px] text-signal outline-none font-mono"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {codeGenError && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700 font-medium">
-                    {codeGenError}
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCodeGenOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="signal"
-                    size="sm"
-                    disabled={codeGenLoading || !codeGenCustomCode.trim()}
-                  >
-                    {codeGenLoading ? "Generating..." : "Generate Activation Code"}
-                  </Button>
+              {codeGenError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700 font-medium">
+                  {codeGenError}
                 </div>
-              </form>
-            )}
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-line">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCodeGenOpen(false);
+                    onCloseProvision?.();
+                  }}
+                  className="h-9 px-4 text-xs font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="signal"
+                  size="sm"
+                  disabled={
+                    codeGenLoading ||
+                    !codeGenCode.trim() ||
+                    !codeGenPlanName.trim()
+                  }
+                  onClick={handleContractSubmit}
+                  className="gap-1.5 font-semibold text-xs h-9 px-5 cursor-pointer shadow-xs"
+                >
+                  {codeGenLoading ? "Creating..." : "+ Create Custom Plan"}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

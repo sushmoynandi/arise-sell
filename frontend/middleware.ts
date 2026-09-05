@@ -33,11 +33,6 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
     }
-
-    // Gating: Merchant must select a plan before entering the console
-    if (!isSuperadmin && !hasPlan) {
-      return NextResponse.redirect(new URL("/choose-plan", request.url));
-    }
   }
 
   // 3. Plan Selection Page Protection
@@ -47,11 +42,6 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set("from", "/choose-plan");
       return NextResponse.redirect(loginUrl);
     }
-
-    // If merchant already has an active plan, proceed to console
-    if (hasPlan && !isSuperadmin) {
-      return NextResponse.redirect(new URL("/console", request.url));
-    }
   }
 
   // 4. Guest Only Routes: If already authenticated, redirect appropriately
@@ -59,9 +49,6 @@ export function middleware(request: NextRequest) {
     if (accessToken) {
       if (isSuperadmin) {
         return NextResponse.redirect(new URL("/admin", request.url));
-      }
-      if (!hasPlan) {
-        return NextResponse.redirect(new URL("/choose-plan", request.url));
       }
       return NextResponse.redirect(new URL("/console", request.url));
     }

@@ -77,6 +77,9 @@ class TenantResponse(BaseModel):
     currentSeatsCount: int | None = None
     nextBillingDate: str | None = None
     paymentMethod: str | None = None
+    signalsCount: int | None = 0
+    signalsLimit: int | None = 10000
+    is_frozen: bool = False
 
 
 
@@ -121,15 +124,19 @@ class StoreWorkspaceItem(BaseModel):
     owner_name: str
     plan_covered_by_owner: bool = False
     is_active: bool = False
+    is_frozen: bool = False
     channels_count: int = 1
     permissions: list[str] = []
     max_stores: int = 1
     maxStores: int = 1
 
 
-
 class SwitchStoreRequest(BaseModel):
     store_id: str
+
+
+class ToggleStoreFreezeRequest(BaseModel):
+    swap_with_store_id: str | None = None
 
 
 class ChannelResponse(BaseModel):

@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -15,6 +15,10 @@ from app.core.deps import get_current_active_user
 from app.core.security import verify_password
 from app.models.user import User
 from app.models.tenant import Business
+from app.models.billing import EnterpriseContract
+from app.models.conversation import Conversation, Message
+from app.models.automation import CapiEvent
+from app.models.order import CourierBooking
 from app.schemas.merchant import (
     TenantResponse,
     TeamMemberResponse,
@@ -29,6 +33,7 @@ from app.schemas.merchant import (
     NotificationItem,
     DeleteStoreRequest,
     DeleteStoreResponse,
+    ToggleStoreFreezeRequest,
 )
 
 router = APIRouter(prefix="/merchants", tags=["Merchant Settings"])
@@ -40,8 +45,8 @@ PLAN_AI_QUOTAS: dict[str, int] = {
     "grow": 500,
     "growth": 500,
     "go": 500,
-    "pro": 10000,
-    "business": 10000,
+    "pro": 1500,
+    "business": 4500,
     "scale": 15000,
     "custom": 50000,
     "enterprise": 50000,
@@ -51,8 +56,8 @@ PLAN_AI_QUOTAS: dict[str, int] = {
 
 def get_plan_ai_quota(plan: str | None) -> int:
     if not plan:
-        return 500
-    return PLAN_AI_QUOTAS.get(plan.strip().lower(), 500)
+        return 100
+    return PLAN_AI_QUOTAS.get(plan.strip().lower(), 100)
 
 
 async def get_user_owned_stores(user: User, db: AsyncSession) -> list[Business]:
@@ -88,24 +93,24 @@ def _build_tenant_response(
     biz: Business,
     user: User | None = None,
     owned_stores_count: int | None = None,
+    signals_count: int = 0,
+    signals_limit: int = 10000,
+    real_ai_msgs: int = 0,
 ) -> TenantResponse:
     extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
 
-    # Calculate live AI reply usage from live store + db + user account
-    from app.services.live_store import get_ai_messages_count
-    live_ai_count = get_ai_messages_count()
+    # Real AI usage calculated from DB messages + user/biz orders_used
     user_ai_used = user.ai_used or 0 if user else 0
-    ai_used = max(user_ai_used, biz.orders_used or 0, live_ai_count or 0)
+    ai_used = max(user_ai_used, biz.orders_used or 0, real_ai_msgs)
 
-    # Determine plan quota: User account level plan/quota takes precedence
-    user_plan = user.plan if user and user.plan else None
-    raw_plan = (user_plan or biz.plan or "Free").strip()
+    # Canonical store plan is biz.plan
+    raw_plan = (biz.plan or (user.plan if user else None) or extra.get("plan") or "Free").strip()
     plan_name = raw_plan if " " in raw_plan else raw_plan.capitalize()
     tier_limit = get_plan_ai_quota(raw_plan)
 
-    account_quota = user.ai_quota if (user and user.ai_quota) else biz.orders_quota
-    if account_quota and account_quota > 0:
-        quota_limit = max(account_quota, tier_limit)
+    account_quota = biz.orders_quota if (biz.orders_quota and biz.orders_quota > 0) else (user.ai_quota if (user and user.ai_quota) else 0)
+    if account_quota > 0:
+        quota_limit = account_quota
     else:
         quota_limit = tier_limit
 
@@ -155,23 +160,24 @@ def _build_tenant_response(
     }
     plan_price = PLAN_PRICES.get(p_lower, 0.0 if "free" in p_lower else (2499.0 if "business" in p_lower else (999.0 if "pro" in p_lower else (9999.0 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else 349.0))))
     max_stores = PLAN_STORES.get(p_lower, 2 if "business" in p_lower else (10 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else 1))
-    max_seats = PLAN_SEATS.get(p_lower, 8 if "business" in p_lower else (4 if "pro" in p_lower else (20 if any(k in p_lower for k in ["enter", "scale", "custom", "vip"]) else (1 if "free" in p_lower else 2))))
+    max_seats = PLAN_SEATS.get(p_lower, 8 if "business" in p_lower else (4 if "pro" in p_lower else (30 if any(k in p_lower for k in ["enter", "scale", "custom", "vip", "karkhana"]) else (1 if "free" in p_lower else 2))))
 
-    if extra.get("max_stores") is not None:
-        try:
-            max_stores = int(extra["max_stores"])
-        except Exception:
-            pass
-    if extra.get("max_seats") is not None:
-        try:
-            max_seats = int(extra["max_seats"])
-        except Exception:
-            pass
-    if extra.get("plan_price_bdt") is not None:
-        try:
-            plan_price = float(extra["plan_price_bdt"])
-        except Exception:
-            pass
+    if str(extra.get("plan", "")).strip().lower() == raw_plan.lower():
+        if extra.get("max_stores") is not None:
+            try:
+                max_stores = int(extra["max_stores"])
+            except Exception:
+                pass
+        if extra.get("max_seats") is not None:
+            try:
+                max_seats = int(extra["max_seats"])
+            except Exception:
+                pass
+        if extra.get("plan_price_bdt") is not None:
+            try:
+                plan_price = float(extra["plan_price_bdt"])
+            except Exception:
+                pass
 
     tm_list = extra.get("team_members", [])
     seats_used = 1 + (len(tm_list) if isinstance(tm_list, list) else 0)
@@ -181,46 +187,48 @@ def _build_tenant_response(
         "name": biz.name,
         "nameBn": biz.name_bn or biz.name,
         "kind": biz.kind or "Ecommerce",
-        "since": "2021",
+        "since": extra.get("since") or "2024",
         "plan": plan_name,
         "planPriceBDT": plan_price,
         "maxStores": max_stores,
         "maxSeats": max_seats,
         "currentSeatsCount": seats_used,
         "currentStoresCount": owned_stores_count if owned_stores_count is not None else 1,
-        "nextBillingDate": extra.get("next_billing_date", "10 Oct, 2026"),
-        "paymentMethod": extra.get("payment_method", "bKash Auto-Debit"),
+        "nextBillingDate": extra.get("next_billing_date") or ("Lifetime Free" if "free" in p_lower else None),
+        "paymentMethod": extra.get("payment_method") or ("Free Tier (No Card Required)" if "free" in p_lower else "bKash Auto-Debit"),
         "ordersUsed": ai_used,
         "ordersQuota": quota_limit,
         "messagesUsed": ai_used,
         "messagesQuota": quota_limit,
         "remainingQuota": remaining,
         "remainingPercent": remaining_pct,
-        "pages": 3,
-        "logoHue": biz.logo_hue,
-        "slug": biz.slug or "nokshi",
+        "signalsCount": signals_count,
+        "signalsLimit": signals_limit,
+        "pages": len(extra.get("connected_pages", [])) if extra.get("connected_pages") else 1,
+        "logoHue": biz.logo_hue if biz.logo_hue is not None else 82,
+        "slug": biz.slug or "",
         "currency": biz.currency or "BDT",
         "timezone": biz.timezone or "Asia/Dhaka",
-        "website": "https://nokshi.co",
-        "support_email": "support@nokshi.co",
-        "phone": "+880 1711-234567",
-        "address": "House 42, Road 11, Dhanmondi, Dhaka 1209",
-        "trade_license": "TRAD/DNCC/049182/2022",
-        "facebook_url": "https://facebook.com/nokshibd",
-        "instagram_url": "https://instagram.com/nokshibd",
-        "whatsapp_url": "https://wa.me/8801711234567",
-        "invoice_layout": "a4",
-        "invoice_show_qr": True,
-        "invoice_show_tax": True,
-        "invoice_prefix": "NOK-",
-        "invoice_terms": "7-day exchange warranty with invoice slip.",
-        "invoice_footer": "Thank you for supporting handloom artisans in Bangladesh.",
-        "website_orders_enabled": False,
-        "website_orders_payment_mode": "payment_link",
-        "website_orders_api_url": "https://nokshi.co/api/v1/orders",
-        "website_orders_auth_header": "X-API-Key",
-        "website_orders_api_key": None,
-        "website_orders_template": None,
+        "website": extra.get("website") or "",
+        "support_email": extra.get("support_email") or (user.email if user else ""),
+        "phone": extra.get("phone") or (user.phone if user else ""),
+        "address": extra.get("address") or "",
+        "trade_license": extra.get("trade_license") or "",
+        "facebook_url": extra.get("facebook_url") or "",
+        "instagram_url": extra.get("instagram_url") or "",
+        "whatsapp_url": extra.get("whatsapp_url") or "",
+        "invoice_layout": extra.get("invoice_layout") or "a4",
+        "invoice_show_qr": extra.get("invoice_show_qr", True),
+        "invoice_show_tax": extra.get("invoice_show_tax", True),
+        "invoice_prefix": extra.get("invoice_prefix") or f"{biz.name[:3].upper()}-",
+        "invoice_terms": extra.get("invoice_terms") or "",
+        "invoice_footer": extra.get("invoice_footer") or "",
+        "website_orders_enabled": extra.get("website_orders_enabled", False),
+        "website_orders_payment_mode": extra.get("website_orders_payment_mode", "payment_link"),
+        "website_orders_api_url": extra.get("website_orders_api_url"),
+        "website_orders_auth_header": extra.get("website_orders_auth_header", "X-API-Key"),
+        "website_orders_api_key": extra.get("website_orders_api_key"),
+        "website_orders_template": extra.get("website_orders_template"),
     }
     # Overlay persisted extra JSON settings
     base_data.update(extra)
@@ -238,6 +246,7 @@ def _build_tenant_response(
     base_data["currency"] = biz.currency or "BDT"
     base_data["timezone"] = biz.timezone or "Asia/Dhaka"
     base_data["logoHue"] = biz.logo_hue if biz.logo_hue is not None else 82
+    base_data["is_frozen"] = bool(extra.get("is_frozen", False))
     # Dynamic setup checklist calculated from merchant profile & settings
     courier_done = bool(
         extra.get("courier_connected")
@@ -290,6 +299,29 @@ def _build_tenant_response(
     return TenantResponse(**base_data)
 
 
+async def _get_real_store_counts(biz_id: uuid.UUID, db: AsyncSession) -> tuple[int, int]:
+    """Return real (signals_count, real_ai_msgs) from database."""
+    try:
+        capi_stmt = select(func.count(CapiEvent.id)).where(CapiEvent.business_id == biz_id)
+        capi_count = (await db.execute(capi_stmt)).scalar() or 0
+
+        courier_stmt = select(func.count(CourierBooking.id)).where(CourierBooking.business_id == biz_id)
+        courier_count = (await db.execute(courier_stmt)).scalar() or 0
+
+        signals_count = capi_count + courier_count
+
+        msg_stmt = (
+            select(func.count(Message.id))
+            .select_from(Message)
+            .join(Conversation, Message.conversation_id == Conversation.id)
+            .where(Conversation.business_id == biz_id, Message.from_type == "ai")
+        )
+        db_ai_msgs = (await db.execute(msg_stmt)).scalar() or 0
+        return signals_count, db_ai_msgs
+    except Exception:
+        return 0, 0
+
+
 @router.get("/profile", response_model=TenantResponse)
 async def get_merchant_profile(
     user: User = Depends(get_current_active_user),
@@ -312,14 +344,18 @@ async def get_merchant_profile(
             user.role = "owner"
             await db.commit()
             await db.refresh(user)
-            return _build_tenant_response(owned_store, user, owned_stores_count=owned_count)
+            sig_cnt, real_ai = await _get_real_store_counts(owned_store.id, db)
+            return _build_tenant_response(
+                owned_store, user, owned_stores_count=owned_count,
+                signals_count=sig_cnt, real_ai_msgs=real_ai
+            )
         else:
             first_name = user.first_name.strip() if user.first_name else ""
             default_name = f"{first_name}'s Store" if first_name else "My Store"
             base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", default_name.lower()).strip("-") or f"store-{uuid.uuid4().hex[:6]}"
             unique_slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
 
-            assigned_plan = user.plan or "growth"
+            assigned_plan = user.plan or "Free"
             quota = user.ai_quota or get_plan_ai_quota(assigned_plan)
             used_msgs = user.ai_used or 0
 
@@ -370,15 +406,101 @@ async def get_merchant_profile(
             await db.refresh(new_biz)
             return _build_tenant_response(new_biz, user, owned_stores_count=1)
 
-    # Sync store plan with user account tier if user has a configured plan
-    if user.plan and (biz.plan or "").strip().lower() != user.plan.strip().lower():
+    # Check for active Enterprise Contract or custom tier in settings_data
+    biz_extra = biz.settings_data if isinstance(biz.settings_data, dict) else {}
+    clean_user_email = user.email.strip().lower()
+    conditions = [EnterpriseContract.business_id == biz.id]
+    if clean_user_email:
+        conditions.append(EnterpriseContract.merchant_email.ilike(clean_user_email))
+    owner_email = biz_extra.get("owner_email")
+    if owner_email:
+        conditions.append(EnterpriseContract.merchant_email.ilike(str(owner_email).strip().lower()))
+
+    contract_stmt = select(EnterpriseContract).where(
+        or_(*conditions),
+        EnterpriseContract.status == "active"
+    ).order_by(EnterpriseContract.created_at.desc())
+    contract_res = await db.execute(contract_stmt)
+    active_contract = contract_res.scalars().first()
+
+    if active_contract:
+        effective_plan = active_contract.plan_name
+        effective_quota = active_contract.message_limit
+        needs_commit = False
+        if (biz.plan or "").strip().lower() != effective_plan.strip().lower():
+            biz.plan = effective_plan
+            biz.orders_quota = max(biz.orders_quota or 0, effective_quota)
+            needs_commit = True
+        if biz_extra.get("plan") != effective_plan or biz_extra.get("max_seats") != active_contract.max_seats:
+            biz_extra["plan"] = effective_plan
+            biz_extra["max_stores"] = active_contract.max_stores
+            biz_extra["max_seats"] = active_contract.max_seats
+            if active_contract.price_bdt:
+                biz_extra["plan_price_bdt"] = float(active_contract.price_bdt)
+            if active_contract.expires_at:
+                biz_extra["next_billing_date"] = active_contract.expires_at.strftime("%d %b, %Y")
+            biz_extra["payment_method"] = active_contract.payment_method or "bKash Auto-Debit"
+            biz.settings_data = biz_extra
+            flag_modified(biz, "settings_data")
+            needs_commit = True
+        if (user.plan or "").strip().lower() != effective_plan.strip().lower():
+            user.plan = effective_plan
+            user.ai_quota = max(user.ai_quota or 0, effective_quota)
+            db.add(user)
+            needs_commit = True
+        if needs_commit:
+            db.add(biz)
+            await db.commit()
+            await db.refresh(biz)
+            await db.refresh(user)
+    elif biz.plan and not any(k in str(biz.plan).lower() for k in ["enter", "custom", "scale", "vip"]):
+        # A standard tier is active on the store - keep settings_data and user in sync
+        needs_commit = False
+        if biz_extra.get("plan") != biz.plan:
+            biz_extra["plan"] = biz.plan
+            biz.settings_data = biz_extra
+            flag_modified(biz, "settings_data")
+            needs_commit = True
+        if (user.plan or "").strip().lower() != biz.plan.strip().lower():
+            user.plan = biz.plan
+            user.ai_quota = biz.orders_quota or get_plan_ai_quota(biz.plan)
+            db.add(user)
+            needs_commit = True
+        if needs_commit:
+            db.add(biz)
+            await db.commit()
+            await db.refresh(biz)
+            await db.refresh(user)
+    elif biz_extra.get("plan") and any(k in str(biz_extra["plan"]).lower() for k in ["enter", "custom", "scale", "vip"]):
+        effective_plan = str(biz_extra["plan"])
+        effective_quota = biz.orders_quota or 50000
+        needs_commit = False
+        if (biz.plan or "").strip().lower() != effective_plan.strip().lower():
+            biz.plan = effective_plan
+            needs_commit = True
+        if (user.plan or "").strip().lower() != effective_plan.strip().lower():
+            user.plan = effective_plan
+            user.ai_quota = max(user.ai_quota or 0, effective_quota)
+            db.add(user)
+            needs_commit = True
+        if needs_commit:
+            db.add(biz)
+            await db.commit()
+            await db.refresh(biz)
+            await db.refresh(user)
+    elif user.plan and (biz.plan or "").strip().lower() != user.plan.strip().lower():
         biz.plan = user.plan
         biz.orders_quota = max(biz.orders_quota or 0, user.ai_quota or get_plan_ai_quota(user.plan))
         db.add(biz)
         await db.commit()
-        await db.refresh(biz)
-
-    return _build_tenant_response(biz, user, owned_stores_count=owned_count)
+    sig_cnt, real_ai = await _get_real_store_counts(biz.id, db)
+    return _build_tenant_response(
+        biz,
+        user,
+        owned_stores_count=owned_count,
+        signals_count=sig_cnt,
+        real_ai_msgs=real_ai,
+    )
 
 
 @router.get("/settings", response_model=TenantResponse)
@@ -400,42 +522,95 @@ PLAN_STORE_LIMITS: dict[str, int] = {
     "business": 2,
     "scale": 4,
     "custom": 10,
-    "enterprise": 4,
-    "enterprize": 4,
-    "karkhana": 4,
+    "enterprise": 10,
+    "enterprize": 10,
+    "karkhana": 10,
+}
+
+PLAN_SEAT_LIMITS: dict[str, int] = {
+    "free": 1,
+    "grow": 2,
+    "growth": 2,
+    "basic": 2,
+    "go": 2,
+    "pro": 4,
+    "business": 8,
+    "scale": 20,
+    "custom": 30,
+    "enterprise": 30,
+    "enterprize": 30,
+    "karkhana": 30,
 }
 
 
 async def get_dynamic_plan_store_limit(plan_name: str) -> int:
+    clean = (plan_name or "").strip().lower()
     try:
         from app.services.plans_service import get_stored_plans
         plans = await get_stored_plans()
-        clean = (plan_name or "").strip().lower()
+        # 1. Exact match
         matched = next(
-            (p for p in plans if p.get("id") == plan_name or p.get("name", "").strip().lower() == clean),
+            (p for p in plans if p.get("id") == plan_name or str(p.get("name", "")).strip().lower() == clean),
             None,
         )
         if matched and matched.get("maxStores"):
             return int(matched["maxStores"])
+        # 2. Substring match
+        for p in plans:
+            p_name = str(p.get("name", "")).strip().lower()
+            p_id = str(p.get("id", "")).strip().lower()
+            if (p_name and (p_name in clean or clean in p_name)) or (p_id and (p_id in clean or clean in p_id)):
+                if p.get("maxStores"):
+                    return int(p["maxStores"])
     except Exception:
         pass
-    return PLAN_STORE_LIMITS.get((plan_name or "growth").strip().lower(), 1)
+
+    # 3. Fuzzy keyword checks
+    if any(k in clean for k in ["enter", "custom", "scale", "vip", "karkhana"]):
+        return 10
+    if "business" in clean:
+        return 2
+    if any(k in clean for k in ["pro", "grow", "growth", "basic", "starter", "go", "free"]):
+        return 1
+
+    return PLAN_STORE_LIMITS.get(clean, 1)
 
 
 async def get_dynamic_plan_seat_limit(plan_name: str) -> int:
+    clean = (plan_name or "").strip().lower()
     try:
         from app.services.plans_service import get_stored_plans
         plans = await get_stored_plans()
-        clean = (plan_name or "").strip().lower()
+        # 1. Exact match
         matched = next(
-            (p for p in plans if p.get("id") == plan_name or p.get("name", "").strip().lower() == clean),
+            (p for p in plans if p.get("id") == plan_name or str(p.get("name", "")).strip().lower() == clean),
             None,
         )
         if matched and matched.get("maxSeats"):
             return int(matched["maxSeats"])
+        # 2. Substring match
+        for p in plans:
+            p_name = str(p.get("name", "")).strip().lower()
+            p_id = str(p.get("id", "")).strip().lower()
+            if (p_name and (p_name in clean or clean in p_name)) or (p_id and (p_id in clean or clean in p_id)):
+                if p.get("maxSeats"):
+                    return int(p["maxSeats"])
     except Exception:
         pass
-    return PLAN_SEAT_LIMITS.get((plan_name or "free").strip().lower(), 2)
+
+    # 3. Fuzzy keyword checks
+    if any(k in clean for k in ["enter", "custom", "scale", "vip", "karkhana"]):
+        return 30
+    if "business" in clean:
+        return 8
+    if "pro" in clean:
+        return 4
+    if any(k in clean for k in ["grow", "growth", "basic", "starter", "go"]):
+        return 2
+    if "free" in clean:
+        return 1
+
+    return PLAN_SEAT_LIMITS.get(clean, 2)
 
 
 @router.post("/store", response_model=TenantResponse)
@@ -459,7 +634,7 @@ async def create_store(
     all_businesses = res.scalars().all()
 
     owned_stores: list[Business] = []
-    user_highest_plan = "growth"
+    user_highest_plan = "Free"
 
     for b in all_businesses:
         extra = b.settings_data if isinstance(b.settings_data, dict) else {}
@@ -475,13 +650,17 @@ async def create_store(
         )
         if is_owner:
             owned_stores.append(b)
-            b_plan = (b.plan or "growth").strip().lower()
+            b_plan = (b.plan or "Free").strip().lower()
             if PLAN_STORE_LIMITS.get(b_plan, 1) > PLAN_STORE_LIMITS.get(user_highest_plan, 1):
                 user_highest_plan = b_plan
 
     target_plan = user.plan or user_highest_plan
     max_stores = await get_dynamic_plan_store_limit(target_plan)
-    if len(owned_stores) >= max_stores:
+    active_owned_stores = [
+        b for b in owned_stores
+        if not bool((b.settings_data or {}).get("is_frozen", False))
+    ]
+    if len(active_owned_stores) >= max_stores:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
@@ -527,7 +706,7 @@ async def create_store(
         "team_members": [],
     }
 
-    assigned_plan = req.plan or user.plan or user_highest_plan or "growth"
+    assigned_plan = req.plan or user.plan or user_highest_plan or "Free"
     tier_quota = get_plan_ai_quota(assigned_plan)
     quota = user.ai_quota or tier_quota
     used_msgs = user.ai_used or 0
@@ -571,7 +750,7 @@ async def quick_create_default_store(
     all_businesses = res.scalars().all()
 
     owned_stores: list[Business] = []
-    user_highest_plan = "growth"
+    user_highest_plan = "Free"
 
     for b in all_businesses:
         extra = b.settings_data if isinstance(b.settings_data, dict) else {}
@@ -587,13 +766,17 @@ async def quick_create_default_store(
         )
         if is_owner:
             owned_stores.append(b)
-            b_plan = (b.plan or "growth").strip().lower()
+            b_plan = (b.plan or "Free").strip().lower()
             if PLAN_STORE_LIMITS.get(b_plan, 1) > PLAN_STORE_LIMITS.get(user_highest_plan, 1):
                 user_highest_plan = b_plan
 
     target_plan = user.plan or user_highest_plan
     max_stores = await get_dynamic_plan_store_limit(target_plan)
-    if len(owned_stores) >= max_stores:
+    active_owned_stores = [
+        b for b in owned_stores
+        if not bool((b.settings_data or {}).get("is_frozen", False))
+    ]
+    if len(active_owned_stores) >= max_stores:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
@@ -654,7 +837,7 @@ async def quick_create_default_store(
         "team_members": [],
     }
 
-    assigned_plan = user.plan or user_highest_plan or "growth"
+    assigned_plan = user.plan or user_highest_plan or "Free"
     tier_quota = get_plan_ai_quota(assigned_plan)
     quota = user.ai_quota or tier_quota
     used_msgs = user.ai_used or 0
@@ -706,8 +889,8 @@ async def update_merchant_settings(
             name_bn=req.name_bn or clean_name,
             kind=req.kind or "Ecommerce",
             slug=unique_slug,
-            plan="growth",
-            orders_quota=1000,
+            plan="Free",
+            orders_quota=100,
             currency=req.currency or "BDT",
             timezone=req.timezone or "Asia/Dhaka",
             settings_data={
@@ -872,19 +1055,6 @@ async def update_merchant_settings(
 
     owned_stores = await get_user_owned_stores(user, db)
     return _build_tenant_response(biz, user, owned_stores_count=len(owned_stores))
-
-
-PLAN_SEAT_LIMITS = {
-    "free": 1,
-    "grow": 2,
-    "growth": 2,
-    "pro": 4,
-    "business": 8,
-    "scale": 15,
-    "custom": 30,
-    "enterprise": 30,
-    "karkhana": 30,
-}
 
 
 @router.get("/team", response_model=list[TeamMemberResponse])
@@ -1075,13 +1245,46 @@ async def invite_team_member(
     team_members = list(extra.get("team_members", []))
 
     # 1. Enforce Plan Seat Limits
-    max_seats = await get_dynamic_plan_seat_limit(biz.plan or "free")
+    max_seats = None
+    if extra.get("max_seats") is not None:
+        try:
+            val = int(extra["max_seats"])
+            if val > 0:
+                max_seats = val
+        except (ValueError, TypeError):
+            pass
+
+    if max_seats is None:
+        owner_stmt = select(User).where(User.business_id == biz.id, User.role == "owner")
+        owner_res = await db.execute(owner_stmt)
+        owner_user = owner_res.scalars().first()
+        owner_email = owner_user.email if owner_user else (extra.get("owner_email") or user.email)
+
+        conditions = [EnterpriseContract.business_id == biz.id]
+        if owner_email:
+            conditions.append(EnterpriseContract.merchant_email.ilike(owner_email.strip().lower()))
+        if user.email:
+            conditions.append(EnterpriseContract.merchant_email.ilike(user.email.strip().lower()))
+
+        contract_stmt = select(EnterpriseContract).where(
+            or_(*conditions),
+            EnterpriseContract.status == "active",
+        ).order_by(EnterpriseContract.created_at.desc())
+        contract_res = await db.execute(contract_stmt)
+        active_contract = contract_res.scalars().first()
+        if active_contract and active_contract.max_seats:
+            max_seats = int(active_contract.max_seats)
+
+    if max_seats is None:
+        max_seats = await get_dynamic_plan_seat_limit(biz.plan or "free")
+
     current_occupied = len(team_members) + 1  # 1 owner + teammates
 
     if current_occupied >= max_seats:
+        plan_display = (biz.plan or "current").capitalize()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Seat limit of {max_seats} reached on your {biz.plan.capitalize()} plan. Please upgrade to invite additional team members.",
+            detail=f"Seat limit of {max_seats} reached on your {plan_display} plan. Please upgrade to invite additional team members.",
         )
 
     # 2. Prevent duplicate invitations
@@ -1346,21 +1549,44 @@ async def list_my_stores(
             owner_display = extra.get("owner_name") or "Store Owner"
             perms = (matched_member.get("permissions") if matched_member else None) or ["chat", "orders"]
 
-        # Resolve real-time dynamic store limit from database plans
-        plan_str = b.plan or user.plan or "Free"
-        max_allowed = await get_dynamic_plan_store_limit(plan_str)
+        # Resolve real-time dynamic store limit from active contract or database plans
+        plan_str = extra.get("plan") or b.plan or user.plan or "Free"
+        c_stmt = select(EnterpriseContract).where(
+            or_(
+                EnterpriseContract.business_id == b.id,
+                EnterpriseContract.merchant_email.ilike(clean_user_email),
+            ),
+            EnterpriseContract.status == "active",
+        ).order_by(EnterpriseContract.created_at.desc())
+        c_res = await db.execute(c_stmt)
+        active_c = c_res.scalars().first()
+        if active_c:
+            plan_str = active_c.plan_name
+            max_allowed = int(active_c.max_stores)
+        elif extra.get("max_stores") is not None:
+            try:
+                max_allowed = int(extra["max_stores"])
+            except Exception:
+                max_allowed = await get_dynamic_plan_store_limit(plan_str)
+        else:
+            max_allowed = await get_dynamic_plan_store_limit(plan_str)
+
+        if (b.plan or "").strip().lower() != plan_str.strip().lower():
+            b.plan = plan_str
+            db.add(b)
 
         workspaces.append(
             StoreWorkspaceItem(
                 id=store_id_str,
                 name=b.name,
                 slug=b.slug,
-                plan=(b.plan or "Free").capitalize(),
+                plan=plan_str,
                 role=role_name,
                 is_owner=is_owner,
                 owner_name=owner_display,
                 plan_covered_by_owner=plan_covered,
                 is_active=is_active,
+                is_frozen=bool(extra.get("is_frozen", False)),
                 channels_count=3,
                 permissions=perms,
                 max_stores=max_allowed,
@@ -1438,6 +1664,119 @@ async def switch_store_workspace(
         "role": new_role,
         "plan": target_biz.plan,
         "is_owner": is_owner,
+    }
+
+
+@router.post("/stores/{store_id}/toggle-freeze")
+async def toggle_store_freeze(
+    store_id: str,
+    req: ToggleStoreFreezeRequest | None = None,
+    user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Toggle a store's frozen state or swap active stores when at plan capacity.
+    """
+    try:
+        target_uuid = uuid.UUID(store_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid store ID format.")
+
+    target_biz = await db.get(Business, target_uuid)
+    if not target_biz:
+        raise HTTPException(status_code=404, detail="Store not found.")
+
+    clean_user_email = user.email.strip().lower()
+    extra = dict(target_biz.settings_data) if isinstance(target_biz.settings_data, dict) else {}
+    owner_id = str(extra.get("owner_id", ""))
+    owner_email = str(extra.get("owner_email", "")).strip().lower()
+    support_email = str(extra.get("support_email", "")).strip().lower()
+
+    is_owner = bool(
+        (target_biz.id == user.business_id and user.role == "owner")
+        or (owner_id and owner_id == str(user.id))
+        or (owner_email and owner_email == clean_user_email)
+        or (support_email and support_email == clean_user_email)
+    )
+    if not is_owner:
+        raise HTTPException(status_code=403, detail="Only the store owner can freeze or activate this store.")
+
+    is_currently_frozen = bool(extra.get("is_frozen", False))
+    owned_stores = await get_user_owned_stores(user, db)
+    active_stores = [
+        b for b in owned_stores
+        if not bool((b.settings_data or {}).get("is_frozen", False))
+    ]
+
+    target_plan = user.plan or extra.get("plan") or target_biz.plan or "Free"
+    max_stores = await get_dynamic_plan_store_limit(target_plan)
+    now_iso = datetime.now().isoformat()
+
+    if is_currently_frozen:
+        # Want to unfreeze / activate
+        if len(active_stores) < max_stores:
+            extra["is_frozen"] = False
+            extra.pop("frozen_at", None)
+            extra.pop("frozen_reason", None)
+            target_biz.settings_data = extra
+            flag_modified(target_biz, "settings_data")
+            db.add(target_biz)
+        else:
+            # Reached capacity, attempt swap
+            swap_id = req.swap_with_store_id if req else None
+            swap_store = None
+            if swap_id:
+                try:
+                    s_uuid = uuid.UUID(swap_id)
+                    swap_store = next((s for s in active_stores if s.id == s_uuid), None)
+                except ValueError:
+                    pass
+
+            if not swap_store and active_stores:
+                if max_stores == 1 and len(active_stores) == 1:
+                    swap_store = active_stores[0]
+
+            if swap_store and swap_store.id != target_biz.id:
+                s_extra = dict(swap_store.settings_data or {})
+                s_extra["is_frozen"] = True
+                s_extra["frozen_at"] = now_iso
+                s_extra["frozen_reason"] = f"Swapped with {target_biz.name}"
+                swap_store.settings_data = s_extra
+                flag_modified(swap_store, "settings_data")
+                db.add(swap_store)
+
+                extra["is_frozen"] = False
+                extra.pop("frozen_at", None)
+                extra.pop("frozen_reason", None)
+                target_biz.settings_data = extra
+                flag_modified(target_biz, "settings_data")
+                db.add(target_biz)
+
+                if user.business_id == swap_store.id:
+                    user.business_id = target_biz.id
+                    db.add(user)
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Store limit reached: Your current {target_plan.capitalize()} plan allows {max_stores} active store(s). Please freeze another store or upgrade your plan.",
+                )
+    else:
+        # Freeze this store
+        extra["is_frozen"] = True
+        extra["frozen_at"] = now_iso
+        extra["frozen_reason"] = "Manually paused by owner"
+        target_biz.settings_data = extra
+        flag_modified(target_biz, "settings_data")
+        db.add(target_biz)
+
+    await db.commit()
+    await db.refresh(target_biz)
+    return {
+        "success": True,
+        "store_id": str(target_biz.id),
+        "name": target_biz.name,
+        "is_frozen": bool((target_biz.settings_data or {}).get("is_frozen", False)),
+        "message": f"Store {target_biz.name} is now {'Frozen (Inactive)' if (target_biz.settings_data or {}).get('is_frozen') else 'Active'}.",
     }
 
 
@@ -1558,7 +1897,7 @@ async def delete_store(
             )
 
     deleted_store_name = biz.name
-    current_plan = biz.plan or "growth"
+    current_plan = biz.plan or "Free"
 
     # 4. Remove staff/teammates belonging only to this store (exclude owner)
     teammates_stmt = select(User).where(User.business_id == biz.id, User.id != user.id)
@@ -1592,13 +1931,10 @@ async def delete_store(
 
     # 6. Preserve Account-Level Subscription Plan & AI Quota / Tokens
     # AI tokens belong to the user account, not to a single store!
-    from app.services.live_store import get_ai_messages_count
-    live_ai_count = get_ai_messages_count()
-
-    account_plan = (user.plan or biz.plan or "growth").strip()
+    account_plan = (user.plan or biz.plan or "Free").strip()
     tier_quota = get_plan_ai_quota(account_plan)
     account_quota = user.ai_quota or (biz.orders_quota if biz.orders_quota and biz.orders_quota > tier_quota else tier_quota)
-    account_used = max(user.ai_used or 0, biz.orders_used or 0, live_ai_count or 0)
+    account_used = max(user.ai_used or 0, biz.orders_used or 0)
 
     # Persist directly onto the user's permanent account
     user.plan = account_plan

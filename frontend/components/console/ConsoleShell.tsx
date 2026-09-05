@@ -82,6 +82,7 @@ const CONSOLE_ITEM_LABELS: Record<string, string> = {
   Products: "প্রোডাক্টস",
   "Knowledge Base": "নলেজ বেস",
   "AI Playground": "এআই প্লেগ্রাউন্ড",
+  "Team Members": "টিম মেম্বারস",
 };
 
 function hasPermission(
@@ -119,7 +120,9 @@ function hasPermission(
     (permissions.includes("settings") ||
       permissions.includes("/console/settings") ||
       permissions.some((p) => p.startsWith("settings:"))) &&
-    targetHref === "/console/settings"
+    (targetHref === "/console/settings" ||
+      targetHref.startsWith("/console/settings") ||
+      targetHref === "/console/team")
   ) {
     return true;
   }
@@ -212,7 +215,12 @@ function NavList({
                     (item.href === "/console/products" &&
                       pathname === "/console/catalog") ||
                     (item.href === "/console/playground" &&
-                      pathname === "/console/test-ai");
+                      pathname === "/console/test-ai") ||
+                    (item.href === "/console/team" &&
+                      pathname === "/console/team") ||
+                    (item.href.includes("/console/settings?tab=account") &&
+                      pathname === "/console/settings" &&
+                      searchParams.get("tab") === "account");
                   return (
                     <li key={item.label}>
                       <Link
@@ -260,6 +268,25 @@ function NavList({
                                 CONSOLE_ITEM_LABELS[item.label] ?? item.label,
                               )}
                             </span>
+                            {item.label === "Team Members" && isOwner && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  router.push("/console/team?invite=true");
+                                  onNavigate?.();
+                                }}
+                                title={
+                                  lang === "bn"
+                                    ? "ইনভাইট করুন"
+                                    : "Invite member"
+                                }
+                                className="opacity-0 group-hover:opacity-100 transition-opacity rounded px-1.5 py-0.5 text-[10px] font-bold bg-signal/15 text-signal hover:bg-signal hover:text-white"
+                              >
+                                + Invite
+                              </button>
+                            )}
                             {"badge" in item && item.badge && (
                               <span
                                 className={cx(
@@ -309,6 +336,7 @@ const SECTION_TITLES: Record<string, string> = {
   "/console/test-ai": "AI Playground",
   "/console/integrations": "Integrations",
   "/console/settings": "Settings",
+  "/console/team": "Team Members",
 };
 
 const SECTION_TITLES_BN: Record<string, string> = {
@@ -330,6 +358,7 @@ const SECTION_TITLES_BN: Record<string, string> = {
   "/console/test-ai": "এআই প্লেগ্রাউন্ড",
   "/console/integrations": "ইন্টিগ্রেশনস",
   "/console/settings": "সেটিংস",
+  "/console/team": "টিম মেম্বারস",
 };
 
 function getQuotaTone(remainingPct: number) {
@@ -432,7 +461,7 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
       setIsCreatingStore(true);
       await api.merchants.quickCreateStore();
       setStoreDropdownOpen(false);
-      window.location.href = "/console";
+      window.location.assign("/console");
     } catch (err: unknown) {
       alert(
         err instanceof Error
@@ -440,6 +469,19 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           : "Failed to create store. Please try again.",
       );
       setIsCreatingStore(false);
+    }
+  };
+
+  const handleToggleActiveStore = async (storeId: string) => {
+    try {
+      const res = await api.merchants.toggleStoreFreeze(storeId);
+      if (res.success) {
+        window.location.reload();
+      }
+    } catch (err: unknown) {
+      alert(
+        err instanceof Error ? err.message : "Failed to toggle store status.",
+      );
     }
   };
 
@@ -992,12 +1034,18 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                       <span className="block truncate text-[10.5px] font-mono font-medium text-emerald-600 dark:text-emerald-400">
                         {activeWorkspace.role} · Owner Paid
                       </span>
+                    ) : activeWorkspace?.is_frozen ? (
+                      <span className="block truncate text-[10.5px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                        ❄️ Frozen (Inactive)
+                      </span>
                     ) : (
                       <span className="block truncate text-[10.5px] font-mono font-medium text-text-3">
                         Owner ·{" "}
                         {activeStorePlan
-                          ? activeStorePlan.toUpperCase()
-                          : "PRO"}
+                          ? activeStorePlan.toLowerCase() === "growth"
+                            ? "GROW"
+                            : activeStorePlan.toUpperCase()
+                          : "FREE"}
                       </span>
                     )}
                   </span>
@@ -1102,10 +1150,16 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
                                       <span className="text-text-2 font-medium">
                                         Owner
                                       </span>
-                                      {w.plan && (
-                                        <span className="ml-1 uppercase text-[9px] px-1 py-0.2 rounded bg-surface-2 border border-line/60">
-                                          {w.plan}
+                                      {w.is_frozen ? (
+                                        <span className="ml-1 uppercase text-[9px] font-bold font-mono px-1 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                          ❄️ Frozen
                                         </span>
+                                      ) : (
+                                        w.plan && (
+                                          <span className="ml-1 uppercase text-[9px] px-1 py-0.2 rounded bg-surface-2 border border-line/60">
+                                            {w.plan}
+                                          </span>
+                                        )
                                       )}
                                     </p>
                                   </div>
@@ -2144,6 +2198,38 @@ function ConsoleShellInner({ children }: { children: ReactNode }) {
           key={pathname}
           className="min-w-0 flex-1 animate-in fade-in duration-100"
         >
+          {/* Frozen Store Capacity Alert Banner */}
+          {activeWorkspace?.is_frozen && (
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base select-none">❄️</span>
+                <span>
+                  <strong>
+                    {activeStoreName} is currently Frozen (Inactive)
+                  </strong>{" "}
+                  under your current plan. Automated AI chat responses and
+                  courier dispatches are paused. All your products, orders, and
+                  settings remain safe.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleToggleActiveStore(activeWorkspace.id)}
+                  className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-[11.5px] px-3 py-1.5 transition-colors cursor-pointer shadow-2xs"
+                >
+                  Make This Store Active (Swap)
+                </button>
+                <Link
+                  href="/console/settings?tab=billing"
+                  className="rounded-lg border border-amber-500/30 bg-white hover:bg-amber-50 text-amber-900 font-semibold text-[11.5px] px-3 py-1.5 transition-colors cursor-pointer shadow-2xs"
+                >
+                  Upgrade Plan
+                </Link>
+              </div>
+            </div>
+          )}
+
           {isPageAuthorized ? (
             children
           ) : (
